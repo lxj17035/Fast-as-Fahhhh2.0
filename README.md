@@ -8,6 +8,8 @@ Part 3 implementation: [PM-approved saved PDF delivery and Xinjie integration](d
 
 Part 4 implementation: [Persistent activity history and event contracts](docs/ACTIVITY.md).
 
+Sweeway handover: [Backend QA, demo steps and outstanding integration work](docs/SWEEWAY_QA.md).
+
 Updated 23 October 2026 against the supplied Domain 2 challenge brief.
 
 ## Product

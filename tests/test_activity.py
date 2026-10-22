@@ -17,7 +17,7 @@ from sqlalchemy.exc import OperationalError
 from app.database import enquiries, metadata, send_attempts, telegram_updates, xinjie_records
 from app.main import create_app
 from app.telegram_client import DeliveryResult
-from test_xinjie_integration import (
+from tests.test_xinjie_integration import (
     RecordingTelegram, deliver, draft, edit, integrated, preview, ready,
 )
 
