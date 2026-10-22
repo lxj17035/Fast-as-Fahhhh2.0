@@ -11,11 +11,11 @@ Work in small sections: implement -> run that section's tests -> update this che
 
 ## 2. Quotation rules and persistence
 
-- [ ] Save drafts with copied company/client details, manual prices, and version checks.
-- [ ] Calculate all validity durations and exact money totals on the backend.
-- [ ] Validate sending (PM role, required fields, expiry, saved version).
-- [ ] Preserve sent snapshots and expose a helper for Sweeway's send handler.
-- [ ] Run `python -m unittest tests.test_quotations -v` and commit `feat: implement quotation rules and draft storage`.
+- [x] Save drafts with copied company/client details, manual prices, and version checks.
+- [x] Calculate all validity durations and exact money totals on the backend.
+- [x] Validate sending (PM role, required fields, expiry, saved version).
+- [x] Preserve sent snapshots and expose a helper for Sweeway's send handler.
+- [x] Run `python -m unittest tests.test_quotations -v` and commit `feat: implement quotation rules and draft storage`.
 
 ## 3. AI extraction and manual fallback
 
@@ -48,3 +48,9 @@ Record commands, results, and limitations here as each section is completed. Com
 - Verified fictional seeds, all validity settings, invalid-update rollback, client editing, and persistence after reopen.
 - Added AGENTS.md/SKILLS.md, ignored .input and .env, and placeholder .env.example.
 - Runtime for local verification: bundled Python 3.12; no real credentials used.
+
+### Section 2
+
+- `python -m unittest tests.test_quotations -v`: 12 tests passed.
+- Verified calendar/month-end/leap-year dates, decimal rounding, blank vs zero prices, stale versions, snapshots, concurrent approvals, PM role, expiry, and uncertain-send lockout.
+- `begin_send` / `record_send_result` are service helpers for Sweeway; no external message was sent.
