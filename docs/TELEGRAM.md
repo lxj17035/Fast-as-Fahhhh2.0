@@ -1,8 +1,8 @@
 # Part 1: Telegram reception
 
 The shared Python application receives text messages at `POST /api/webhooks/telegram`.
-Part 2 adds [enquiry persistence and APIs](ENQUIRIES.md). Quotation services,
-delivery, and activity history remain later parts.
+Part 2 adds [enquiry persistence and APIs](ENQUIRIES.md). Part 3 connects
+[Xinjie's services and PDF delivery](DELIVERY.md). General activity history is Part 4.
 
 ## Setup
 
@@ -63,8 +63,8 @@ commit. One bot per database is assumed; multiple bots need a composite key.
 Part 2 now saves a linked enquiry in the same transaction as each new receipt,
 preserving IDs and recording source as `telegram`. Startup backfills old receipts
 without replacing existing enquiries. Each text message creates a separate enquiry;
-new messages do not overwrite existing enquiries. Activity logging and teammate
-modules remain unimplemented.
+new messages do not overwrite existing enquiries. Xinjie's quotation/PDF services
+are now connected in Part 3. General activity history remains unimplemented.
 
 ## Tests and live setup
 

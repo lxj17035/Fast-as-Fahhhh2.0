@@ -4,6 +4,8 @@ Part 1 implementation: [Telegram setup, API contract and integration handoff](do
 
 Part 2 implementation: [Enquiry inbox/detail API and persistence](docs/ENQUIRIES.md).
 
+Part 3 implementation: [PM-approved saved PDF delivery and Xinjie integration](docs/DELIVERY.md).
+
 Updated 23 October 2026 against the supplied Domain 2 challenge brief.
 
 ## Product

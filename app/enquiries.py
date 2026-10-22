@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.engine import RowMapping
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.database import enquiries, telegram_updates
+from app.database import enquiries, send_attempts, telegram_updates
 
 router = APIRouter(prefix="/api/enquiries", tags=["enquiries"])
 
@@ -38,8 +38,23 @@ class OriginalMessage(BaseModel):
     received_at: datetime
 
 
+class DeliveryAttempt(BaseModel):
+    """Pending means processing or unresolved; never automatically retry it."""
+
+    attempt_id: str
+    quotation_id: str
+    version: int
+    status: str
+    approved_at: datetime
+    updated_at: datetime
+    provider_message_id: str | None
+    safe_error_code: str | None
+    requires_verification: bool
+
+
 class EnquiryDetail(EnquirySummary):
     messages: list[OriginalMessage]
+    delivery_attempts: list[DeliveryAttempt]
 
 
 def utc_timestamp(value: datetime) -> datetime:
@@ -95,6 +110,20 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
     try:
         with request.app.state.engine.connect() as connection:
             row = connection.execute(statement).mappings().one_or_none()
+            attempts = connection.execute(
+                select(
+                    send_attempts.c.id,
+                    send_attempts.c.quotation_id,
+                    send_attempts.c.version,
+                    send_attempts.c.status,
+                    send_attempts.c.approved_at,
+                    send_attempts.c.updated_at,
+                    send_attempts.c.provider_message_id,
+                    send_attempts.c.safe_error_code,
+                )
+                .where(send_attempts.c.enquiry_id == str(enquiry_id))
+                .order_by(send_attempts.c.approved_at, send_attempts.c.id)
+            ).mappings().all()
     except SQLAlchemyError:
         raise HTTPException(
             status_code=503, detail="Enquiry storage unavailable"
@@ -111,5 +140,19 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
                 text=row["original_text"],
                 received_at=utc_timestamp(row["received_at"]),
             )
+        ],
+        delivery_attempts=[
+            DeliveryAttempt(
+                attempt_id=attempt["id"],
+                quotation_id=attempt["quotation_id"],
+                version=attempt["version"],
+                status=attempt["status"],
+                approved_at=utc_timestamp(attempt["approved_at"]),
+                updated_at=utc_timestamp(attempt["updated_at"]),
+                provider_message_id=attempt["provider_message_id"],
+                safe_error_code=attempt["safe_error_code"],
+                requires_verification=attempt["status"] in {"pending", "unknown"},
+            )
+            for attempt in attempts
         ],
     )

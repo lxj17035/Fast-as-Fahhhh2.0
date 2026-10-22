@@ -13,3 +13,4 @@ dist/
 build/
 .test-postgres/
 .pytest_tmp*/
+tmp/pdfs/

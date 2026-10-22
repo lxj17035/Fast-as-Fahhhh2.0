@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sweeway"
 version = "0.1.0"
-description = "Shared enquiry-to-quotation prototype: Telegram reception"
+description = "Shared enquiry-to-quotation prototype with PM-approved PDF delivery"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115,<1",
@@ -13,13 +13,16 @@ dependencies = [
     "uvicorn>=0.34,<1",
     "sqlalchemy>=2.0,<3",
     "psycopg[binary]>=3.2,<4",
+    "httpx>=0.28,<1",
+    "tzdata>=2025.1",
+    "reportlab==4.4.9",
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=8,<10", "httpx>=0.28,<1"]
+test = ["pytest>=8,<10", "pypdf>=6,<7"]
 
 [tool.setuptools.packages.find]
-include = ["app*"]
+include = ["app*", "backend*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

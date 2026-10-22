@@ -9,6 +9,9 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    Integer,
+    JSON,
+    LargeBinary,
     MetaData,
     String,
     Table,
@@ -21,6 +24,14 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 
 metadata = MetaData()
+# Reused Xinjie services persist their JSON records in the SAME team database.
+xinjie_records = Table(
+    "xinjie_records",
+    metadata,
+    Column("kind", String(40), primary_key=True),
+    Column("id", String(100), primary_key=True),
+    Column("body", JSON, nullable=False),
+)
 telegram_updates = Table(
     "telegram_updates",
     metadata,
@@ -48,6 +59,28 @@ enquiries = Table(
     CheckConstraint(
         "status IN ('needs_review', 'sent', 'failed', 'unknown')",
         name="enquiries_status_check",
+    ),
+)
+send_attempts = Table(
+    "send_attempts",
+    metadata,
+    Column("id", String(36), primary_key=True),
+    Column("quotation_id", String(36), nullable=False, unique=True),
+    Column("enquiry_id", String(36), ForeignKey("enquiries.id"), nullable=False),
+    Column("version", Integer, nullable=False),
+    Column("actor_id", String(40), nullable=False),
+    Column("role", String(10), nullable=False),
+    Column("approved_at", DateTime(timezone=True), nullable=False),
+    Column("pdf_sha256", String(64), nullable=False),
+    Column("pdf_bytes", LargeBinary, nullable=False),
+    Column("status", String(20), nullable=False),
+    Column("provider_message_id", String(80)),
+    Column("safe_error_code", String(80)),
+    Column("updated_at", DateTime(timezone=True), nullable=False),
+    CheckConstraint("role = 'pm'", name="send_attempts_role_check"),
+    CheckConstraint(
+        "status IN ('pending', 'sent', 'failed', 'unknown')",
+        name="send_attempts_status_check",
     ),
 )
 

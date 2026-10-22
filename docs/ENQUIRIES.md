@@ -73,14 +73,16 @@ clients preserve integer precision; do not convert them to JavaScript numbers.
 ## Status and team handoff
 
 New enquiries are `needs_review`. The database permits future `sent`, `failed`,
-and `unknown` delivery states, but Part 2 exposes no status-changing endpoint and
-does not claim a send occurred. Part 3 will set these states from actual outcomes.
+and `unknown` delivery states. Part 2 exposes no status-changing endpoint.
+The [Part 3 component](DELIVERY.md) now updates these states from delivery attempts
+when a real quotation adapter is connected. An unresolved/in-flight attempt is
+`unknown`; detail responses include `delivery_attempts` so this remains visible.
 
 YieXian can use the list and detail routes for the inbox. Xinjie can associate
 quotations using the stable enquiry UUID and read the stored message through
 the shared database. Business/client context, AI summaries, missing-information
-analysis, quotations and activity history are not implemented or fabricated in
-these responses; extend the contract as those modules become available.
+analysis, quotation content and general activity history are not implemented or
+fabricated in these responses; extend the contract as those modules become available.
 
 The read APIs have no production authentication. Keep the app bound to localhost
 or behind team-controlled access restrictions, using fictional data. If exposing
