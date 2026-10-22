@@ -14,6 +14,7 @@ from .settings import SettingsService
 from .store import Store
 from .sending import SendService
 from .telegram_delivery import TelegramDocumentSender
+from .activity import enquiry_activity
 
 ROOT = Path(__file__).resolve().parent.parent
 ALLOWED_ORIGINS = {f"http://{host}:{port}" for host in ("localhost", "127.0.0.1")
@@ -75,7 +76,12 @@ class Application:
                     if quote["enquiryId"] == parts[2]:
                         return 200, quote
                 raise AppError("Draft is not available yet; refresh or retry drafting", 404)
+            if len(parts) == 4 and parts[3] == "activity" and method == "GET":
+                return 200, {"items": enquiry_activity(self.store, parts[2])}
         if len(parts) >= 3 and parts[:2] == ["api", "quotations"]:
+            if len(parts) == 4 and parts[3] == "activity" and method == "GET":
+                quote = self.quotations.get(parts[2])
+                return 200, {"items": enquiry_activity(self.store, quote["enquiryId"])}
             if len(parts) == 3:
                 if method == "GET":
                     return 200, self.quotations.get(parts[2])

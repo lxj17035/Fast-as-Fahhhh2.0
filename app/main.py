@@ -62,6 +62,10 @@ def create_app(
     @application.exception_handler(AppError)
     async def quotation_error(request, error):
         return JSONResponse({"error": str(error), "fields": error.fields}, status_code=error.status)
+
+    @application.exception_handler(SQLAlchemyError)
+    async def storage_error(request, error):
+        return JSONResponse({"error": "Storage unavailable; no successful action is implied", "fields": {}}, status_code=503)
     application.state.settings = settings
     application.state.engine = engine
     application.include_router(router)

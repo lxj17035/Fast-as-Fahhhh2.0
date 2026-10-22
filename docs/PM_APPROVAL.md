@@ -31,6 +31,6 @@ TELEGRAM_BOT_TOKEN must be configured privately before starting the app. Missing
 - Repeating an already accepted request returns its persisted result without another upload, including after application restart.
 - If saving a result fails after an upload, the pending reservation remains locked and the API returns 503. Check the chat before any operational recovery; no exactly-once delivery guarantee is claimed.
 
-The enquiry inbox reflects sent/failed/unknown outcomes. Send attempts persist in PostgreSQL alongside immutable quotation/PDF snapshots. Approval and delivery activity events are the next checklist section.
+The enquiry inbox reflects sent/failed/unknown outcomes. Send attempts persist in PostgreSQL alongside immutable quotation/PDF snapshots. Read the chronological activity log at GET /api/enquiries/:id/activity or GET /api/quotations/:id/activity. Receipt, draft, approval, and Telegram result events persist in PostgreSQL. Retried requests do not overwrite or duplicate existing events. Approval is recorded atomically before upload; result/attempt/inbox changes and the result event are committed together.
 
 Reference: [Telegram Bot API sendDocument](https://core.telegram.org/bots/api#senddocument).

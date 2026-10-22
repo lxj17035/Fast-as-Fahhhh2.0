@@ -139,3 +139,8 @@ Review one section with `git show <commit>`. All implementation commits are on `
 
 - Saved preview/version checks, explicit simulated-PM approval, original-recipient routing, persistent attempts, retry guards, and sanitised Telegram multipart adapter implemented.
 - Targeted combined tests: 67 passed against isolated adapters and PostgreSQL with mocked outbound requests. No real messages sent.
+
+### Approval and delivery activity
+
+- Added persisted receipt/approval/accepted/rejected/uncertain events and read-only activity APIs. Audit failures before upload roll back the approval; failures after upload preserve a reservation that prevents duplicate sending.
+- Targeted PostgreSQL activity/send/automatic-drafting checks: 56 passed. No real messages or credentials used in tests.

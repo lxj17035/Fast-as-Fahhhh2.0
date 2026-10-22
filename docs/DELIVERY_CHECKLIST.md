@@ -2,7 +2,6 @@
 
 Completed items are removed from this active list and recorded below.
 
-- [ ] Approval and delivery outcomes appear in a persisted activity log.
 - [ ] Member 2 configures private credentials and a team-controlled test chat; verify the real end-to-end journey.
 
 ## Completion evidence
@@ -30,3 +29,12 @@ Readiness check reports DATABASE_URL present; TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHO
 - Persisted send reservations prevent repeated/concurrent clicks and restart retries from uploading twice. Known failures require explicit retry approval; uncertain outcomes block blind resend.
 - Targeted send/adapter/webhook/shared API regression tests with real PostgreSQL and mocked Telegram: **67 passed**. Read-only enquiry quotation lookup was also checked in both database adapters.
 - New API contract: docs/PM_APPROVAL.md. No live Telegram message was sent during tests.
+
+### Approval and delivery activity log
+
+- Added chronological read-only enquiry/quotation activity endpoints.
+- Receipt events use stable keys, approval events are atomic with send reservations, and result events are atomic with the persisted outcome/inbox status.
+- Duplicate webhooks/clicks do not duplicate events. Audit-write failure before upload rolls back approval; failure after upload leaves the pending attempt locked against duplicate sending.
+- Outcomes distinguish Telegram acceptance from reading, rejection, and uncertainty. Tests use only mocked uploads.
+
+- Activity/send/automatic-drafting regression checks with PostgreSQL: **56 passed**.

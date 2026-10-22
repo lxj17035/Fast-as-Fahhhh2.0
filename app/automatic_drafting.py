@@ -5,6 +5,7 @@ from threading import Lock
 from sqlalchemy import select
 
 from app.database import enquiries
+from backend.activity import record_activity
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,8 @@ class AutomaticDrafting:
             with self.engine.connect() as connection:
                 enquiry_id = connection.execute(select(enquiries.c.id).where(
                     enquiries.c.telegram_update_id == update_id)).scalar_one()
+            record_activity(self.app.store, "receipt:" + str(update_id), enquiryId=enquiry_id,
+                            actor="system", role="system", action="enquiry_received", outcome="stored")
             self.app.drafts.create(enquiry_id)
         except Exception:
             # No raw exception/provider text: it may contain connection secrets.

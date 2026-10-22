@@ -6,6 +6,7 @@ from uuid import uuid4
 from .errors import AppError, object_fields, text
 from .quotations import expected_version
 from .telegram_delivery import DeliveryResult
+from .activity import record_activity
 
 
 def timestamp():
@@ -71,6 +72,9 @@ class SendService:
                        "version": version, "actor": actor, "role": "pm", "status": "pending",
                        "createdAt": timestamp(), "chatId": chat_id}
             self.store.put("send_attempts", attempt_id, attempt)
+            record_activity(self.store, "approval:" + attempt_id, enquiryId=quote["enquiryId"],
+                            quotationId=quotation_id, version=version, attemptId=attempt_id,
+                            actor=actor, role="pm", action="quotation_approved", outcome="approved")
         # No database transaction/lock is held while the external request runs.
         try:
             result = self.sender.send_document(chat_id, pdf, quote["number"] + ".pdf")
@@ -89,6 +93,12 @@ class SendService:
                 enquiry = self.store.get("enquiries", quote["enquiryId"])
                 enquiry["status"] = {"accepted": "sent", "failed": "failed", "uncertain": "unknown"}[result.outcome]
                 self.store.put("enquiries", enquiry["id"], enquiry)
+                record_activity(self.store, "delivery:" + attempt_id, enquiryId=quote["enquiryId"],
+                                quotationId=quotation_id, version=version, attemptId=attempt_id,
+                                actor="system", role="system", action={"accepted": "telegram_accepted",
+                                "failed": "telegram_rejected", "uncertain": "telegram_uncertain"}[result.outcome],
+                                outcome=result.outcome, providerReference=result.reference,
+                                error=result.error, readConfirmed=False)
                 return self.response(quote)
         except Exception:
             # A committed pending attempt blocks another external call even if
