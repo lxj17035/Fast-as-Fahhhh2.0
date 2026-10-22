@@ -141,8 +141,10 @@ class DraftService:
             quote = self.quotations.create(enquiry_id, enquiry["clientId"], extracted=extracted,
                                           draft_mode="ai" if error is None and not manual else "manual",
                                           draft_error=error)
-            enquiry["status"] = "needs_review"
-            self.store.put("enquiries", enquiry_id, enquiry)
+            # Preserve messages that may have arrived while the provider ran.
+            current_enquiry = self.store.get("enquiries", enquiry_id)
+            current_enquiry["status"] = "needs_review"
+            self.store.put("enquiries", enquiry_id, current_enquiry)
             event_id = uuid4().hex
             self.store.put("activity", event_id, {
                 "id": event_id, "enquiryId": enquiry_id, "quotationId": quote["id"],

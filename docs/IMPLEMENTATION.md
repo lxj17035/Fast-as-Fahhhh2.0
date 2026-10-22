@@ -1,6 +1,6 @@
 # Lean implementation and demo checklist
 
-Proposed contract only; this document does not claim any code or test is complete.
+This document records the shared target contract. Xinjie's backend is now implemented; see [the handoff](XINJIE_HANDOFF.md) for actual routes, setup, and integration boundaries, and [his checklist](XINJIE_CHECKLIST.md) for test evidence. The shared full-journey acceptance items below remain unverified until frontend and live channel integration.
 
 ## Keep the architecture small
 

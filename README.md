@@ -15,6 +15,8 @@ Build one understandable journey. Telegram is our chosen demo channel; it is not
 - [Workflow and essential requirements](docs/WORKFLOW.md)
 - [Two-day build plan and team ownership](docs/TWO_DAY_PLAN.md)
 - [Lean implementation and demo checklist](docs/IMPLEMENTATION.md)
+- [Xinjie's section checklist and test evidence](docs/XINJIE_CHECKLIST.md)
+- [Backend setup and integration handoff](docs/XINJIE_HANDOFF.md)
 
 ## What changed after reading the brief
 
@@ -36,6 +38,17 @@ The supplied rubric is for the **preliminary round**. A final-round rubric will 
 | Feasibility | 25% | Working journey, synthetic data, explicit API assumptions, GitHub code, and an integration fallback |
 | Clarity | 20% | Problem -> approach -> measured outcome; a short, understandable demo |
 
-A focused two-day prototype is plausible for three available contributors. The preliminary brief accepts a rough working most-important feature; a complete journey remains our build target. This is a plan, not evidence of completed implementation.
+A focused two-day prototype is plausible for three available contributors. The preliminary brief accepts a rough working most-important feature; a complete journey remains our build target. Xinjie's Python/SQLite backend is now implemented and locally tested. Live AI credentials, Telegram delivery, and the frontend remain integration work; the complete journey is not yet verified.
+
+## Backend quick start
+
+```powershell
+python -m pip install -r requirements-dev.txt
+# Configure local .env as needed; never commit it.
+python -m backend.server
+python -m unittest discover -s tests -v
+```
+
+The local-only API listens at `http://127.0.0.1:8000`. See the handoff for environment setup, payloads, manual fallback, and ownership boundaries. Keep disposable references in ignored `.input/`; project conventions are in AGENTS.md and SKILLS.md.
 
 Source: supplied “Copy of Domain 2 (1).pdf”, physical PDF pages 4-9. The brief provides challenge requirements; channel, owners, architecture, and schedule are our project decisions. The round, exact deadline, and submission length limits still need confirmation from event instructions.

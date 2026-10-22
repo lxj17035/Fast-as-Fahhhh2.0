@@ -131,6 +131,17 @@ class DraftingTests(unittest.TestCase):
         self.assertEqual(self.store.list("quotations"), [])
         self.assertNotIn("status", self.store.get("enquiries", "demo"))
 
+    def test_message_arriving_during_ai_call_is_not_overwritten(self):
+        def receive_during_call(payload):
+            with self.store.transaction():
+                enquiry = self.store.get("enquiries", "demo")
+                enquiry["text"] += "\nAlso need 10 caps"
+                self.store.put("enquiries", "demo", enquiry)
+            return response()
+        self.transport.side_effect = receive_during_call
+        self.service.create("demo")
+        self.assertIn("10 caps", self.store.get("enquiries", "demo")["text"])
+
     def test_dotenv_does_not_execute_or_override_environment(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)/".env"

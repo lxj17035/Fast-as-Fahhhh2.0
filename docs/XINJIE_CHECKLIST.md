@@ -29,11 +29,11 @@ Work in small sections: implement -> run that section's tests -> update this che
 
 ## 4. PDF, HTTP API, and handoff
 
-- [ ] Fixed PDF template for saved quotation data, including multipage tables.
-- [ ] HTTP settings/client/draft/save/PDF endpoints with predictable errors.
-- [ ] Integration instructions and fictional sample for Sweeway/YieXian.
-- [ ] Run PDF/API tests, inspect generated PDFs, and run the full suite.
-- [ ] Commit `feat: expose quotation API and PDF preview`.
+- [x] Fixed PDF template for saved quotation data, including multipage tables.
+- [x] HTTP settings/client/draft/save/PDF endpoints with predictable errors.
+- [x] Integration instructions and fictional sample for Sweeway/YieXian.
+- [x] Run PDF/API tests, inspect generated PDFs, and run the full suite.
+- [x] Commit `feat: expose quotation API and PDF preview`.
 
 ## Ownership boundary
 
@@ -62,3 +62,26 @@ Record commands, results, and limitations here as each section is completed. Com
 - Mocked Responses API requests verify strict schema, no prices/tools, timeout/refusal/invalid response fallback, retry idempotency, and atomic draft/activity rollback.
 - `.env` loader preserves process environment and never executes shell content.
 - Live AI remains unverified: configure OPENAI_API_KEY and OPENAI_MODEL in local .env. No real key was used or printed.
+
+### Section 4
+
+- `python -m unittest tests.test_pdf tests.test_api -v`: PDF and HTTP integration checks passed; final suite includes 7 PDF and 9 API tests.
+- `python -m unittest discover -s tests`: **46 tests passed** (6 settings, 12 quotations, 12 drafting, 7 PDF, 9 API).
+- API tests exercise a real localhost HTTP server: fictional enquiry -> manual draft -> saved prices -> PDF, plus stale versions, invalid JSON, CORS, and explicit 501 for unfinished Telegram sending.
+- Fixed orphan totals/short notes, repeated headers within a page, and mixed Latin/Chinese font rendering during visual review. Added regression checks for table headings and long CJK row splitting.
+- Rendered single-page and nine-page fictional samples with Poppler; visually inspected the sample plus first/second/final multipage layouts. Review images are ignored under .input/pdf-review; useful samples remain in ignored output/pdf.
+- Added a regression test ensuring a message received during AI extraction is preserved.
+- Confirmed Markdown links, code fences, clean diff formatting, ignored .env/.input, and trackable .env.example.
+- No live AI, Telegram, email, or frontend integration was claimed or tested. See XINJIE_HANDOFF.md for exact ownership boundaries.
+
+## Commit review guide
+
+| Section | Commit / subject |
+| --- | --- |
+| Checklist baseline | `11290ab` - docs: add Xinjie section-by-section checklist |
+| 1. Settings/clients and repo conventions | `f572a43` - feat: persist business settings and clients |
+| 2. Quotation rules | `a0ca19b` - feat: implement quotation rules and draft storage |
+| 3. AI/manual drafting | `2b4cfe3` - feat: add structured enquiry drafting and fallback |
+| 4. PDF/API/handoff | `feat: expose quotation API and PDF preview` (see git log for hash) |
+
+Review one section with `git show <commit>`. All implementation commits are on `feat/xinjie`; none were pushed. The checklist-baseline commit predates branch creation and is an ancestor of the feature branch.
