@@ -1,6 +1,10 @@
 # Lean implementation and demo checklist
 
-Proposed contract only; this document does not claim any code or test is complete.
+This document records the shared target contract. Implemented backend behavior
+and actual test evidence are documented in [Telegram reception](TELEGRAM.md),
+[enquiries](ENQUIRIES.md), [approved delivery](DELIVERY.md), and
+[activity history](ACTIVITY.md). The complete frontend/live journey below remains
+subject to final integration verification; unchecked items are not evidence of completion.
 
 ## Keep the architecture small
 

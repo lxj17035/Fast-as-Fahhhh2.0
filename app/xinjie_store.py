@@ -2,6 +2,7 @@
 
 from contextlib import contextmanager
 from copy import deepcopy
+from datetime import datetime
 from threading import Lock, RLock
 from weakref import WeakKeyDictionary
 
@@ -10,6 +11,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.engine import Connection, Engine
 
+from app.activity import record_activity
 from app.database import enquiries, telegram_updates, xinjie_records
 from backend.errors import AppError
 
@@ -125,6 +127,26 @@ class Store:
     def put(self, kind: str, key: str, value: dict) -> None:
         if self.connection is None:
             raise RuntimeError("Record writes require a transaction")
+        if kind == "activity":
+            # Normalize Xinjie's real draft event into the one activity stream.
+            # Keep their service source unchanged and avoid a second event copy.
+            if value.get("action") != "draft_created":
+                raise AppError("Unsupported service activity")
+            quote = self.get("quotations", value["quotationId"])
+            record_activity(
+                self.connection,
+                enquiry_id=value["enquiryId"],
+                quotation_id=value["quotationId"],
+                version=quote["version"],
+                action="quotation_draft_created",
+                result=value["outcome"],
+                actor_id="system",
+                role="system",
+                actor_origin="system",
+                timestamp=datetime.fromisoformat(value["timestamp"]),
+                event_id=value["id"],
+            )
+            return
         if kind == "enquiries":
             current = self.get(kind, key)
             if value.get("status") != "needs_review":

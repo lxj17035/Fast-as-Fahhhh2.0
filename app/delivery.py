@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
+from app.activity import record_activity
 from app.database import enquiries, send_attempts, telegram_updates
 from app.quotation_contract import (
     IntegrationUnavailable,
@@ -164,6 +165,21 @@ def send_quotation(
                 enquiries.update().where(enquiries.c.id == quotation.enquiry_id)
                 .values(status="unknown")
             )
+            activity = {
+                "enquiry_id": quotation.enquiry_id,
+                "quotation_id": saved_id,
+                "version": quotation.version,
+                "attempt_id": attempt_id,
+                "actor_id": actor,
+                "role": "pm",
+                "actor_origin": "simulated",
+            }
+            record_activity(
+                connection, **activity, action="pm_approved", result="approved"
+            )
+            record_activity(
+                connection, **activity, action="pdf_send_attempted", result="pending"
+            )
     except HTTPException:
         raise
     except QuotationNotFound:
@@ -217,6 +233,18 @@ def send_quotation(
             )
             provider.record_outcome(
                 connection, saved_id, result.status, result.message_id
+            )
+            record_activity(
+                connection,
+                **activity,
+                action={
+                    "sent": "pdf_send_succeeded",
+                    "failed": "pdf_send_failed",
+                    "unknown": "delivery_unknown",
+                }[result.status],
+                result=result.status,
+                provider_reference=result.message_id,
+                safe_error_code=safe_error_code(result.error_code),
             )
     except Exception:
         return JSONResponse(

@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.engine import RowMapping
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.database import enquiries, send_attempts, telegram_updates
+from app.database import activities, enquiries, send_attempts, telegram_updates
 
 router = APIRouter(prefix="/api/enquiries", tags=["enquiries"])
 
@@ -52,9 +52,26 @@ class DeliveryAttempt(BaseModel):
     requires_verification: bool
 
 
+class ActivityRecord(BaseModel):
+    id: str
+    enquiry_id: str
+    quotation_id: str | None
+    version: int | None
+    attempt_id: str | None
+    timestamp: datetime
+    actor_id: str | None
+    role: str | None
+    actor_origin: str
+    action: str
+    result: str
+    provider_reference: str | None
+    safe_error_code: str | None
+
+
 class EnquiryDetail(EnquirySummary):
     messages: list[OriginalMessage]
     delivery_attempts: list[DeliveryAttempt]
+    activity: list[ActivityRecord]
 
 
 def utc_timestamp(value: datetime) -> datetime:
@@ -124,6 +141,11 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
                 .where(send_attempts.c.enquiry_id == str(enquiry_id))
                 .order_by(send_attempts.c.approved_at, send_attempts.c.id)
             ).mappings().all()
+            history = connection.execute(
+                select(activities)
+                .where(activities.c.enquiry_id == str(enquiry_id))
+                .order_by(activities.c.timestamp, activities.c.id)
+            ).mappings().all()
     except SQLAlchemyError:
         raise HTTPException(
             status_code=503, detail="Enquiry storage unavailable"
@@ -154,5 +176,12 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
                 requires_verification=attempt["status"] in {"pending", "unknown"},
             )
             for attempt in attempts
+        ],
+        activity=[
+            ActivityRecord(**{
+                **event,
+                "timestamp": utc_timestamp(event["timestamp"]),
+            })
+            for event in history
         ],
     )

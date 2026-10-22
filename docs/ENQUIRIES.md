@@ -81,8 +81,9 @@ when a real quotation adapter is connected. An unresolved/in-flight attempt is
 YieXian can use the list and detail routes for the inbox. Xinjie can associate
 quotations using the stable enquiry UUID and read the stored message through
 the shared database. Business/client context, AI summaries, missing-information
-analysis, quotation content and general activity history are not implemented or
-fabricated in these responses; extend the contract as those modules become available.
+analysis and quotation content are not embedded in these responses; use the
+quotation routes for saved quotation details. Part 4 adds the canonical `activity`
+history to enquiry detail; see [event contracts](ACTIVITY.md).
 
 The read APIs have no production authentication. Keep the app bound to localhost
 or behind team-controlled access restrictions, using fictional data. If exposing

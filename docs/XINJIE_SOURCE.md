@@ -21,8 +21,10 @@ the shared runtime. No Git merge or teammate-branch changes are performed.
 The bridge projects existing relational enquiries into the service interface;
 fictional `demo-client` is an explicit seeded association. Business settings,
 client snapshots, saved quotations, cached PDFs and the service's draft-created
-event use `xinjie_records` in the same database. This draft event does not complete
-Part 4's general activity history.
+event originally used `xinjie_records` in the same database. Part 4 now intercepts
+new draft events into the canonical `activities` table, retaining their actual
+ID/time and avoiding a second event copy. Existing legacy records remain intact;
+no historical activity is reconstructed.
 
 Xinjie's source uses ReportLab 4.4.9, retained in project dependencies. PDF
 rendering and AI extraction behavior remain theirs. External extraction is disabled

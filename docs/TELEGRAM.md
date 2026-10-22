@@ -2,7 +2,8 @@
 
 The shared Python application receives text messages at `POST /api/webhooks/telegram`.
 Part 2 adds [enquiry persistence and APIs](ENQUIRIES.md). Part 3 connects
-[Xinjie's services and PDF delivery](DELIVERY.md). General activity history is Part 4.
+[Xinjie's services and PDF delivery](DELIVERY.md). Part 4 adds
+[persistent activity history](ACTIVITY.md).
 
 ## Setup
 
@@ -64,7 +65,8 @@ Part 2 now saves a linked enquiry in the same transaction as each new receipt,
 preserving IDs and recording source as `telegram`. Startup backfills old receipts
 without replacing existing enquiries. Each text message creates a separate enquiry;
 new messages do not overwrite existing enquiries. Xinjie's quotation/PDF services
-are now connected in Part 3. General activity history remains unimplemented.
+are now connected in Part 3. Part 4 records new operations in canonical activity
+history; it does not reconstruct missing historical events.
 
 ## Tests and live setup
 

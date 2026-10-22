@@ -8,6 +8,7 @@ from fastapi import APIRouter, Body, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, StrictBool
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.activity import optional_demo_actor, record_activity
 from app.xinjie_store import Store
 from backend.drafting import DraftService, OpenAIExtractor
 from backend.errors import AppError
@@ -84,8 +85,20 @@ def get_quotation(quotation_id: UUID, request: Request):
 
 @router.patch("/quotations/{quotation_id}")
 def patch_quotation(quotation_id: UUID, request: Request, patch: dict = Body(...)):
-    with services(request) as (_, _, quotations):
-        return quotations.update(quotation_id.hex, patch)
+    actor = optional_demo_actor(request)
+    with services(request) as (store, _, quotations):
+        with store.transaction():
+            saved = quotations.update(quotation_id.hex, patch)
+            record_activity(
+                store.connection,
+                enquiry_id=saved["enquiryId"],
+                quotation_id=saved["id"],
+                version=saved["version"],
+                action="quotation_updated",
+                result="saved",
+                **actor,
+            )
+            return saved
 
 
 @router.get("/quotations/{quotation_id}/pdf")

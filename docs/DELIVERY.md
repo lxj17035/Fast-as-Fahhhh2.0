@@ -125,7 +125,8 @@ to resend. Pending attempts after crashes must not be automatically resumed.
 Enquiry detail includes safe `delivery_attempts` with state, timestamps, provider
 reference and `requires_verification` for pending/unknown. Pending means processing
 or unresolved. PDF bytes are not exposed there. The inbox therefore retains the
-unconfirmed outcome after reload. Part 4 will add the general activity history.
+unconfirmed outcome after reload. Part 4 now adds [persistent activity history](ACTIVITY.md)
+in the same transactions as receipt, drafting, edits, approval and outcomes.
 
 ## Verification boundary
 

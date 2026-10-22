@@ -6,6 +6,8 @@ Part 2 implementation: [Enquiry inbox/detail API and persistence](docs/ENQUIRIES
 
 Part 3 implementation: [PM-approved saved PDF delivery and Xinjie integration](docs/DELIVERY.md).
 
+Part 4 implementation: [Persistent activity history and event contracts](docs/ACTIVITY.md).
+
 Updated 23 October 2026 against the supplied Domain 2 challenge brief.
 
 ## Product

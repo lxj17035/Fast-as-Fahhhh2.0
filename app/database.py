@@ -9,6 +9,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     JSON,
     LargeBinary,
@@ -83,6 +84,28 @@ send_attempts = Table(
         name="send_attempts_status_check",
     ),
 )
+activities = Table(
+    "activities",
+    metadata,
+    Column("id", String(36), primary_key=True),
+    Column("enquiry_id", String(36), ForeignKey("enquiries.id"), nullable=False),
+    Column("quotation_id", String(36)),
+    Column("version", Integer),
+    Column("attempt_id", String(36), ForeignKey("send_attempts.id")),
+    Column("timestamp", DateTime(timezone=True), nullable=False),
+    Column("actor_id", String(80)),
+    Column("role", String(20)),
+    Column("actor_origin", String(20), nullable=False),
+    Column("action", String(40), nullable=False),
+    Column("result", String(40), nullable=False),
+    Column("provider_reference", String(100)),
+    Column("safe_error_code", String(80)),
+    CheckConstraint(
+        "actor_origin IN ('system', 'simulated', 'unknown')",
+        name="activities_actor_origin_check",
+    ),
+    Index("activities_enquiry_timestamp", "enquiry_id", "timestamp", "id"),
+)
 
 
 def enquiry_values(update_id: int, received_at: datetime) -> dict:
@@ -96,7 +119,7 @@ def enquiry_values(update_id: int, received_at: datetime) -> dict:
 
 
 def backfill_enquiries(engine: Engine) -> None:
-    """Link pre-Part-2 receipts once, preserving any existing enquiry state."""
+    """Link old receipts without inventing historical activity or changing state."""
     insert = (
         postgresql_insert if engine.dialect.name == "postgresql" else sqlite_insert
     )
@@ -122,7 +145,9 @@ def backfill_enquiries(engine: Engine) -> None:
 def save_update(
     engine: Engine, update_id: int, message_id: int, chat_id: int, text: str
 ) -> bool:
-    """Commit receipt and enquiry together; False means an existing receipt."""
+    """Commit receipt, enquiry and real events; False means an existing receipt."""
+    from app.activity import record_activity
+
     receipt_inserted = False
     received_at = datetime.now(timezone.utc)
     try:
@@ -137,8 +162,27 @@ def save_update(
                 )
             )
             receipt_inserted = True
-            connection.execute(
-                enquiries.insert().values(**enquiry_values(update_id, received_at))
+            enquiry = enquiry_values(update_id, received_at)
+            connection.execute(enquiries.insert().values(**enquiry))
+            record_activity(
+                connection,
+                enquiry_id=enquiry["id"],
+                action="telegram_received",
+                result="received",
+                actor_id="system",
+                role="system",
+                actor_origin="system",
+                provider_reference=str(update_id),
+                timestamp=received_at,
+            )
+            record_activity(
+                connection,
+                enquiry_id=enquiry["id"],
+                action="enquiry_created",
+                result="created",
+                actor_id="system",
+                role="system",
+                actor_origin="system",
             )
     except IntegrityError as error:
         # Enquiry constraint failures must roll back and be retried, not swallowed.
