@@ -44,7 +44,8 @@ def create_app(
                 await run_in_threadpool(metadata.create_all, engine)
                 await run_in_threadpool(backfill_enquiries, engine)
                 store = await run_in_threadpool(lambda: Store(engine=engine))
-                application.state.quotation_app = await run_in_threadpool(lambda: Application(store))
+                application.state.quotation_app = await run_in_threadpool(
+                    lambda: Application(store, telegram_token=settings.telegram_bot_token))
                 application.state.automatic_drafting = AutomaticDrafting(engine, application.state.quotation_app)
             except SQLAlchemyError:
                 raise RuntimeError("Database initialization failed") from None

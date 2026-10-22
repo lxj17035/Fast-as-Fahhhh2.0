@@ -31,7 +31,7 @@ def test_postgres_inbound_to_priced_pdf_in_one_application(client, engine, heade
     assert pdf.headers["x-quotation-version"] == "2"
     assert pdf.content.startswith(b"%PDF-")
     assert client.get(path + "/pdf?version=1").status_code == 409
-    assert client.post(path + "/send", json={}).status_code == 501
+    assert client.post(path + "/send", json={}).status_code == 403
     with engine.connect() as connection:
         row = connection.execute(select(telegram_updates)).mappings().one()
     assert row["original_text"] == update["message"]["text"]

@@ -12,6 +12,8 @@ from .pdf import PDFService
 from .quotations import QuotationService
 from .settings import SettingsService
 from .store import Store
+from .sending import SendService
+from .telegram_delivery import TelegramDocumentSender
 
 ROOT = Path(__file__).resolve().parent.parent
 ALLOWED_ORIGINS = {f"http://{host}:{port}" for host in ("localhost", "127.0.0.1")
@@ -19,12 +21,13 @@ ALLOWED_ORIGINS = {f"http://{host}:{port}" for host in ("localhost", "127.0.0.1"
 
 
 class Application:
-    def __init__(self, store, extractor=None):
+    def __init__(self, store, extractor=None, telegram_token=None):
         self.store = store
         self.settings = SettingsService(store)
         self.quotations = QuotationService(store, self.settings)
         self.drafts = DraftService(store, self.settings, self.quotations, extractor)
         self.pdfs = PDFService(store, self.quotations)
+        self.sending = SendService(store, self.quotations, self.pdfs, TelegramDocumentSender(telegram_token))
 
     def route(self, method, path, body, query):
         parts = [part for part in path.split("/") if part]
@@ -66,6 +69,12 @@ class Application:
                 if not isinstance(body.get("manual", False), bool):
                     raise AppError("manual must be a boolean")
                 return 200, self.drafts.create(parts[2], manual=body.get("manual", False))
+            if len(parts) == 4 and parts[3] == "quotation" and method == "GET":
+                self.store.get("enquiries", parts[2])
+                for quote in self.store.list("quotations"):
+                    if quote["enquiryId"] == parts[2]:
+                        return 200, quote
+                raise AppError("Draft is not available yet; refresh or retry drafting", 404)
         if len(parts) >= 3 and parts[:2] == ["api", "quotations"]:
             if len(parts) == 3:
                 if method == "GET":
@@ -83,7 +92,7 @@ class Application:
                 return 200, data, {"Content-Type": "application/pdf", "X-Quotation-Version": str(version),
                                    "Content-Disposition": f'inline; filename="quotation-{parts[2]}.pdf"'}
             if len(parts) == 4 and parts[3] == "send" and method == "POST":
-                raise AppError("Telegram sending is Sweeway's integration; no message was sent", 501)
+                return self.sending.send(parts[2], body)
         raise AppError("Route not found", 404)
 
 

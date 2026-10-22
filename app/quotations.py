@@ -33,6 +33,11 @@ def read_quotation(quotation_id: str, request: Request):
     return dispatch(request, "GET")
 
 
+@router.get("/api/enquiries/{enquiry_id}/quotation")
+def enquiry_quotation(enquiry_id: str, request: Request):
+    return dispatch(request, "GET")
+
+
 @router.patch("/api/settings")
 def edit_settings(request: Request, body: dict = Body(...)):
     return dispatch(request, "PATCH", body)

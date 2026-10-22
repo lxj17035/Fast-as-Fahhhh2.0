@@ -2,7 +2,6 @@
 
 Completed items are removed from this active list and recorded below.
 
-- [ ] PM approval sends the saved PDF back to the original Telegram chat.
 - [ ] Approval and delivery outcomes appear in a persisted activity log.
 - [ ] Member 2 configures private credentials and a team-controlled test chat; verify the real end-to-end journey.
 
@@ -24,3 +23,10 @@ Completed items are removed from this active list and recorded below.
 ## Live configuration
 
 Readiness check reports DATABASE_URL present; TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, OPENAI_API_KEY, and OPENAI_MODEL missing. Presence is not a successful connection test. Member 2 owns filling these privately in .env and identifying the controlled test chat. Never paste credentials into chat or fixtures.
+
+### PM approval and Telegram PDF sending
+
+- Implemented version/preview/role/approval validation and original-chat-only PDF uploads.
+- Persisted send reservations prevent repeated/concurrent clicks and restart retries from uploading twice. Known failures require explicit retry approval; uncertain outcomes block blind resend.
+- Targeted send/adapter/webhook/shared API regression tests with real PostgreSQL and mocked Telegram: **67 passed**. Read-only enquiry quotation lookup was also checked in both database adapters.
+- New API contract: docs/PM_APPROVAL.md. No live Telegram message was sent during tests.

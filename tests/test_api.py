@@ -99,11 +99,11 @@ class APITests(unittest.TestCase):
                                      headers={"Origin": "https://untrusted.example"})[0], 403)
         self.assertEqual(self.app.settings.get_settings()["currency"], "MYR")
 
-    def test_send_is_explicitly_not_implemented(self):
+    def test_send_requires_explicit_pm_approval(self):
         _, quote = self.draft()
         status, error, _ = self.request("POST", f'/api/quotations/{quote["id"]}/send', {})
-        self.assertEqual(status, 501)
-        self.assertIn("no message was sent", error["error"])
+        self.assertEqual(status, 403)
+        self.assertIn("PM", error["error"])
 
     def test_no_key_returns_labelled_manual_draft_and_no_secret_fields(self):
         _, quote = self.draft()

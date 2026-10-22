@@ -134,3 +134,8 @@ Review one section with `git show <commit>`. All implementation commits are on `
 - Implemented post-receipt background drafting; duplicate updates preserve PM edits and can retry failed drafts.
 - Targeted webhook/shared API/automatic-drafting tests: 38 passed. No live AI or Telegram calls used.
 - Added docs/DELIVERY_CHECKLIST.md containing only unfinished delivery work; verified the merge was already committed as 8aa59b9.
+
+### PM approval and outbound Telegram adapter
+
+- Saved preview/version checks, explicit simulated-PM approval, original-recipient routing, persistent attempts, retry guards, and sanitised Telegram multipart adapter implemented.
+- Targeted combined tests: 67 passed against isolated adapters and PostgreSQL with mocked outbound requests. No real messages sent.
