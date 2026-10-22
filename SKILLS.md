@@ -12,7 +12,7 @@ This is a repository guide, not an installed Codex skill package.
 
 ## Backend
 
-Use Python 3.11+ and standard-library SQLite, decimal arithmetic, HTTP, and unittest. ReportLab renders the fixed PDF layout; pypdf checks PDF content in tests. Avoid introducing a separate service just to support this demo.
+Use Python 3.12+, FastAPI, SQLAlchemy/Psycopg, and one shared PostgreSQL DATABASE_URL. SQLite is limited to explicitly injected test/offline-fixture adapters. Use pytest for the combined suite and decimal arithmetic for money. ReportLab renders the fixed PDF layout; pypdf checks PDF content in tests. Avoid introducing a separate service just to support this demo.
 
 ## AI
 

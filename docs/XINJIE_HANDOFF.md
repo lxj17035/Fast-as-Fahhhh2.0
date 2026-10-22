@@ -2,9 +2,9 @@
 
 ## Implemented scope
 
-Python 3.11+ backend with SQLite, editable business/client details, versioned quotations, exact totals, calendar validity, structured AI extraction/manual fallback, cached saved-version PDFs, and a local HTTP API.
+Python 3.12+ backend with shared PostgreSQL via SQLAlchemy/Psycopg, editable business/client details, versioned quotations, exact totals, calendar validity, structured AI extraction/manual fallback, cached saved-version PDFs, and a local HTTP API.
 
-The frontend, real Telegram webhook/send integration, PM approval/send activity events, and email are not implemented here. The `/api/demo/enquiries` route is explicitly simulated (`source: demo`); it never receives a real Telegram message. Draft creation records one system activity event. Sweeway owns remaining activity events and transport.
+Telegram reception and quotations now run in one FastAPI application and use the same DATABASE_URL. The frontend, automatic draft trigger, outbound document sending, PM approval/send activity events, and email remain pending. The `/api/demo/enquiries` route is explicitly simulated (`source: demo`); it never receives a real Telegram message. Draft creation records one system activity event. Sweeway owns remaining activity events and transport.
 
 ## Setup (PowerShell from repository root)
 
@@ -12,21 +12,22 @@ The frontend, real Telegram webhook/send integration, PM approval/send activity 
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 # Only if .env does not already exist:
-Copy-Item .env.example .env
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 .\.venv\Scripts\python.exe -m backend.server
 ```
 
 The API binds to `127.0.0.1:8004`. This is a supervised local synthetic-data demo with no production authentication. Keep it local. The frontend can run on localhost/127.0.0.1 ports 3000, 5173, or 8004; those origins receive CORS access. The backend does not serve frontend files.
 
-The local `.env` already contains placeholders. Add real values there only. Existing process environment overrides `.env`; the loader supports `KEY=value`, optional surrounding quotes, and whole-line comments, without interpolation or shell execution. No extra dotenv dependency is required.
+The local `.env` contains user-specific configuration placeholders. Set DATABASE_URL and TELEGRAM_WEBHOOK_SECRET before starting. Add real values there only. Existing process environment overrides `.env`; the loader supports `KEY=value`, optional surrounding quotes, and whole-line comments, without interpolation or shell execution. No extra dotenv dependency is required.
 
 | Variable | Purpose |
 | --- | --- |
 | `OPENAI_API_KEY` | Private server-side provider key; blank produces manual fallback |
 | `OPENAI_MODEL` | Account-accessible Responses model supporting structured outputs; deliberately no assumed model |
-| `QUOTATION_DB` | SQLite path, default `data/quotation.sqlite3`, relative to repository root |
+| `DATABASE_URL` | Required private PostgreSQL connection URL shared by Telegram and quotations; no SQLite runtime fallback |
 | `PORT` | Local API port, default 8004 |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | Reserved for Sweeway; unused by Xinjie's backend |
+| `TELEGRAM_WEBHOOK_SECRET` | Required private secret for the unified application webhook |
+| `TELEGRAM_BOT_TOKEN` | Optional for inbound receipt; required later for bot registration/outbound delivery |
 
 AI requests use [official Responses structured output](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses). No live provider request has been verified. Without credentials or on refusal/failure, the original enquiry is retained and the returned quotation has `draftMode: manual` and a safe `draftError` explanation. Explicit manual mode does not call AI. No fixture is presented as live AI.
 
@@ -37,13 +38,13 @@ python -m unittest tests.test_settings -v
 python -m unittest tests.test_quotations -v
 python -m unittest tests.test_drafting -v
 python -m unittest tests.test_pdf tests.test_api -v
-python -m unittest discover -s tests -v
+python -m pytest -q
 python -m scripts.demo_pdfs
 ```
 
 PDF tests require `requirements-dev.txt`. Samples are generated in ignored `output/pdf/`. Fonts support Latin text and Chinese through ReportLab's CJK font support; arbitrary emoji and every writing system are not promised. Test actual customer-facing scripts/fonts before deployment.
 
-Tests use temporary/in-memory databases, a local test HTTP server, and mocked AI transport. They do not send messages or use real secrets. See XINJIE_CHECKLIST.md for verified counts and remaining checks.
+Tests use isolated adapters and optional unique PostgreSQL test schemas, local test HTTP servers, and mocked AI transport. They do not send messages or use real secrets. See XINJIE_CHECKLIST.md for verified counts and remaining checks.
 
 ## HTTP contract
 
@@ -57,9 +58,9 @@ Send JSON with `Content-Type: application/json` for POST/PATCH, including `{}` w
 | `GET /api/clients/demo-client` | Fictional seeded client |
 | `PATCH /api/clients/:id` | Partial name/address for an existing client |
 | `POST /api/demo/enquiries` | `{ "text": "Need 20 fictional shirts", "clientId": "demo-client" }`; returns enquiry with id |
-| `GET /api/enquiries` | Local persisted enquiry list (integration scaffold) |
-| `GET /api/enquiries/:id` | Enquiry plus context, quotations, and activity |
-| `POST /api/enquiries/:id/draft` | `{ "manual": false }` for AI/fallback; `true` for explicit manual; repeated requests return existing draft |
+| `GET /api/enquiries` | Shared Telegram inbox: paginated `{items, limit, offset}` with snake_case fields, described in ENQUIRIES.md |
+| `GET /api/enquiries/:id` | Shared original-message detail, described in ENQUIRIES.md; quotation routes use camelCase payloads |
+| `POST /api/enquiries/:id/draft` | Read the stored Telegram enquiry directly; `{ "manual": false }` for AI/fallback or `true` for manual; returns existing draft on repeat |
 | `GET /api/quotations/:id` | Saved quotation and version |
 | `PATCH /api/quotations/:id` | Current version plus allowed client/items/issueDate/validity/notes/missingInformation changes |
 | `GET /api/quotations/:id/pdf?version=2` | PDF bytes; header `X-Quotation-Version: 2`; use expected version to reject stale preview requests |
@@ -89,7 +90,7 @@ Errors return `{ "error": "message", "fields": {} }`. Invalid data -> 422 (field
 
 ## Sweeway integration boundary
 
-1. Use the shared `Store` instance. Persist normalized enquiry records under `enquiries` with `id`, combined original `text`, existing `clientId`, `source`, `chatId`, and status; add provider identifiers and message history as needed. Deduplicate provider updates and preserve source chat identity. New clients need a creation path in Sweeway's ingestion before drafting; current routes only edit seeded/existing clients.
+1. Keep using the normalized `telegram_updates` and `enquiries` tables. The quotation store reads their existing rows directly, preserves original text and provider/chat IDs, and stores only quotation client context separately. Unknown Telegram senders get distinct empty client records during draft creation; they are never assigned the fictional seeded client by default.
 2. Call `app.drafts.create(enquiry_id)`. Repeated calls return the existing quotation; this intentionally avoids overwriting PM edits. Later customer messages must be shown to the PM and reconciled manually in this MVP.
 3. In the future send handler, require explicit PM approval of the current previewed version and latest messages. Simulate actor/role only for this controlled demo; do not treat client-provided roles as trusted production identity.
 4. Call `app.quotations.begin_send(id, version, actor, role)` to atomically validate and reserve one send. It blocks Sales, missing details/prices, expired/stale quotations, and duplicate approval attempts.
@@ -102,3 +103,7 @@ Sent/sending/uncertain quotations are locked. A known failed quotation can be ed
 ## Review commits
 
 Run `git log --oneline feat/xinjie` to find the small commits. Use `git show <commit>` to review one section. No push, deployment, or live API verification is implied by these local commits.
+
+## PostgreSQL integration update
+
+See POSTGRESQL.md for the shared schema, DATABASE_URL setup, test isolation, and remaining integration boundaries. The combined FastAPI application exposes Telegram reception, inbox, settings, clients, draft, quotation edit, and PDF routes on port 8004. Automatic drafting and outbound sending remain unfinished. Simulated `/api/demo/enquiries` records are for quotation API testing and are not included in the normalized Telegram inbox.

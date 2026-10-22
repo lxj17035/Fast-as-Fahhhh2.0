@@ -121,6 +121,20 @@ class DraftService:
             if quotation["enquiryId"] == enquiry_id:
                 return quotation
         message = text(enquiry["text"], "enquiry.text", required=True, limit=20000)
+        if not enquiry.get("clientId"):
+            # An inbound Telegram identity is not a known business client.
+            client_id = "telegram-client-" + enquiry_id
+            with self.store.transaction():
+                try:
+                    self.settings.get_client(client_id)
+                except AppError as failure:
+                    if failure.status != 404:
+                        raise
+                    self.store.put("clients", client_id, {"id": client_id, "name": "", "address": ""})
+                current = self.store.get("enquiries", enquiry_id)
+                current["clientId"] = client_id
+                self.store.put("enquiries", enquiry_id, current)
+            enquiry["clientId"] = client_id
         context = {"company": self.settings.get_settings(),
                    "client": self.settings.get_client(enquiry["clientId"])}
         error = None

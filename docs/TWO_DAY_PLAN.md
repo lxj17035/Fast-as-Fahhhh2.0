@@ -18,7 +18,7 @@ All three agree data shapes at kickoff, integrate before Day 1 ends, and share d
 
 ## First 30 minutes
 
-- Pick the stack the team already knows; use one app, one database, and one PDF layout.
+- Use the selected stack: Python/FastAPI with SQLAlchemy/Psycopg, one shared PostgreSQL DATABASE_URL (also on Replit), and one PDF layout.
 - Agree the small contract in IMPLEMENTATION.md and one fictional enquiry/client/company dataset.
 - Obtain the bot token and AI key. Prove message receipt, a bot response, and basic PDF generation early.
 - Create the GitHub repository and local setup instructions. Ensure judges can access the repo at submission; never commit credentials.

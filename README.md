@@ -2,10 +2,6 @@
 
 > An assisted quotation workflow for small businesses that turns customer enquiries into editable drafts while keeping a PM in control of pricing and sending.
 
-Part 1 implementation: [Telegram setup, API contract and integration handoff](docs/TELEGRAM.md).
-
-Part 2 implementation: [Enquiry inbox/detail API and persistence](docs/ENQUIRIES.md).
-
 Updated 23 October 2026 against the supplied Domain 2 challenge brief.
 
 **QuoteFlow** is a proposed name for the team's next discussion; it is not final. Other options are EnquiryFlow, QuoteBridge, and ReplyReady.
@@ -68,7 +64,7 @@ Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are fu
 
 | Component | Status |
 | --- | --- |
-| Editable business/client settings and SQLite persistence | Implemented and locally tested |
+| Editable business/client settings and PostgreSQL persistence | Implemented and locally tested |
 | Quotation drafts, exact totals, configurable validity, version checks | Implemented and locally tested |
 | PM-role validation and send-state helpers | Implemented and locally tested; not a production identity system |
 | OpenAI structured extraction adapter | Implemented with mocked tests; live credentials/model verification pending |
@@ -76,10 +72,11 @@ Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are fu
 | Saved-version PDF generation and local HTTP API | Implemented, tested, and sample layouts visually reviewed |
 | Activity record | Draft-creation event implemented; approval/send events still need transport integration |
 | Frontend inbox, editor, and PDF display | Pending |
-| Live Telegram receive/send | Pending |
+| Telegram reception | Implemented; shares the database and application with quotations; live bot verification pending |
+| Telegram document sending | Pending |
 | Replit/RunPod deployment, video, and slides | Not prepared yet |
 
-The full backend suite passed **46 tests** at the last full run. After switching to port 8004, the 21 relevant API/drafting tests also passed. Tests use fictional records, local test servers, and mocked AI responses; they do not prove live provider or messaging integration.
+The combined suite passed **176 tests**, with one PostgreSQL-only check skipped for the SQLite adapter, using isolated adapters and a disposable PostgreSQL instance. This includes receipt-to-enquiry-to-draft-to-priced-PDF HTTP checks. Automatic AI triggering and outbound Telegram delivery are not yet verified. Tests use fictional records, local test servers, and mocked AI responses; they do not prove live provider or messaging integration.
 
 ## Key quotation rules
 
@@ -95,18 +92,18 @@ The full backend suite passed **46 tests** at the last full run. After switching
 
 | Area | Current choice |
 | --- | --- |
-| Backend | Python 3.11+ and standard-library HTTP server |
-| Storage | SQLite |
+| Backend | Python 3.12+, FastAPI, and SQLAlchemy/Psycopg |
+| Storage | Shared PostgreSQL via DATABASE_URL, locally and on Replit |
 | AI adapter | OpenAI Responses API with structured output; model configured locally |
 | PDF generation | ReportLab |
-| Tests | unittest and pypdf |
+| Tests | pytest, unittest, and pypdf; PostgreSQL integration coverage |
 | Frontend | Pending integration |
-| Messaging | Telegram selected; live adapter pending |
+| Messaging | Telegram reception implemented; live bot verification and document sending pending |
 | Hosting / RunPod | Not configured |
 
 ## How to run the backend
 
-Use PowerShell from the repository root, with Python 3.11 or newer installed.
+Use PowerShell from the repository root, with Python 3.12 or newer and an accessible PostgreSQL database.
 
 ```powershell
 python -m venv .venv
@@ -120,7 +117,7 @@ if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 
 The API listens at **http://127.0.0.1:8004**. Check **http://127.0.0.1:8004/api/health**. No frontend page is served yet.
 
-Add `OPENAI_API_KEY` and `OPENAI_MODEL` to local `.env` to enable live AI requests. With either value blank, draft creation falls back to a clearly labelled manual draft. `PORT=8004` controls the local port; an existing process environment variable takes precedence over `.env`.
+Set your private `DATABASE_URL` and `TELEGRAM_WEBHOOK_SECRET` in local `.env` before starting. Both modules use this same PostgreSQL database. Add `OPENAI_API_KEY` and `OPENAI_MODEL` to enable live AI requests. With either value blank, draft creation falls back to a clearly labelled manual draft. `PORT=8004` controls the local port; an existing process environment variable takes precedence over `.env`.
 
 Secrets belong only in `.env`, which is ignored by Git. `.env.example` contains placeholders. Keep this backend local: simulated roles and the standard-library server are for the supervised prototype.
 
@@ -155,11 +152,11 @@ This creates a **simulated** enquiry (`source: demo`), a manual draft, and a pri
 ### Run tests and generate sample PDFs
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m scripts.demo_pdfs
 ```
 
-Generated PDFs are stored under ignored `output/pdf/`. Local databases are stored under ignored `data/` by default.
+Generated PDFs are stored under ignored `output/pdf/`. Runtime records live in PostgreSQL; SQLite is only used in explicit isolated test/offline adapters. Existing SQLite files are not automatically migrated or deleted.
 
 ## Orbyte fit, business benefit, and SDG
 
@@ -170,7 +167,7 @@ We plan to compare manual and assisted preparation using the same fictional enqu
 ## Demo boundaries and next steps
 
 - Use team-created fictional business/customer records only.
-- Complete the frontend and live Telegram integration, then verify PM approval and the full activity trail.
+- Complete the frontend, automatic drafting trigger, and Telegram document sending, then verify PM approval and the full activity trail.
 - Configure credentials and verify a real AI request separately from mocked tests.
 - Prepare the hosted demo/Replit link, RunPod endpoint if used for the submission, slides, and YouTube video; update the links table when ready.
 - Confirm the final project name and event submission requirements before submitting.

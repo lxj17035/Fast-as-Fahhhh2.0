@@ -11,6 +11,7 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.pool import StaticPool
 
 from app.db_url import postgres_url
+from app.database import metadata as inbound_metadata, enquiries, telegram_updates
 from .errors import AppError
 
 metadata = MetaData()
@@ -40,6 +41,7 @@ class Store:
             if self.engine.dialect.name == "postgresql":
                 connection.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": WRITE_LOCK})
             metadata.create_all(connection)
+            inbound_metadata.create_all(connection)
 
     @classmethod
     def for_test(cls, path=None):
@@ -76,8 +78,27 @@ class Store:
                 with self.engine.connect() as connection:
                     yield connection
 
+    def inbound(self, connection, key=None):
+        statement = select(enquiries, telegram_updates).join(
+            telegram_updates, enquiries.c.telegram_update_id == telegram_updates.c.update_id)
+        if key is not None:
+            statement = statement.where(enquiries.c.id == key)
+        result = []
+        for row in connection.execute(statement).mappings():
+            context = connection.execute(select(records.c.body).where(
+                records.c.kind == "enquiry_context", records.c.id == row["id"])).scalar_one_or_none() or {}
+            result.append({"id": row["id"], "text": row["original_text"], "source": row["source"],
+                           "chatId": str(row["chat_id"]), "clientId": context.get("clientId"),
+                           "providerUpdateId": str(row["update_id"]),
+                           "providerMessageId": str(row["message_id"]), "status": row["status"]})
+        return result
+
     def get(self, kind, key):
         with self.reading() as connection:
+            if kind == "enquiries":
+                inbound = self.inbound(connection, key)
+                if inbound:
+                    return inbound[0]
             value = connection.execute(select(records.c.body).where(
                 records.c.kind == kind, records.c.id == key)).scalar_one_or_none()
         if value is None:
@@ -88,6 +109,11 @@ class Store:
         if self.connection is None:
             raise RuntimeError("Store mutations require transaction()")
         json.dumps(value, ensure_ascii=False, allow_nan=False)
+        if kind == "enquiries" and self.inbound(self.connection, key):
+            # Do not overwrite transport identifiers or the original message.
+            if "status" in value:
+                self.connection.execute(enquiries.update().where(enquiries.c.id == key).values(status=value["status"]))
+            return self.put("enquiry_context", key, {"clientId": value.get("clientId")})
         insert = pg_insert if self.engine.dialect.name == "postgresql" else sqlite_insert
         statement = insert(records).values(kind=kind, id=key, body=value,
                                           created_at=datetime.now(timezone.utc))
@@ -96,8 +122,13 @@ class Store:
 
     def list(self, kind):
         with self.reading() as connection:
-            return list(connection.execute(select(records.c.body).where(
+            values = list(connection.execute(select(records.c.body).where(
                 records.c.kind == kind).order_by(records.c.created_at, records.c.id)).scalars())
+            if kind == "enquiries":
+                inbound = self.inbound(connection)
+                ids = {item["id"] for item in inbound}
+                return inbound + [item for item in values if item["id"] not in ids]
+            return values
 
     def close(self):
         if self.owns_engine:

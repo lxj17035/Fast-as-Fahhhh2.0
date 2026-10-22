@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
@@ -11,6 +13,10 @@ from starlette.concurrency import run_in_threadpool
 
 from app.config import Settings
 from backend.config import load_env
+from backend.errors import AppError
+from backend.server import Application, ALLOWED_ORIGINS
+from backend.store import Store
+from app.quotations import router as quotation_router
 from app.database import backfill_enquiries, metadata
 from app.enquiries import router as enquiries_router
 from app.telegram import router
@@ -36,6 +42,8 @@ def create_app(
             try:
                 await run_in_threadpool(metadata.create_all, engine)
                 await run_in_threadpool(backfill_enquiries, engine)
+                store = await run_in_threadpool(lambda: Store(engine=engine))
+                application.state.quotation_app = await run_in_threadpool(lambda: Application(store))
             except SQLAlchemyError:
                 raise RuntimeError("Database initialization failed") from None
             yield
@@ -43,9 +51,17 @@ def create_app(
             if owns_engine:
                 await run_in_threadpool(engine.dispose)
 
-    application = FastAPI(title="Sweeway", lifespan=lifespan)
+    application = FastAPI(title="QuoteFlow (working title)", lifespan=lifespan)
+    application.add_middleware(CORSMiddleware, allow_origins=sorted(ALLOWED_ORIGINS),
+                               allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+                               allow_headers=["Content-Type"], expose_headers=["X-Quotation-Version"])
+
+    @application.exception_handler(AppError)
+    async def quotation_error(request, error):
+        return JSONResponse({"error": str(error), "fields": error.fields}, status_code=error.status)
     application.state.settings = settings
     application.state.engine = engine
     application.include_router(router)
     application.include_router(enquiries_router)
+    application.include_router(quotation_router)
     return application

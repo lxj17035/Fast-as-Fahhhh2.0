@@ -118,3 +118,13 @@ Review one section with `git show <commit>`. All implementation commits are on `
 - Both startup paths read local .env. Removed QUOTATION_DB from .env.example and local .env without changing credentials.
 - Targeted database/config checks against isolated PostgreSQL: 26 passed, 1 skipped (the PostgreSQL-only concurrency test is skipped for the SQLite adapter).
 - Full merged suite: `pytest -q --basetemp=.pytest_tmp_pg_full` with a disposable TEST_DATABASE_URL: **168 passed, 1 skipped**. A dependency deprecation warning from Starlette/httpx does not affect the passing tests.
+
+### PostgreSQL migration - shared API and data handoff
+
+- Mounted quotation/settings/client/draft/PDF routes alongside Telegram reception and inbox in one FastAPI application on port 8004.
+- Quotation drafting reads the normalized Telegram enquiry tables directly. Original messages/provider IDs/chat identity are preserved; unknown senders receive distinct empty contact records.
+- Runtime settings use the same DATABASE_URL. SQLite is only explicit test/offline-fixture injection; old SQLite files are preserved without automatic import.
+- `pytest tests/test_shared_quotation_api.py tests/test_store.py tests/test_drafting.py -q` with disposable PostgreSQL: 35 passed, 1 skipped.
+- Full combined regression suite with PostgreSQL: **176 passed, 1 skipped**. One Starlette/httpx dependency deprecation warning remains; it is not a test failure.
+- Updated README, handoff, Telegram setup, AGENTS.md, SKILLS.md, and PostgreSQL setup documentation. .env.example keeps all credentials blank and local .env stays ignored.
+- This does not deploy to Replit, call a live AI provider, trigger drafting automatically, or send a Telegram document. These remain separate unfinished steps.

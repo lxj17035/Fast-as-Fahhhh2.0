@@ -15,8 +15,8 @@ Read README.md and docs/WORKFLOW.md before changing behavior. Deliver the synthe
 
 - Xinjie's branch is `feat/xinjie`; work in the existing repository, not its parent workspace.
 - Implement one checklist section, run its tests, record the result, then commit it. Do not combine untested later sections into earlier commits.
-- Use `python -m unittest discover -s tests -v` for the full backend suite. Tests must use temporary databases and mocked external providers; never send real customer messages.
-- Keep backend business logic independent of HTTP and frontend code. Use SQLite transactions and server-side validation for mutations.
+- Use `python -m pytest -q` for the full merged backend suite. Use TEST_DATABASE_URL pointing to a disposable PostgreSQL test database to exercise the real driver as well as isolated SQLite test adapters. Tests must use temporary databases and mocked external providers; never send real customer messages.
+- Keep backend business logic independent of HTTP and frontend code. Use SQLAlchemy/PostgreSQL transactions and server-side validation for mutations. Both modules use DATABASE_URL; never restore runtime SQLite.
 - Preserve unknown AI fields and blank prices. Only PM may approve; AI must not set prices, recipients, or send authority.
 - Report live provider checks separately from local mocked tests. Never mark an unavailable integration complete.
 - Review rendered PDFs after template/layout changes and test that the PDF uses the saved quotation version.

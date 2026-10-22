@@ -57,7 +57,8 @@ class Application:
                 enquiry = self.store.get("enquiries", parts[2])
                 return 200, {**enquiry, "context": {
                     "company": self.settings.get_settings(),
-                    "client": self.settings.get_client(enquiry["clientId"]), "source": "synthetic-seed"},
+                    "client": self.settings.get_client(enquiry["clientId"]) if enquiry.get("clientId") else None,
+                    "source": "stored-business-context" if enquiry["source"] == "telegram" else "synthetic-seed"},
                     "quotations": [q for q in self.store.list("quotations") if q["enquiryId"] == parts[2]],
                     "activity": [a for a in self.store.list("activity") if a["enquiryId"] == parts[2]]}
             if len(parts) == 4 and parts[3] == "draft" and method == "POST":
@@ -166,19 +167,13 @@ class LocalServer(ThreadingHTTPServer):
 
 def main():
     load_env(ROOT / ".env")
+    import uvicorn
+    from app.main import create_app
     try:
-        store = Store()
+        application = create_app()
     except Exception:
-        raise SystemExit("PostgreSQL startup failed. Check DATABASE_URL and database availability; credentials are not logged.") from None
-    server = LocalServer(("127.0.0.1", int(os.environ.get("PORT", "8004"))), handler_for(Application(store)))
-    print(f"Local synthetic demo API: http://127.0.0.1:{server.server_port}")
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
-        store.close()
+        raise SystemExit("Startup configuration failed. Check DATABASE_URL and TELEGRAM_WEBHOOK_SECRET in local .env; private values are not logged.") from None
+    uvicorn.run(application, host="127.0.0.1", port=int(os.environ.get("PORT", "8004")))
 
 
 if __name__ == "__main__":

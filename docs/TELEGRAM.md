@@ -1,8 +1,7 @@
 # Part 1: Telegram reception
 
 The shared Python application receives text messages at `POST /api/webhooks/telegram`.
-Part 2 adds [enquiry persistence and APIs](ENQUIRIES.md). Quotation services,
-delivery, and activity history remain later parts.
+Part 2 adds [enquiry persistence and APIs](ENQUIRIES.md). Quotation draft/edit/PDF routes now share this FastAPI application and PostgreSQL database. Automatic drafting, outbound delivery, and the complete activity trail remain later work.
 
 ## Setup
 
@@ -13,13 +12,12 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[test]"
 $env:DATABASE_URL = "postgresql+psycopg://USER:PASSWORD@localhost:5432/sweeway"
 $env:TELEGRAM_WEBHOOK_SECRET = "YOUR_RANDOM_SECRET"
-.\.venv\Scripts\python.exe -m uvicorn app.main:create_app --factory --host 127.0.0.1
+.\.venv\Scripts\python.exe -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8004
 ```
 
 If Python's Windows alias fails, use an installed Python's absolute path. If pip
 is unavailable, use `uv pip install --python .venv/Scripts/python.exe -e ".[test]"`.
-`.env.example` lists configuration names. `.env` is ignored, but not automatically
-loaded: set environment variables before launch. Use a random webhook secret with
+`.env.example` lists configuration names with blank private fields. Both startup paths now load local `.env`; existing process environment wins. `.env` stays ignored. Use a random webhook secret with
 1–256 letters, digits, underscores or hyphens. Keep `TELEGRAM_BOT_TOKEN` in the
 server environment for bot setup and later sending. It is optional for reception;
 this endpoint makes no Telegram calls. Never commit credentials.
