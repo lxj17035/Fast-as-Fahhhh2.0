@@ -1,7 +1,8 @@
 # Part 1: Telegram reception
 
 The shared Python application receives text messages at `POST /api/webhooks/telegram`.
-Enquiry APIs, quotation services, delivery, and activity history are later parts.
+Part 2 adds [enquiry persistence and APIs](ENQUIRIES.md). Quotation services,
+delivery, and activity history remain later parts.
 
 ## Setup
 
@@ -23,8 +24,9 @@ loaded: set environment variables before launch. Use a random webhook secret wit
 server environment for bot setup and later sending. It is optional for reception;
 this endpoint makes no Telegram calls. Never commit credentials.
 
-Startup creates the missing `telegram_updates` table; it does not alter existing
-tables. Run one instance for initial schema setup. Future changes need migrations.
+Startup creates missing `telegram_updates` and `enquiries` tables; it does not
+alter existing tables. Part 2 backfills enquiries for existing receipts. Run one
+instance for initial schema setup. Future changes need migrations.
 
 ## API contract
 
@@ -58,9 +60,11 @@ credentials, customer content or database details.
 `received_at`. The database arbitrates concurrent duplicates; success follows
 commit. One bot per database is assumed; multiple bots need a composite key.
 
-Part 2 must transactionally consume/link these receipts into enquiries, preserving
-IDs and recording source as Telegram. Receipts are not enquiries or activity logs.
-New messages must not overwrite PM edits. No teammate modules are implemented here.
+Part 2 now saves a linked enquiry in the same transaction as each new receipt,
+preserving IDs and recording source as `telegram`. Startup backfills old receipts
+without replacing existing enquiries. Each text message creates a separate enquiry;
+new messages do not overwrite existing enquiries. Activity logging and teammate
+modules remain unimplemented.
 
 ## Tests and live setup
 

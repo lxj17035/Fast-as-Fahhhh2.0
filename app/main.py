@@ -9,7 +9,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
 
 from app.config import Settings
-from app.database import metadata
+from app.database import backfill_enquiries, metadata
+from app.enquiries import router as enquiries_router
 from app.telegram import router
 
 
@@ -30,6 +31,7 @@ def create_app(
             # Prototype bootstrap only; schema evolution will need migrations.
             try:
                 await run_in_threadpool(metadata.create_all, engine)
+                await run_in_threadpool(backfill_enquiries, engine)
             except SQLAlchemyError:
                 raise RuntimeError("Database initialization failed") from None
             yield
@@ -41,4 +43,5 @@ def create_app(
     application.state.settings = settings
     application.state.engine = engine
     application.include_router(router)
+    application.include_router(enquiries_router)
     return application

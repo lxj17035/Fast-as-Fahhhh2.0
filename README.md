@@ -2,6 +2,8 @@
 
 Part 1 implementation: [Telegram setup, API contract and integration handoff](docs/TELEGRAM.md).
 
+Part 2 implementation: [Enquiry inbox/detail API and persistence](docs/ENQUIRIES.md).
+
 Updated 23 October 2026 against the supplied Domain 2 challenge brief.
 
 ## Product
