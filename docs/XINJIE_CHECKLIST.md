@@ -4,10 +4,10 @@ Work in small sections: implement -> run that section's tests -> update this che
 
 ## 1. Settings and client storage
 
-- [ ] Python backend package and SQLite persistence with fictional seed data.
-- [ ] Read/update company details, currency, default validity, and client name/address.
-- [ ] Validate settings and preserve stored data after reopening the database.
-- [ ] Run `python -m unittest tests.test_settings -v` and commit `feat: persist business settings and clients`.
+- [x] Python backend package and SQLite persistence with fictional seed data.
+- [x] Read/update company details, currency, default validity, and client name/address.
+- [x] Validate settings and preserve stored data after reopening the database.
+- [x] Run `python -m unittest tests.test_settings -v` and commit `feat: persist business settings and clients`.
 
 ## 2. Quotation rules and persistence
 
@@ -41,3 +41,10 @@ Sweeway still owns live Telegram receive/send, inbox integration, approval/send 
 ## Verification log
 
 Record commands, results, and limitations here as each section is completed. Commits remain local unless pushing is separately requested.
+
+### Section 1
+
+- `python -m unittest tests.test_settings -v`: 6 tests passed.
+- Verified fictional seeds, all validity settings, invalid-update rollback, client editing, and persistence after reopen.
+- Added AGENTS.md/SKILLS.md, ignored .input and .env, and placeholder .env.example.
+- Runtime for local verification: bundled Python 3.12; no real credentials used.
