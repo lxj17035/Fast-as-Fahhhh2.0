@@ -1,70 +1,104 @@
+"""Quotation records in shared PostgreSQL. SQLite is test/fixture injection only."""
 import json
-import sqlite3
+import os
 from contextlib import contextmanager
-from pathlib import Path
+from datetime import datetime, timezone
 from threading import RLock
 
+from sqlalchemy import Column, DateTime, JSON, MetaData, String, Table, create_engine, select, text
+from sqlalchemy.dialects.postgresql import JSONB, insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.pool import StaticPool
+
+from app.db_url import postgres_url
 from .errors import AppError
+
+metadata = MetaData()
+records = Table(
+    "quotation_records", metadata,
+    Column("kind", String(40), primary_key=True),
+    Column("id", String(160), primary_key=True),
+    Column("body", JSON().with_variant(JSONB(), "postgresql"), nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False),
+)
+# A short transaction lock serializes prototype mutations across processes,
+# including absent-row creation and check-version-then-update operations.
+# PostgreSQL releases it automatically at transaction commit/rollback.
+WRITE_LOCK = 7081942026
 
 
 class Store:
-    """One SQLite connection protected across the local HTTP server's threads.
-
-    Mutations must be enclosed in transaction(). Composite operations then stay
-    atomic, including version checks. JSON records keep this prototype small.
-    """
-
-    def __init__(self, path="data/quotation.sqlite3"):
-        if str(path) != ":memory:":
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
+    def __init__(self, database_url=None, *, engine=None):
         self.lock = RLock()
-        self.depth = 0
-        self.connection = sqlite3.connect(str(path), check_same_thread=False)
-        self.connection.execute("""CREATE TABLE IF NOT EXISTS records (
-            kind TEXT NOT NULL, id TEXT NOT NULL, body TEXT NOT NULL,
-            PRIMARY KEY(kind, id))""")
-        self.connection.commit()
+        self.connection = None
+        self.owns_engine = engine is None
+        self.engine = engine if engine is not None else create_engine(
+            postgres_url(database_url if database_url is not None else os.environ.get("DATABASE_URL", "")),
+            pool_pre_ping=True,
+        )
+        with self.engine.begin() as connection:
+            if self.engine.dialect.name == "postgresql":
+                connection.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": WRITE_LOCK})
+            metadata.create_all(connection)
+
+    @classmethod
+    def for_test(cls, path=None):
+        """Explicit isolated SQLite adapter for tests/offline PDF fixtures only."""
+        options = {"connect_args": {"check_same_thread": False, "timeout": 30}}
+        if path is None:
+            options["poolclass"] = StaticPool
+        engine = create_engine("sqlite://" if path is None else f"sqlite:///{path}", **options)
+        store = cls(engine=engine)
+        store.owns_engine = True
+        return store
 
     @contextmanager
     def transaction(self):
         with self.lock:
-            outer = self.depth == 0
-            if outer:
-                self.connection.execute("BEGIN IMMEDIATE")
-            self.depth += 1
-            try:
+            if self.connection is not None:
                 yield self
-                if outer:
-                    self.connection.commit()
-            except BaseException:
-                if outer:
-                    self.connection.rollback()
-                raise
-            finally:
-                self.depth -= 1
+                return
+            with self.engine.begin() as connection:
+                self.connection = connection
+                try:
+                    if self.engine.dialect.name == "postgresql":
+                        connection.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": WRITE_LOCK})
+                    yield self
+                finally:
+                    self.connection = None
+
+    @contextmanager
+    def reading(self):
+        with self.lock:
+            if self.connection is not None:
+                yield self.connection
+            else:
+                with self.engine.connect() as connection:
+                    yield connection
 
     def get(self, kind, key):
-        with self.lock:
-            row = self.connection.execute(
-                "SELECT body FROM records WHERE kind=? AND id=?", (kind, key)
-            ).fetchone()
-        if row is None:
+        with self.reading() as connection:
+            value = connection.execute(select(records.c.body).where(
+                records.c.kind == kind, records.c.id == key)).scalar_one_or_none()
+        if value is None:
             raise AppError(f"{kind} not found", 404)
-        return json.loads(row[0])
+        return value
 
     def put(self, kind, key, value):
-        self.connection.execute(
-            "INSERT INTO records VALUES (?, ?, ?) "
-            "ON CONFLICT(kind,id) DO UPDATE SET body=excluded.body",
-            (kind, key, json.dumps(value, ensure_ascii=False, allow_nan=False)),
-        )
+        if self.connection is None:
+            raise RuntimeError("Store mutations require transaction()")
+        json.dumps(value, ensure_ascii=False, allow_nan=False)
+        insert = pg_insert if self.engine.dialect.name == "postgresql" else sqlite_insert
+        statement = insert(records).values(kind=kind, id=key, body=value,
+                                          created_at=datetime.now(timezone.utc))
+        self.connection.execute(statement.on_conflict_do_update(
+            index_elements=[records.c.kind, records.c.id], set_={"body": statement.excluded.body}))
 
     def list(self, kind):
-        with self.lock:
-            rows = self.connection.execute(
-                "SELECT body FROM records WHERE kind=? ORDER BY rowid", (kind,)
-            ).fetchall()
-        return [json.loads(row[0]) for row in rows]
+        with self.reading() as connection:
+            return list(connection.execute(select(records.c.body).where(
+                records.c.kind == kind).order_by(records.c.created_at, records.c.id)).scalars())
 
     def close(self):
-        self.connection.close()
+        if self.owns_engine:
+            self.engine.dispose()

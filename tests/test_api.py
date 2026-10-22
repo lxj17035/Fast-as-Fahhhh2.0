@@ -11,7 +11,7 @@ from backend.store import Store
 
 class APITests(unittest.TestCase):
     def setUp(self):
-        self.store = Store(":memory:")
+        self.store = Store.for_test()
         self.app = Application(self.store, OpenAIExtractor("", ""))
         self.server = LocalServer(("127.0.0.1", 0), handler_for(self.app))
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)

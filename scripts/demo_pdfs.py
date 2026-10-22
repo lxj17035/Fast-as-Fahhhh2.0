@@ -10,7 +10,7 @@ from backend.store import Store
 def main():
     output = Path("output/pdf")
     output.mkdir(parents=True, exist_ok=True)
-    store = Store(":memory:")
+    store = Store.for_test()
     try:
         settings = SettingsService(store)
         quotes = QuotationService(store, settings)

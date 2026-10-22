@@ -166,8 +166,10 @@ class LocalServer(ThreadingHTTPServer):
 
 def main():
     load_env(ROOT / ".env")
-    path = Path(os.environ.get("QUOTATION_DB", "data/quotation.sqlite3"))
-    store = Store(path if path.is_absolute() else ROOT / path)
+    try:
+        store = Store()
+    except Exception:
+        raise SystemExit("PostgreSQL startup failed. Check DATABASE_URL and database availability; credentials are not logged.") from None
     server = LocalServer(("127.0.0.1", int(os.environ.get("PORT", "8004"))), handler_for(Application(store)))
     print(f"Local synthetic demo API: http://127.0.0.1:{server.server_port}")
     try:

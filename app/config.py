@@ -4,8 +4,7 @@ import os
 import re
 from dataclasses import dataclass, field
 
-from sqlalchemy.engine import make_url
-from sqlalchemy.exc import ArgumentError
+from app.db_url import postgres_url
 
 
 @dataclass(frozen=True)
@@ -30,10 +29,6 @@ class Settings:
             telegram_webhook_secret=os.environ.get("TELEGRAM_WEBHOOK_SECRET", ""),
             telegram_bot_token=os.environ.get("TELEGRAM_BOT_TOKEN") or None,
         )
-        try:
-            url = make_url(settings.database_url)
-        except ArgumentError:
-            raise ValueError("DATABASE_URL must be a valid PostgreSQL URL") from None
-        if url.drivername != "postgresql+psycopg":
-            raise ValueError("DATABASE_URL must use postgresql+psycopg")
-        return settings
+        return cls(database_url=postgres_url(settings.database_url).render_as_string(hide_password=False),
+                   telegram_webhook_secret=settings.telegram_webhook_secret,
+                   telegram_bot_token=settings.telegram_bot_token)

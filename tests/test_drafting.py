@@ -23,7 +23,7 @@ def response(value=None):
 
 class DraftingTests(unittest.TestCase):
     def setUp(self):
-        self.store = Store(":memory:")
+        self.store = Store.for_test()
         self.addCleanup(self.store.close)
         self.settings = SettingsService(self.store)
         self.quotes = QuotationService(self.store, self.settings)

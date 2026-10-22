@@ -1,6 +1,7 @@
 """Run with: uvicorn app.main:create_app --factory."""
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from sqlalchemy import create_engine
@@ -9,6 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
 
 from app.config import Settings
+from backend.config import load_env
 from app.database import backfill_enquiries, metadata
 from app.enquiries import router as enquiries_router
 from app.telegram import router
@@ -17,7 +19,9 @@ from app.telegram import router
 def create_app(
     settings: Settings | None = None, engine: Engine | None = None
 ) -> FastAPI:
-    settings = settings if settings is not None else Settings.from_env()
+    if settings is None:
+        load_env(Path(__file__).resolve().parent.parent / ".env")
+        settings = Settings.from_env()
     owns_engine = engine is None
     engine = (
         engine

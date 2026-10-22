@@ -10,7 +10,7 @@ from backend.store import Store
 
 class QuotationTests(unittest.TestCase):
     def setUp(self):
-        self.store = Store(":memory:")
+        self.store = Store.for_test()
         self.addCleanup(self.store.close)
         self.settings = SettingsService(self.store)
         self.service = QuotationService(self.store, self.settings)

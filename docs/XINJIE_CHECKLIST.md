@@ -110,3 +110,11 @@ Review one section with `git show <commit>`. All implementation commits are on `
 - Put QuoteFlow and the alternative names directly in README, clearly pending team discussion.
 - Removed the internal Project documentation links section from README; retained all underlying planning and handoff files.
 - Verified README links/code fences and clean diff formatting. Documentation-only change; no application tests required.
+
+### PostgreSQL migration - storage section
+
+- Replaced runtime SQLite with SQLAlchemy/Psycopg and shared DATABASE_URL. PostgreSQL records use JSONB and transaction advisory locks to protect version checks across store instances.
+- PostgreSQL URL aliases preserve password encoding and SSL options; SQLite/file URLs are rejected at runtime. SQLite remains explicit test/offline fixture injection only.
+- Both startup paths read local .env. Removed QUOTATION_DB from .env.example and local .env without changing credentials.
+- Targeted database/config checks against isolated PostgreSQL: 26 passed, 1 skipped (the PostgreSQL-only concurrency test is skipped for the SQLite adapter).
+- Full merged suite: `pytest -q --basetemp=.pytest_tmp_pg_full` with a disposable TEST_DATABASE_URL: **168 passed, 1 skipped**. A dependency deprecation warning from Starlette/httpx does not affect the passing tests.

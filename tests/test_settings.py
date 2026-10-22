@@ -9,7 +9,7 @@ from backend.store import Store
 
 class SettingsTests(unittest.TestCase):
     def setUp(self):
-        self.store = Store(":memory:")
+        self.store = Store.for_test()
         self.addCleanup(self.store.close)
         self.service = SettingsService(self.store)
 
@@ -47,12 +47,12 @@ class SettingsTests(unittest.TestCase):
     def test_reopen_database_preserves_edits_and_seed_does_not_reset(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "demo.sqlite3"
-            first = Store(path)
+            first = Store.for_test(path)
             service = SettingsService(first)
             service.update_settings({"companyName": "Changed Demo", "currency": "USD"})
             service.update_client("demo-client", {"address": "99 Fictional Road"})
             first.close()
-            second = Store(path)
+            second = Store.for_test(path)
             try:
                 reopened = SettingsService(second)
                 self.assertEqual(reopened.get_settings()["companyName"], "Changed Demo")

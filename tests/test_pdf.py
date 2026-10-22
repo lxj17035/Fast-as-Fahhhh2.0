@@ -13,7 +13,7 @@ from backend.store import Store
 
 class PDFTests(unittest.TestCase):
     def setUp(self):
-        self.store = Store(":memory:")
+        self.store = Store.for_test()
         self.addCleanup(self.store.close)
         self.quotes = QuotationService(self.store, SettingsService(self.store))
         self.pdfs = PDFService(self.store, self.quotes)

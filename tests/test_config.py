@@ -20,7 +20,7 @@ def test_invalid_secrets_are_rejected(secret):
         Settings(database_url="postgresql+psycopg://localhost/test", telegram_webhook_secret=secret)
 
 
-@pytest.mark.parametrize("url", ["", "not-a-url", "sqlite:///test.db", "postgresql://localhost/test"])
+@pytest.mark.parametrize("url", ["", "not-a-url", "sqlite:///test.db", "mysql://localhost/test"])
 def test_runtime_rejects_missing_or_unsupported_database(monkeypatch, url):
     monkeypatch.setenv("DATABASE_URL", url)
     monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", "synthetic-secret")
