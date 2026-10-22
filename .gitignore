@@ -1,0 +1,15 @@
+.venv/
+.uv-cache/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.egg-info/
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite*
+dist/
+build/
+.test-postgres/
+.pytest_tmp*/
