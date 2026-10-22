@@ -91,3 +91,10 @@ Review one section with `git show <commit>`. All implementation commits are on `
 - Changed the default/local port to 8004 in server configuration, .env.example, local ignored .env, CORS origins, and setup docs.
 - Verified 127.0.0.1:8004 was available at the time of the check; no other project process was stopped.
 - `python -m unittest tests.test_api tests.test_drafting`: 21 tests passed, including CORS for localhost/127.0.0.1:8004 and environment-file loading.
+
+### README submission overview
+
+- Reworked README around the supplied screenshot: project description, team information, links, overview, workflow, current status, setup, and demo instructions.
+- Used the configured GitHub remote; Replit, hosted demo, RunPod, slides, and YouTube remain explicitly pending. Final project/team name, leader, university, and member count await user confirmation.
+- Kept intended workflow separate from implemented features; no live integration or measured impact was invented.
+- Verified local Markdown links, fenced blocks, required overview sections, and PowerShell syntax for all three command blocks. Application tests were not rerun because no application code changed.

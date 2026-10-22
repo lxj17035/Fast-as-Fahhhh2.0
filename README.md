@@ -1,54 +1,183 @@
 # Enquiry-to-Quotation MVP
 
-Updated 23 October 2026 against the supplied Domain 2 challenge brief.
+> An assisted quotation workflow for small businesses that turns customer enquiries into editable drafts while keeping a PM in control of pricing and sending.
 
-## Product
+Working project title; final name is to be confirmed. Built for the **Orbyte Smart SME Challenge: Less Busywork, Better Business (Domain 2)**.
 
-Help a small business turn a customer enquiry into a reviewed quotation without repeatedly copying messages and preparing documents manually.
+## Team information
 
-**Demo journey:** Telegram enquiry -> connected client/company data -> AI draft -> PM prices and approves -> PDF sent to the same chat -> visible activity log.
+| Field | Details |
+| --- | --- |
+| Team name | To be confirmed |
+| Domain | Domain 2 - Orbyte Smart SME Challenge |
+| SDG track | SDG 8 - Decent Work and Economic Growth; intended contribution to productivity (8.2) and small-enterprise growth (8.3) |
+| Team leader | To be confirmed |
+| University | To be confirmed |
+| Number of members | To be confirmed; three contributors are currently listed below |
 
-Build one understandable journey. Telegram is our chosen demo channel; it is not a competition requirement. Use only team-created fictional business/customer content.
+| Contributor | Responsibility |
+| --- | --- |
+| Xinjie | Business/client settings, AI extraction, quotation rules/storage, backend PDF generation |
+| Sweeway | Telegram receive/send integration, enquiry source tracking, send activity, optional email alerts |
+| YieXian | Frontend inbox/editor, PDF preview, simulated role controls, activity display |
 
-## Read these files
+## Project links
 
-- [Workflow and essential requirements](docs/WORKFLOW.md)
-- [Two-day build plan and team ownership](docs/TWO_DAY_PLAN.md)
-- [Lean implementation and demo checklist](docs/IMPLEMENTATION.md)
-- [Xinjie's section checklist and test evidence](docs/XINJIE_CHECKLIST.md)
-- [Backend setup and integration handoff](docs/XINJIE_HANDOFF.md)
+| Resource | Link or status |
+| --- | --- |
+| GitHub repository | [Fast-as-Fahhhh2.0](https://github.com/lxj17035/Fast-as-Fahhhh2.0) |
+| Replit project | Not set up yet - link pending |
+| Hosted live demo | Not deployed yet - link pending |
+| RunPod endpoint | Not set up yet - endpoint pending |
+| Pitch slides | Not created yet - link pending |
+| YouTube pitching/demo video | Not recorded or uploaded yet - link pending |
 
-## What changed after reading the brief
+The GitHub URL is taken from this repository's configured remote. Submission links above will be added when available; they are not working deliverables yet. The localhost API described below is a development backend, not a hosted demo.
 
-- Keep human approval, simple permissions, and an activity log: these demonstrate required control.
-- Use simulated staff identities/roles and assumed Orbyte interfaces. Do not build a full login or identity platform.
-- Keep one Telegram integration, one PDF layout, manual prices, editable client details, and quotation validity settings.
-- Make PM email alerts a stretch goal. A visible Needs review inbox is enough for the core journey; email was our original feature, not a brief requirement.
-- Drop queue infrastructure, separate retry endpoints, preview-confirmation APIs, extensive revision machinery, and production deployment work from the two-day target.
-- Add Orbyte fit, reuse across SMEs, measurable benefits, SDG contribution, and a judge-accessible GitHub repository.
+## Overview
 
-## Competition priorities
+Small sales teams often receive customer enquiries in messages, copy details into documents, calculate prices manually, and keep track of replies themselves. This repeated work can delay quotations and leave interested customers without follow-up.
 
-The supplied rubric is for the **preliminary round**. A final-round rubric will be shared separately; do not assume the same weights apply there.
+Our proposed product connects the enquiry with business/client information, drafts the quotation content, and puts it in a review workflow. A PM checks the requirements, enters prices, previews the PDF, and approves sending. The intended result is less copying and document preparation, consistent quotation details, and a visible record of what needs review and what was sent.
 
-| Preliminary criterion | Weight | Our evidence |
-| --- | --- | --- |
-| Innovation and creativity | 30% | A quotation workflow that combines business context with controlled approval, beyond a generic chatbot |
-| Problem-solution fit | 25% | One recurring SME task, simple review, permissions, activity log, and Orbyte fit |
-| Feasibility | 25% | Working journey, synthetic data, explicit API assumptions, GitHub code, and an integration fallback |
-| Clarity | 20% | Problem -> approach -> measured outcome; a short, understandable demo |
+The initial use case is a small printing business preparing quotations for items such as event T-shirts. The same workflow could serve repair shops and other service businesses by changing business settings and item descriptions.
 
-A focused two-day prototype is plausible for three available contributors. The preliminary brief accepts a rough working most-important feature; a complete journey remains our build target. Xinjie's Python/SQLite backend is now implemented and locally tested. Live AI credentials, Telegram delivery, and the frontend remain integration work; the complete journey is not yet verified.
+## Intended workflow
 
-## Backend quick start
+1. A customer sends an enquiry to the business's Telegram bot.
+2. The system stores the enquiry and connects it with client/company details and quotation defaults.
+3. AI extracts the stated requirements, drafts item descriptions, and flags missing information. Prices remain blank.
+4. The PM reviews the draft, edits client details, and enters quantities and prices.
+5. The backend calculates totals and expiry; the PM previews the saved PDF.
+6. The PM approves sending to the original Telegram conversation.
+7. The system shows the outcome and records the action in an activity log.
+
+Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are future integrations. Email notifications are a stretch goal; the review inbox is the core alert mechanism.
+
+**This is the target journey. Live Telegram delivery and the frontend are not implemented in the current backend, so the complete journey has not yet been demonstrated.**
+
+## Current implementation status
+
+| Component | Status |
+| --- | --- |
+| Editable business/client settings and SQLite persistence | Implemented and locally tested |
+| Quotation drafts, exact totals, configurable validity, version checks | Implemented and locally tested |
+| PM-role validation and send-state helpers | Implemented and locally tested; not a production identity system |
+| OpenAI structured extraction adapter | Implemented with mocked tests; live credentials/model verification pending |
+| Manual draft fallback | Implemented and locally tested |
+| Saved-version PDF generation and local HTTP API | Implemented, tested, and sample layouts visually reviewed |
+| Activity record | Draft-creation event implemented; approval/send events still need transport integration |
+| Frontend inbox, editor, and PDF display | Pending |
+| Live Telegram receive/send | Pending |
+| Replit/RunPod deployment, video, and slides | Not prepared yet |
+
+The full backend suite passed **46 tests** at the last full run. After switching to port 8004, the 21 relevant API/drafting tests also passed. Tests use fictional records, local test servers, and mocked AI responses; they do not prove live provider or messaging integration.
+
+## Key quotation rules
+
+- Default validity: one calendar month. Available options: 7 days, 14 days, 1 month, 2 months, and 3 months.
+- Validity is calculated from the selected issue date, with calendar-month clamping at month end.
+- Client name/address and draft items are editable. Unknown information remains visible instead of being invented.
+- The PM enters prices. AI cannot set prices, approve a quotation, or choose a recipient.
+- The backend calculates totals using decimal arithmetic. Blank prices are distinct from explicitly entered zero prices.
+- Stale edits, missing required details, expired quotations, and non-PM sending are blocked by the service helpers.
+- Sent quotation details and cached PDFs remain unchanged when settings or client details change later.
+
+## Technology
+
+| Area | Current choice |
+| --- | --- |
+| Backend | Python 3.11+ and standard-library HTTP server |
+| Storage | SQLite |
+| AI adapter | OpenAI Responses API with structured output; model configured locally |
+| PDF generation | ReportLab |
+| Tests | unittest and pypdf |
+| Frontend | Pending integration |
+| Messaging | Telegram selected; live adapter pending |
+| Hosting / RunPod | Not configured |
+
+## How to run the backend
+
+Use PowerShell from the repository root, with Python 3.11 or newer installed.
 
 ```powershell
-python -m pip install -r requirements-dev.txt
-# Configure local .env as needed; never commit it.
-python -m backend.server
-python -m unittest discover -s tests -v
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+
+# Create the local config only if it does not already exist.
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+
+.\.venv\Scripts\python.exe -m backend.server
 ```
 
-The local-only API listens at `http://127.0.0.1:8004`. See the handoff for environment setup, payloads, manual fallback, and ownership boundaries. Keep disposable references in ignored `.input/`; project conventions are in AGENTS.md and SKILLS.md.
+The API listens at **http://127.0.0.1:8004**. Check **http://127.0.0.1:8004/api/health**. No frontend page is served yet.
 
-Source: supplied “Copy of Domain 2 (1).pdf”, physical PDF pages 4-9. The brief provides challenge requirements; channel, owners, architecture, and schedule are our project decisions. The round, exact deadline, and submission length limits still need confirmation from event instructions.
+Add `OPENAI_API_KEY` and `OPENAI_MODEL` to local `.env` to enable live AI requests. With either value blank, draft creation falls back to a clearly labelled manual draft. `PORT=8004` controls the local port; an existing process environment variable takes precedence over `.env`.
+
+Secrets belong only in `.env`, which is ignored by Git. `.env.example` contains placeholders. Keep this backend local: simulated roles and the standard-library server are for the supervised prototype.
+
+### Try the implemented flow without AI credentials
+
+With the server running, open another PowerShell terminal in the repository root:
+
+```powershell
+$base = 'http://127.0.0.1:8004'
+$enquiry = Invoke-RestMethod -Method Post -Uri "$base/api/demo/enquiries" -ContentType 'application/json' -Body (@{
+    text = 'Example Events needs 20 printed T-shirts. Address: 12 Demo Road.'
+} | ConvertTo-Json)
+
+$quote = Invoke-RestMethod -Method Post -Uri "$base/api/enquiries/$($enquiry.id)/draft" -ContentType 'application/json' -Body '{"manual":true}'
+
+$edit = @{
+    version = $quote.version
+    client = @{ name = 'Example Events'; address = '12 Demo Road' }
+    items = @(@{ description = 'Printed T-shirts'; quantity = '20'; unitPrice = '25.00' })
+    missingInformation = @()
+} | ConvertTo-Json -Depth 5
+
+$quote = Invoke-RestMethod -Method Patch -Uri "$base/api/quotations/$($quote.id)" -ContentType 'application/json' -Body $edit
+$quote.total # Expected: 500.00 in the seeded demo currency (MYR).
+
+New-Item -ItemType Directory -Force output/pdf | Out-Null
+Invoke-WebRequest -Uri "$base/api/quotations/$($quote.id)/pdf?version=$($quote.version)" -OutFile 'output/pdf/quotation-preview.pdf'
+```
+
+This creates a **simulated** enquiry (`source: demo`), a manual draft, and a priced PDF. It does not call Telegram or demonstrate live AI. The send endpoint intentionally returns HTTP 501 until the messaging integration is implemented.
+
+### Run tests and generate sample PDFs
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m scripts.demo_pdfs
+```
+
+Generated PDFs are stored under ignored `output/pdf/`. Local databases are stored under ignored `data/` by default.
+
+## Orbyte fit, business benefit, and SDG
+
+The product is designed as an enquiry-to-quotation module in an Orbyte-style connected business hub. Business context and roles are currently synthetic, team-defined assumptions; no live Orbyte API integration is claimed. The same module could be reused across SMEs with different company details and services.
+
+We plan to compare manual and assisted preparation using the same fictional enquiries, measuring elapsed time, copying steps, and quotation errors. A 30% reduction in preparation time is a **target to test**, not an achieved result. The intended SDG 8 contribution is improved SME productivity and support for small-business growth.
+
+## Demo boundaries and next steps
+
+- Use team-created fictional business/customer records only.
+- Complete the frontend and live Telegram integration, then verify PM approval and the full activity trail.
+- Configure credentials and verify a real AI request separately from mocked tests.
+- Prepare the hosted demo/Replit link, RunPod endpoint if used for the submission, slides, and YouTube video; update the links table when ready.
+- Confirm team details, final project name, and event submission requirements before submitting.
+- Keep production authentication, multi-tenancy, extra channels, payments, and advanced commercial rules outside this prototype.
+
+## Project documentation
+
+- [Workflow and essential requirements](docs/WORKFLOW.md)
+- [Two-day build plan and responsibilities](docs/TWO_DAY_PLAN.md)
+- [Shared implementation target](docs/IMPLEMENTATION.md)
+- [Xinjie's section checklist and verification evidence](docs/XINJIE_CHECKLIST.md)
+- [Backend setup, API contract, and integration handoff](docs/XINJIE_HANDOFF.md)
+- [Project instructions](AGENTS.md)
+- [Project workflow guide](SKILLS.md)
+
+## License
+
+See [LICENSE](LICENSE).
