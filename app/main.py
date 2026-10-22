@@ -17,6 +17,7 @@ from backend.errors import AppError
 from backend.server import Application, ALLOWED_ORIGINS
 from backend.store import Store
 from app.quotations import router as quotation_router
+from app.automatic_drafting import AutomaticDrafting
 from app.database import backfill_enquiries, metadata
 from app.enquiries import router as enquiries_router
 from app.telegram import router
@@ -44,6 +45,7 @@ def create_app(
                 await run_in_threadpool(backfill_enquiries, engine)
                 store = await run_in_threadpool(lambda: Store(engine=engine))
                 application.state.quotation_app = await run_in_threadpool(lambda: Application(store))
+                application.state.automatic_drafting = AutomaticDrafting(engine, application.state.quotation_app)
             except SQLAlchemyError:
                 raise RuntimeError("Database initialization failed") from None
             yield

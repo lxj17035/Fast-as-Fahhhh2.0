@@ -4,7 +4,7 @@ import json
 from hmac import compare_digest
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
@@ -54,7 +54,7 @@ class TelegramUpdate(BaseModel):
 
 
 @router.post("/api/webhooks/telegram")
-async def receive_update(request: Request) -> dict[str, str]:
+async def receive_update(request: Request, background_tasks: BackgroundTasks) -> dict[str, str]:
     supplied_secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
     expected_secret = request.app.state.settings.telegram_webhook_secret
     if not compare_digest(
@@ -92,4 +92,7 @@ async def receive_update(request: Request) -> dict[str, str]:
         raise HTTPException(
             status_code=503, detail="Message storage unavailable"
         ) from None
+    # Run only after receipt/enquiry commit and response creation. Duplicates may
+    # retry an interrupted draft; DraftService returns existing PM-edited drafts.
+    background_tasks.add_task(request.app.state.automatic_drafting.run, update.update_id)
     return {"status": "received" if stored else "duplicate"}

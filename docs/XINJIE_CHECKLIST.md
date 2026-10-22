@@ -128,3 +128,9 @@ Review one section with `git show <commit>`. All implementation commits are on `
 - Full combined regression suite with PostgreSQL: **176 passed, 1 skipped**. One Starlette/httpx dependency deprecation warning remains; it is not a test failure.
 - Updated README, handoff, Telegram setup, AGENTS.md, SKILLS.md, and PostgreSQL setup documentation. .env.example keeps all credentials blank and local .env stays ignored.
 - This does not deploy to Replit, call a live AI provider, trigger drafting automatically, or send a Telegram document. These remain separate unfinished steps.
+
+### Automatic drafting on Telegram receipt
+
+- Implemented post-receipt background drafting; duplicate updates preserve PM edits and can retry failed drafts.
+- Targeted webhook/shared API/automatic-drafting tests: 38 passed. No live AI or Telegram calls used.
+- Added docs/DELIVERY_CHECKLIST.md containing only unfinished delivery work; verified the merge was already committed as 8aa59b9.
