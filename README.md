@@ -2,6 +2,12 @@
 
 > An assisted quotation workflow for small businesses that turns customer enquiries into editable drafts while keeping a PM in control of pricing and sending.
 
+Part 1 implementation: [Telegram setup, API contract and integration handoff](docs/TELEGRAM.md).
+
+Part 2 implementation: [Enquiry inbox/detail API and persistence](docs/ENQUIRIES.md).
+
+Updated 23 October 2026 against the supplied Domain 2 challenge brief.
+
 **QuoteFlow** is a proposed name for the team's next discussion; it is not final. Other options are EnquiryFlow, QuoteBridge, and ReplyReady.
 
 Built for the **Orbyte Smart SME Challenge: Less Busywork, Better Business (Domain 2)**.

@@ -1,13 +1,35 @@
+# Python
 __pycache__/
 *.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments and caches
 .venv/
+.uv-cache/
+
+# Environment variables
 .env
 .env.*
 !.env.example
-.input/
+
+# Database
+*.db
+*.sqlite*
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Build
+dist/
+build/
+
+# Runtime data and output
 data/
 output/
 tmp/
-*.sqlite3
-*.sqlite3-shm
-*.sqlite3-wal
+.input/
+.output/
+
+# Testing
+.test-postgres/
+.pytest_tmp*/
