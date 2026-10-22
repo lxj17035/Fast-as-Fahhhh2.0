@@ -1,8 +1,10 @@
-# Enquiry-to-Quotation MVP
+# QuoteFlow (Working Title)
 
 > An assisted quotation workflow for small businesses that turns customer enquiries into editable drafts while keeping a PM in control of pricing and sending.
 
-Working project title; final name is to be confirmed. Built for the **Orbyte Smart SME Challenge: Less Busywork, Better Business (Domain 2)**.
+**QuoteFlow** is a proposed name for the team's next discussion; it is not final. Other options are EnquiryFlow, QuoteBridge, and ReplyReady.
+
+Built for the **Orbyte Smart SME Challenge: Less Busywork, Better Business (Domain 2)**.
 
 ## Team information
 
@@ -167,17 +169,6 @@ We plan to compare manual and assisted preparation using the same fictional enqu
 - Prepare the hosted demo/Replit link, RunPod endpoint if used for the submission, slides, and YouTube video; update the links table when ready.
 - Confirm the final project name and event submission requirements before submitting.
 - Keep production authentication, multi-tenancy, extra channels, payments, and advanced commercial rules outside this prototype.
-
-## Project documentation
-
-- [Project name suggestions](docs/PROJECT_NAMES.md)
-- [Workflow and essential requirements](docs/WORKFLOW.md)
-- [Two-day build plan and responsibilities](docs/TWO_DAY_PLAN.md)
-- [Shared implementation target](docs/IMPLEMENTATION.md)
-- [Xinjie's section checklist and verification evidence](docs/XINJIE_CHECKLIST.md)
-- [Backend setup, API contract, and integration handoff](docs/XINJIE_HANDOFF.md)
-- [Project instructions](AGENTS.md)
-- [Project workflow guide](SKILLS.md)
 
 ## License
 

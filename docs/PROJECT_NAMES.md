@@ -1,6 +1,6 @@
 # Project name suggestions
 
-Team: Fast as Fahhhhh. Final product name is not selected yet; the README retains its descriptive working title until the team chooses.
+Team: Fast as Fahhhhh. Final product name is not selected yet; the README uses QuoteFlow as a provisional working title pending team discussion.
 
 | Name | Why it fits |
 | --- | --- |

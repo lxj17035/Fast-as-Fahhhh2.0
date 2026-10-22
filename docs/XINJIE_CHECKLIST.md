@@ -104,3 +104,9 @@ Review one section with `git show <commit>`. All implementation commits are on `
 - Updated README with user-confirmed team name Fast as Fahhhhh, Domain 2, leader LIM XIN JIE, institution EDUVO Academy, and 3 members.
 - Added project-name suggestions in docs/PROJECT_NAMES.md; final product name remains open.
 - Verified team fields and local documentation links; documentation-only change.
+
+### README focus cleanup
+
+- Put QuoteFlow and the alternative names directly in README, clearly pending team discussion.
+- Removed the internal Project documentation links section from README; retained all underlying planning and handoff files.
+- Verified README links/code fences and clean diff formatting. Documentation-only change; no application tests required.
