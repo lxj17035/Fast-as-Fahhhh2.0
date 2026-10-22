@@ -8,12 +8,12 @@ Working project title; final name is to be confirmed. Built for the **Orbyte Sma
 
 | Field | Details |
 | --- | --- |
-| Team name | To be confirmed |
+| Team name | Fast as Fahhhhh |
 | Domain | Domain 2 - Orbyte Smart SME Challenge |
 | SDG track | SDG 8 - Decent Work and Economic Growth; intended contribution to productivity (8.2) and small-enterprise growth (8.3) |
-| Team leader | To be confirmed |
-| University | To be confirmed |
-| Number of members | To be confirmed; three contributors are currently listed below |
+| Team leader | LIM XIN JIE |
+| University / Institution | EDUVO Academy |
+| Number of members | 3 |
 
 | Contributor | Responsibility |
 | --- | --- |
@@ -165,11 +165,12 @@ We plan to compare manual and assisted preparation using the same fictional enqu
 - Complete the frontend and live Telegram integration, then verify PM approval and the full activity trail.
 - Configure credentials and verify a real AI request separately from mocked tests.
 - Prepare the hosted demo/Replit link, RunPod endpoint if used for the submission, slides, and YouTube video; update the links table when ready.
-- Confirm team details, final project name, and event submission requirements before submitting.
+- Confirm the final project name and event submission requirements before submitting.
 - Keep production authentication, multi-tenancy, extra channels, payments, and advanced commercial rules outside this prototype.
 
 ## Project documentation
 
+- [Project name suggestions](docs/PROJECT_NAMES.md)
 - [Workflow and essential requirements](docs/WORKFLOW.md)
 - [Two-day build plan and responsibilities](docs/TWO_DAY_PLAN.md)
 - [Shared implementation target](docs/IMPLEMENTATION.md)
