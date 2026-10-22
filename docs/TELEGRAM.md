@@ -1,7 +1,7 @@
 # Part 1: Telegram reception
 
 The shared Python application receives text messages at `POST /api/webhooks/telegram`.
-Part 2 adds [enquiry persistence and APIs](ENQUIRIES.md). Quotation draft/edit/PDF routes now share this FastAPI application and PostgreSQL database. Automatic drafting, outbound delivery, and the complete activity trail remain later work.
+Part 2 adds [enquiry persistence and APIs](ENQUIRIES.md). Quotation draft/edit/PDF routes now share this FastAPI application and PostgreSQL database. Automatic drafting, approved outbound PDF sending, and receipt/approval/provider-result activity are now implemented. Live verification with Member 2's credentials/test chat remains pending.
 
 ## Setup
 

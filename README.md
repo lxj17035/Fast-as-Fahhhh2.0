@@ -58,7 +58,7 @@ The initial use case is a small printing business preparing quotations for items
 
 Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are future integrations. Email notifications are a stretch goal; the review inbox is the core alert mechanism.
 
-**This is the target journey. Live Telegram delivery and the frontend are not implemented in the current backend, so the complete journey has not yet been demonstrated.**
+**The backend journey is implemented and locally tested. Live verification with Member 2's credentials/test chat and the frontend remain pending; a complete live demonstration is not yet claimed.**
 
 ## Current implementation status
 
@@ -70,13 +70,14 @@ Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are fu
 | OpenAI structured extraction adapter | Implemented with mocked tests; live credentials/model verification pending |
 | Manual draft fallback | Implemented and locally tested |
 | Saved-version PDF generation and local HTTP API | Implemented, tested, and sample layouts visually reviewed |
-| Activity record | Draft-creation event implemented; approval/send events still need transport integration |
+| Activity record | Receipt, draft, PM approval, and Telegram acceptance/rejection/uncertainty are persisted and exposed by read-only APIs |
 | Frontend inbox, editor, and PDF display | Pending |
 | Telegram reception | Implemented; shares the database and application with quotations; live bot verification pending |
-| Telegram document sending | Pending |
+| Automatic drafting | Starts after persisted receipt; preserves existing PM edits on duplicate updates |
+| Telegram document sending | Implemented with explicit PM approval and saved-preview/version validation; live verification pending |
 | Replit/RunPod deployment, video, and slides | Not prepared yet |
 
-The combined suite passed **176 tests**, with one PostgreSQL-only check skipped for the SQLite adapter, using isolated adapters and a disposable PostgreSQL instance. This includes receipt-to-enquiry-to-draft-to-priced-PDF HTTP checks. Automatic AI triggering and outbound Telegram delivery are not yet verified. Tests use fictional records, local test servers, and mocked AI responses; they do not prove live provider or messaging integration.
+The combined suite passed **245 tests**, with one PostgreSQL-only check skipped for the SQLite adapter, using isolated adapters and a disposable PostgreSQL instance. This covers automatic drafting, PM approval, saved PDF upload, duplicate protection, and activity logging with mocked providers. Live AI and Telegram verification remains pending with Member 2. Tests use fictional records, local test servers, and mocked AI responses; they do not prove live provider or messaging integration.
 
 ## Key quotation rules
 
@@ -98,7 +99,7 @@ The combined suite passed **176 tests**, with one PostgreSQL-only check skipped 
 | PDF generation | ReportLab |
 | Tests | pytest, unittest, and pypdf; PostgreSQL integration coverage |
 | Frontend | Pending integration |
-| Messaging | Telegram reception implemented; live bot verification and document sending pending |
+| Messaging | Telegram reception, automatic drafting, and approved PDF sending implemented; live bot verification pending |
 | Hosting / RunPod | Not configured |
 
 ## How to run the backend
@@ -147,7 +148,7 @@ New-Item -ItemType Directory -Force output/pdf | Out-Null
 Invoke-WebRequest -Uri "$base/api/quotations/$($quote.id)/pdf?version=$($quote.version)" -OutFile 'output/pdf/quotation-preview.pdf'
 ```
 
-This creates a **simulated** enquiry (`source: demo`), a manual draft, and a priced PDF. It does not call Telegram or demonstrate live AI. The send endpoint intentionally returns HTTP 501 until the messaging integration is implemented.
+This creates a **simulated** enquiry (`source: demo`), a manual draft, and a priced PDF. It does not call Telegram or demonstrate live AI. To send a real document, the send endpoint requires configured bot credentials and explicit PM approval of the current saved PDF preview. Use only the authorized team test chat for live verification.
 
 ### Run tests and generate sample PDFs
 
@@ -167,8 +168,8 @@ We plan to compare manual and assisted preparation using the same fictional enqu
 ## Demo boundaries and next steps
 
 - Use team-created fictional business/customer records only.
-- Complete the frontend, automatic drafting trigger, and Telegram document sending, then verify PM approval and the full activity trail.
-- Configure credentials and verify a real AI request separately from mocked tests.
+- Complete the frontend and have Member 2 verify the real receipt-to-draft-to-approved-PDF journey with private credentials and a controlled chat.
+- Configure the real credentials privately and run `python -m scripts.check_live_config`; this reports configuration only, without printing secrets or calling providers.
 - Prepare the hosted demo/Replit link, RunPod endpoint if used for the submission, slides, and YouTube video; update the links table when ready.
 - Confirm the final project name and event submission requirements before submitting.
 - Keep production authentication, multi-tenancy, extra channels, payments, and advanced commercial rules outside this prototype.

@@ -38,3 +38,23 @@ Readiness check reports DATABASE_URL present; TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHO
 - Outcomes distinguish Telegram acceptance from reading, rejection, and uncertainty. Tests use only mocked uploads.
 
 - Activity/send/automatic-drafting regression checks with PostgreSQL: **56 passed**.
+
+### Live verification preparation (not completed)
+
+- `python -m scripts.check_live_config` safely reports presence/format without printing values or calling services. Its three tests passed.
+- Current check: DATABASE_URL has a valid-looking PostgreSQL scheme. Bot token, webhook secret, OpenAI key/model, and LIVE_TEST_CHAT_ID are missing. Exit 1 is expected until Member 2 supplies them privately.
+- Prepared docs/LIVE_TEST.md for actual inbound receipt, AI draft, PM pricing/preview, approved outbound PDF, activity, and repeat-click verification. This procedure has not been run against real services.
+
+## Final local regression verification
+
+- Full combined pytest suite with a disposable PostgreSQL database: **245 passed, 1 skipped**. The skip is a PostgreSQL-only concurrency test under the SQLite test adapter; its PostgreSQL case passed.
+- One Starlette/httpx dependency deprecation warning remains; no test failure.
+- Verified documentation links/fences, blank private fields in .env.example, ignored .env, and no pending merge.
+- No real AI call or Telegram message was sent. The remaining live verification is intentionally unchecked.
+
+## Review commits
+
+- `d05a822`: automatic drafting after receipt (38 targeted checks).
+- `5a131a7`: explicit PM approval and guarded Telegram PDF sending (67 targeted checks plus read API verification).
+- `c1c3565`: persisted approval/provider-outcome activity (56 targeted checks).
+- Live-test readiness/helper documentation is committed separately; it does not complete the live test.

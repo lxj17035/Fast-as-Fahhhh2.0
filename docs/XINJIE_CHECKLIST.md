@@ -144,3 +144,9 @@ Review one section with `git show <commit>`. All implementation commits are on `
 
 - Added persisted receipt/approval/accepted/rejected/uncertain events and read-only activity APIs. Audit failures before upload roll back the approval; failures after upload preserve a reservation that prevents duplicate sending.
 - Targeted PostgreSQL activity/send/automatic-drafting checks: 56 passed. No real messages or credentials used in tests.
+
+### Final delivery regression and Member 2 handoff
+
+- Combined real-PostgreSQL/mocked-provider pytest suite: 245 passed, 1 skipped, one dependency deprecation warning.
+- Configuration readiness helper: 3 tests passed; current live readiness is false because private bot/webhook/AI/test-chat values are missing.
+- Updated docs/DELIVERY_CHECKLIST.md so only real-credential live verification remains in the active list. The prior merge is already committed, and no new merge is pending.

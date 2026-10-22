@@ -26,7 +26,7 @@ The shared database must already exist. Startup creates missing prototype tables
 
 Quotation drafting reads the existing Telegram enquiry ID directly. Unknown senders receive distinct empty contact records for PM review; no customer identity is guessed. Source chat IDs and original messages are preserved. `/api/enquiries` keeps Sweeway's paginated snake_case API contract; quotation payloads remain camelCase as documented in XINJIE_HANDOFF.md.
 
-Posting an authenticated Telegram enquiry now automatically starts drafting after the receipt is committed. The explicit draft endpoint remains available for manual retry; duplicate receipts preserve existing drafts. Outbound PDF sending still returns 501 until implemented; receiving an enquiry and producing a draft/PDF is not a complete send demonstration.
+Posting an authenticated Telegram enquiry now automatically starts drafting after the receipt is committed. The explicit draft endpoint remains available for manual retry; duplicate receipts preserve existing drafts. Outbound PDF sending now requires explicit PM approval of a saved preview; receipt/approval/provider outcomes are logged. Full live verification with Member 2's credentials and controlled Telegram chat remains pending.
 
 ## Verification
 

@@ -4,7 +4,7 @@
 
 Python 3.12+ backend with shared PostgreSQL via SQLAlchemy/Psycopg, editable business/client details, versioned quotations, exact totals, calendar validity, structured AI extraction/manual fallback, cached saved-version PDFs, and a local HTTP API.
 
-Telegram reception and quotations now run in one FastAPI application and use the same DATABASE_URL. The frontend, automatic draft trigger, outbound document sending, PM approval/send activity events, and email remain pending. The `/api/demo/enquiries` route is explicitly simulated (`source: demo`); it never receives a real Telegram message. Draft creation records one system activity event. Sweeway owns remaining activity events and transport.
+Telegram reception and quotations now run in one FastAPI application and use the same DATABASE_URL. Automatic drafting, approved outbound PDF sending, and receipt/approval/outcome activity are implemented and tested. The frontend, real-credential end-to-end verification, and optional email remain pending. The `/api/demo/enquiries` route is explicitly simulated (`source: demo`); it never receives a real Telegram message. Receipt, draft, PM approval, and Telegram outcome events are persisted. Member 2 owns real bot credentials and controlled-chat live verification.
 
 ## Setup (PowerShell from repository root)
 
@@ -64,7 +64,7 @@ Send JSON with `Content-Type: application/json` for POST/PATCH, including `{}` w
 | `GET /api/quotations/:id` | Saved quotation and version |
 | `PATCH /api/quotations/:id` | Current version plus allowed client/items/issueDate/validity/notes/missingInformation changes |
 | `GET /api/quotations/:id/pdf?version=2` | PDF bytes; header `X-Quotation-Version: 2`; use expected version to reject stale preview requests |
-| `POST /api/quotations/:id/send` | Intentionally returns 501 until Sweeway supplies the send integration |
+| `POST /api/quotations/:id/send` | Explicit PM approval of current saved preview; original-chat-only delivery and guarded retry; see PM_APPROVAL.md |
 
 PDF rendering caches bytes per saved quotation version. Save changes, refresh the PDF preview using the returned version, then approve that version. Do not include derived fields (`total`, `lineTotal`, expiry, status, company, currency) in PATCH. The API rejects unknown fields.
 
@@ -88,17 +88,15 @@ Result: version 2, total `500.00`, expiry `2026-11-23`. Draft edits allow unknow
 
 Errors return `{ "error": "message", "fields": {} }`. Invalid data -> 422 (field errors included when checking readiness); malformed JSON -> 400; unsupported content type -> 415; missing records -> 404; stale/locked version -> 409; non-PM send validation -> 403. Failed AI processing returns a saved manual draft, not a fabricated AI success. Unexpected server errors return a generic 500.
 
-## Sweeway integration boundary
+## Integrated delivery boundary
 
-1. Keep using the normalized `telegram_updates` and `enquiries` tables. The quotation store reads their existing rows directly, preserves original text and provider/chat IDs, and stores only quotation client context separately. Unknown Telegram senders get distinct empty client records during draft creation; they are never assigned the fictional seeded client by default.
-2. Call `app.drafts.create(enquiry_id)`. Repeated calls return the existing quotation; this intentionally avoids overwriting PM edits. Later customer messages must be shown to the PM and reconciled manually in this MVP.
-3. In the future send handler, require explicit PM approval of the current previewed version and latest messages. Simulate actor/role only for this controlled demo; do not treat client-provided roles as trusted production identity.
-4. Call `app.quotations.begin_send(id, version, actor, role)` to atomically validate and reserve one send. It blocks Sales, missing details/prices, expired/stale quotations, and duplicate approval attempts.
-5. Retrieve exactly that version's bytes with `app.pdfs.get(id, version)` and send to the stored original chat; do not accept AI/request-provided recipient overrides. Handle PDF retrieval failure before calling the provider by recording a known failed attempt.
-6. Call `app.quotations.record_send_result(id, outcome, provider_reference)` with `accepted`, `failed`, or `uncertain`. Acceptance is not proof of reading. Only known failures may retry; unknown outcomes block blind resend.
-7. Persist receipt, approving actor/time, and outbound result events in `activity`. The begin/result helpers change quotation state but do not supply Telegram transport or its activity records. Do not claim the full audit journey is complete before these are wired up.
+Telegram receipt and enquiry rows remain normalized in the shared database. Receipt now schedules automatic drafting after commit. Repeated receipts return existing drafts without overwriting PM edits; failed background work preserves the enquiry for manual retry or repeated receipt.
 
-Sent/sending/uncertain quotations are locked. A known failed quotation can be edited or retried; sent quotation details and PDF bytes remain unchanged by later client/company settings edits.
+Use GET /api/enquiries/:id/quotation to retrieve the automatically generated draft. Unknown senders get distinct empty client records. Review/pricing remains manual. Display the saved PDF version, then use the explicit PM send payload documented in PM_APPROVAL.md. SendService reserves one attempt, uploads the cached bytes to the stored original chat, and persists the result/inbox status and activity together. Do not bypass it with low-level helpers.
+
+GET /api/enquiries/:id/activity and GET /api/quotations/:id/activity expose chronological receipt/draft/approval/provider-result events. Provider acceptance is not proof of reading. Known failures require explicit retry approval; uncertain outcomes block blind resend.
+
+Sent/sending/uncertain quotations remain locked. A known failed quotation can be edited or explicitly retried. Local mocked checks do not complete live AI/Telegram verification; Member 2 follows LIVE_TEST.md after filling private configuration.
 
 ## Review commits
 
@@ -106,4 +104,4 @@ Run `git log --oneline feat/xinjie` to find the small commits. Use `git show <co
 
 ## PostgreSQL integration update
 
-See POSTGRESQL.md for the shared schema, DATABASE_URL setup, test isolation, and remaining integration boundaries. The combined FastAPI application exposes Telegram reception, inbox, settings, clients, draft, quotation edit, and PDF routes on port 8004. Automatic drafting and outbound sending remain unfinished. Simulated `/api/demo/enquiries` records are for quotation API testing and are not included in the normalized Telegram inbox.
+See POSTGRESQL.md for the shared schema, DATABASE_URL setup, test isolation, and remaining integration boundaries. The combined FastAPI application exposes Telegram reception, inbox, settings, clients, draft, quotation edit, and PDF routes on port 8004. Automatic drafting and approved outbound sending are implemented; live verification is the remaining delivery checklist item. Simulated `/api/demo/enquiries` records are for quotation API testing and are not included in the normalized Telegram inbox.
