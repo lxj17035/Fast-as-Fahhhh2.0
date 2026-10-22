@@ -15,7 +15,7 @@ from .store import Store
 
 ROOT = Path(__file__).resolve().parent.parent
 ALLOWED_ORIGINS = {f"http://{host}:{port}" for host in ("localhost", "127.0.0.1")
-                   for port in (3000, 5173, 8000)}
+                   for port in (3000, 5173, 8004)}
 
 
 class Application:
@@ -168,7 +168,7 @@ def main():
     load_env(ROOT / ".env")
     path = Path(os.environ.get("QUOTATION_DB", "data/quotation.sqlite3"))
     store = Store(path if path.is_absolute() else ROOT / path)
-    server = LocalServer(("127.0.0.1", int(os.environ.get("PORT", "8000"))), handler_for(Application(store)))
+    server = LocalServer(("127.0.0.1", int(os.environ.get("PORT", "8004"))), handler_for(Application(store)))
     print(f"Local synthetic demo API: http://127.0.0.1:{server.server_port}")
     try:
         server.serve_forever()

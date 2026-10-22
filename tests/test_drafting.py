@@ -145,11 +145,11 @@ class DraftingTests(unittest.TestCase):
     def test_dotenv_does_not_execute_or_override_environment(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)/".env"
-            path.write_text('# comment\nOPENAI_API_KEY="file-value"\nPORT=8000\nLITERAL=$(whoami)\n', encoding="utf-8")
+            path.write_text('# comment\nOPENAI_API_KEY="file-value"\nPORT=8004\nLITERAL=$(whoami)\n', encoding="utf-8")
             environment = {"OPENAI_API_KEY": "process-value"}
             load_env(path, environment)
             self.assertEqual(environment["OPENAI_API_KEY"], "process-value")
-            self.assertEqual(environment["PORT"], "8000")
+            self.assertEqual(environment["PORT"], "8004")
             self.assertEqual(environment["LITERAL"], "$(whoami)")
 
 

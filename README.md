@@ -49,6 +49,6 @@ python -m backend.server
 python -m unittest discover -s tests -v
 ```
 
-The local-only API listens at `http://127.0.0.1:8000`. See the handoff for environment setup, payloads, manual fallback, and ownership boundaries. Keep disposable references in ignored `.input/`; project conventions are in AGENTS.md and SKILLS.md.
+The local-only API listens at `http://127.0.0.1:8004`. See the handoff for environment setup, payloads, manual fallback, and ownership boundaries. Keep disposable references in ignored `.input/`; project conventions are in AGENTS.md and SKILLS.md.
 
 Source: supplied “Copy of Domain 2 (1).pdf”, physical PDF pages 4-9. The brief provides challenge requirements; channel, owners, architecture, and schedule are our project decisions. The round, exact deadline, and submission length limits still need confirmation from event instructions.

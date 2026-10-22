@@ -91,9 +91,10 @@ class APITests(unittest.TestCase):
         self.assertEqual(self.request("PATCH", "/api/settings", {}, headers={"Content-Type": "text/plain"})[0], 415)
 
     def test_local_cors_and_untrusted_origin_rejection(self):
-        status, _, headers = self.request("GET", "/api/settings", headers={"Origin": "http://localhost:3000"})
-        self.assertEqual(status, 200)
-        self.assertEqual(headers["Access-Control-Allow-Origin"], "http://localhost:3000")
+        for origin in ("http://localhost:3000", "http://localhost:8004", "http://127.0.0.1:8004"):
+            status, _, headers = self.request("GET", "/api/settings", headers={"Origin": origin})
+            self.assertEqual(status, 200)
+            self.assertEqual(headers["Access-Control-Allow-Origin"], origin)
         self.assertEqual(self.request("PATCH", "/api/settings", {"currency": "USD"},
                                      headers={"Origin": "https://untrusted.example"})[0], 403)
         self.assertEqual(self.app.settings.get_settings()["currency"], "MYR")

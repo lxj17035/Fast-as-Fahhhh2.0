@@ -16,7 +16,7 @@ Copy-Item .env.example .env
 .\.venv\Scripts\python.exe -m backend.server
 ```
 
-The API binds to `127.0.0.1:8000`. This is a supervised local synthetic-data demo with no production authentication. Keep it local. The frontend can run on localhost/127.0.0.1 ports 3000, 5173, or 8000; those origins receive CORS access. The backend does not serve frontend files.
+The API binds to `127.0.0.1:8004`. This is a supervised local synthetic-data demo with no production authentication. Keep it local. The frontend can run on localhost/127.0.0.1 ports 3000, 5173, or 8004; those origins receive CORS access. The backend does not serve frontend files.
 
 The local `.env` already contains placeholders. Add real values there only. Existing process environment overrides `.env`; the loader supports `KEY=value`, optional surrounding quotes, and whole-line comments, without interpolation or shell execution. No extra dotenv dependency is required.
 
@@ -25,7 +25,7 @@ The local `.env` already contains placeholders. Add real values there only. Exis
 | `OPENAI_API_KEY` | Private server-side provider key; blank produces manual fallback |
 | `OPENAI_MODEL` | Account-accessible Responses model supporting structured outputs; deliberately no assumed model |
 | `QUOTATION_DB` | SQLite path, default `data/quotation.sqlite3`, relative to repository root |
-| `PORT` | Local API port, default 8000 |
+| `PORT` | Local API port, default 8004 |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | Reserved for Sweeway; unused by Xinjie's backend |
 
 AI requests use [official Responses structured output](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses). No live provider request has been verified. Without credentials or on refusal/failure, the original enquiry is retained and the returned quotation has `draftMode: manual` and a safe `draftError` explanation. Explicit manual mode does not call AI. No fixture is presented as live AI.

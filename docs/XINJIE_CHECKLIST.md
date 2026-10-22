@@ -85,3 +85,9 @@ Record commands, results, and limitations here as each section is completed. Com
 | 4. PDF/API/handoff | `feat: expose quotation API and PDF preview` (see git log for hash) |
 
 Review one section with `git show <commit>`. All implementation commits are on `feat/xinjie`; none were pushed. The checklist-baseline commit predates branch creation and is an ancestor of the feature branch.
+
+### Port configuration follow-up
+
+- Changed the default/local port to 8004 in server configuration, .env.example, local ignored .env, CORS origins, and setup docs.
+- Verified 127.0.0.1:8004 was available at the time of the check; no other project process was stopped.
+- `python -m unittest tests.test_api tests.test_drafting`: 21 tests passed, including CORS for localhost/127.0.0.1:8004 and environment-file loading.
