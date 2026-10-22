@@ -19,12 +19,13 @@ Work in small sections: implement -> run that section's tests -> update this che
 
 ## 3. AI extraction and manual fallback
 
-- [ ] Configurable OpenAI Responses API structured extraction with no pricing/send authority.
-- [ ] Validate AI output and preserve unknown fields; never overwrite PM edits.
-- [ ] Persist a clearly labelled manual draft if credentials/provider output are unavailable.
-- [ ] Test valid output, malformed output, refusal/timeout, missing credentials, and repeat draft requests.
-- [ ] Run `python -m unittest tests.test_drafting -v` and commit `feat: add structured enquiry drafting and fallback`.
+- [x] Configurable OpenAI Responses API structured extraction with no pricing/send authority.
+- [x] Validate AI output and preserve unknown fields; never overwrite PM edits.
+- [x] Persist a clearly labelled manual draft if credentials/provider output are unavailable.
+- [x] Test valid output, malformed output, refusal/timeout, missing credentials, and repeat draft requests.
+- [x] Run `python -m unittest tests.test_drafting -v` and commit `feat: add structured enquiry drafting and fallback`.
 - [ ] Live provider verification with a real API key (requires user configuration).
+
 
 ## 4. PDF, HTTP API, and handoff
 
@@ -54,3 +55,10 @@ Record commands, results, and limitations here as each section is completed. Com
 - `python -m unittest tests.test_quotations -v`: 12 tests passed.
 - Verified calendar/month-end/leap-year dates, decimal rounding, blank vs zero prices, stale versions, snapshots, concurrent approvals, PM role, expiry, and uncertain-send lockout.
 - `begin_send` / `record_send_result` are service helpers for Sweeway; no external message was sent.
+
+### Section 3
+
+- `python -m unittest tests.test_drafting tests.test_settings tests.test_quotations -v`: 29 tests passed (11 drafting, 6 settings, 12 quotation).
+- Mocked Responses API requests verify strict schema, no prices/tools, timeout/refusal/invalid response fallback, retry idempotency, and atomic draft/activity rollback.
+- `.env` loader preserves process environment and never executes shell content.
+- Live AI remains unverified: configure OPENAI_API_KEY and OPENAI_MODEL in local .env. No real key was used or printed.

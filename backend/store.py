@@ -18,6 +18,7 @@ class Store:
         if str(path) != ":memory:":
             Path(path).parent.mkdir(parents=True, exist_ok=True)
         self.lock = RLock()
+        self.depth = 0
         self.connection = sqlite3.connect(str(path), check_same_thread=False)
         self.connection.execute("""CREATE TABLE IF NOT EXISTS records (
             kind TEXT NOT NULL, id TEXT NOT NULL, body TEXT NOT NULL,
@@ -26,8 +27,21 @@ class Store:
 
     @contextmanager
     def transaction(self):
-        with self.lock, self.connection:
-            yield self
+        with self.lock:
+            outer = self.depth == 0
+            if outer:
+                self.connection.execute("BEGIN IMMEDIATE")
+            self.depth += 1
+            try:
+                yield self
+                if outer:
+                    self.connection.commit()
+            except BaseException:
+                if outer:
+                    self.connection.rollback()
+                raise
+            finally:
+                self.depth -= 1
 
     def get(self, kind, key):
         with self.lock:
