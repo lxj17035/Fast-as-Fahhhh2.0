@@ -1,3 +1,5 @@
+> Historical merge review: the one-attempt limitation below was subsequently fixed. See [PM_APPROVAL.md](PM_APPROVAL.md) and [DELIVERY_RETRY_CHECKLIST.md](DELIVERY_RETRY_CHECKLIST.md) for current behavior and verification.
+
 # Sweeway merge review - 23 October 2026
 
 ## Scope and resolutions

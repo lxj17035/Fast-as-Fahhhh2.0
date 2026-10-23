@@ -58,7 +58,8 @@ send_attempts = Table(
     "send_attempts",
     metadata,
     Column("id", String(36), primary_key=True),
-    Column("quotation_id", String(36), nullable=False, unique=True),
+    Column("quotation_id", String(36), nullable=False),
+    Column("retry_of_attempt_id", String(36), ForeignKey("send_attempts.id")),
     Column("enquiry_id", String(36), ForeignKey("enquiries.id"), nullable=False),
     Column("version", Integer, nullable=False),
     Column("actor_id", String(40), nullable=False),
@@ -76,6 +77,13 @@ send_attempts = Table(
         name="send_attempts_status_check",
     ),
 )
+# Each explicit approval is durable. A failure may have one approved successor;
+# duplicate initial requests and replayed retry approvals cannot create siblings.
+Index("send_attempts_initial_unique", send_attempts.c.quotation_id, unique=True,
+      postgresql_where=send_attempts.c.retry_of_attempt_id.is_(None),
+      sqlite_where=send_attempts.c.retry_of_attempt_id.is_(None))
+Index("send_attempts_retry_unique", send_attempts.c.retry_of_attempt_id, unique=True)
+
 activities = Table(
     "activities",
     metadata,

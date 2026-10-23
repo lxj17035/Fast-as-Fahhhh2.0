@@ -50,6 +50,8 @@ class DeliveryAttempt(BaseModel):
     provider_message_id: str | None
     safe_error_code: str | None
     requires_verification: bool
+    retry_of_attempt_id: str | None
+    can_retry: bool
 
 
 class ActivityRecord(BaseModel):
@@ -130,6 +132,7 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
             attempts = connection.execute(
                 select(
                     send_attempts.c.id,
+                    send_attempts.c.retry_of_attempt_id,
                     send_attempts.c.quotation_id,
                     send_attempts.c.version,
                     send_attempts.c.status,
@@ -152,6 +155,8 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
         ) from None
     if row is None:
         raise HTTPException(status_code=404, detail="Enquiry not found")
+    consumed = {attempt["retry_of_attempt_id"] for attempt in attempts}
+    blocked_quotes = {a["quotation_id"] for a in attempts if a["status"] != "failed"}
     return EnquiryDetail(
         **summary(row).model_dump(),
         messages=[
@@ -174,6 +179,9 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
                 provider_message_id=attempt["provider_message_id"],
                 safe_error_code=attempt["safe_error_code"],
                 requires_verification=attempt["status"] in {"pending", "unknown"},
+                retry_of_attempt_id=attempt["retry_of_attempt_id"],
+                can_retry=(attempt["status"] == "failed" and attempt["id"] not in consumed
+                           and attempt["quotation_id"] not in blocked_quotes),
             )
             for attempt in attempts
         ],

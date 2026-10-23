@@ -12,8 +12,7 @@ All mutation paths share the same PostgreSQL advisory lock; SQLite is test-only.
 
 Unknown senders retain Xinjie's separate empty client records. Automatic drafting
 and explicit retry use the same service. The public send handler is Sweeway's
-`app/delivery.py`, with `X-Demo-Actor: pm` and `expected_version`; it permits only
-one attempt per quotation. The older standalone handler and SendService remain
+`app/delivery.py`, with `X-Demo-Actor: pm` and `expected_version`; it allows an initial send and explicit PM-approved retries of confirmed failures. The older standalone handler and SendService remain
 isolated compatibility/test helpers and are not registered public send routes.
 
 Do not edit copied modules independently or restore a second runtime store.

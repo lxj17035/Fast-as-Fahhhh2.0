@@ -96,9 +96,9 @@ Telegram receipt and enquiry rows remain normalized in the shared database. Rece
 
 Use GET /api/enquiries/:id/quotation to retrieve the automatically generated draft. Unknown senders get distinct empty client records. Review/pricing remains manual. Display the saved PDF version, then use the explicit PM send payload documented in PM_APPROVAL.md. The integrated delivery handler reserves one attempt, uploads the cached bytes to the stored original chat, and persists the result/inbox status and activity together. Do not bypass it with low-level helpers.
 
-GET /api/enquiries/:id/activity and GET /api/quotations/:id/activity expose chronological receipt/draft/approval/provider-result events. Provider acceptance is not proof of reading. All previous attempts block resending, including known failures; unknown outcomes require checking the chat.
+GET /api/enquiries/:id/activity and GET /api/quotations/:id/activity expose chronological receipt/draft/approval/provider-result events. Provider acceptance is not proof of reading. Known failures allow fresh PM approval referencing the failed attempt ID; pending/sent/unknown outcomes and replayed approvals block resending.
 
-Sent/sending/uncertain quotations remain locked. A known failed quotation can be edited, but the merged delivery endpoint does not permit a second attempt. Local mocked checks do not complete live AI/Telegram verification; Member 2 follows LIVE_TEST.md after filling private configuration.
+Sent/sending/uncertain quotations remain locked. A known failed quotation can be edited and retried after PM approval of the current saved preview; use the failed retry_of_attempt_id. Local mocked checks do not complete live AI/Telegram verification; Member 2 follows LIVE_TEST.md after filling private configuration.
 
 ## Review commits
 

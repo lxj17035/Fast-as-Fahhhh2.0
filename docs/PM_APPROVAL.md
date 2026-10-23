@@ -32,16 +32,37 @@ Telegram chat. The send request cannot override recipients or upload PDF URLs.
 - 200 `sent`: Telegram accepted the document; not proof of customer reading.
 - 502 `failed`: explicit Telegram rejection.
 - 202 `unknown`: ambiguous response or timeout; check the original chat.
-- 409: a previous attempt exists, or the version/preview is stale. Repeated clicks never upload again.
+- 409: duplicate/stale approval, pending/sent/unknown delivery, or stale version/preview. Repeated clicks never upload again.
 - 503: approval disabled, missing token, storage/preparation failure, or result could not be persisted.
 
 Responses after an attempt include `attempt_id` and `status`. Read the provider
 message reference, attempt state and chronological activity from
 `GET /api/enquiries/:id`; activity-only endpoints return the same history under `items`.
 
-The merged MVP allows one send attempt per quotation, including failed attempts.
-A retry/recovery interface for known failures is deferred. Never delete attempts
-or force a resend after an unknown outcome. Pending attempts remain visible and
-locked if finalization fails. Approval, attempt and outcome logs are transactional.
+## Retry a confirmed failure
+
+Only an explicitly recorded `failed` outcome can be retried. After fixing the
+cause, GET enquiry detail and find the delivery attempt with `can_retry: true`.
+The PM reviews the current quotation/PDF and explicitly approves again:
+
+```json
+{"expected_version": 2, "approved": true, "retry_of_attempt_id": "UUID of the failed attempt"}
+```
+
+Use the same `X-Demo-Actor: pm` header. `can_retry` describes delivery state;
+normal PM/configuration, validity, version and saved-preview checks still apply.
+If the quotation was edited, save and preview the new version before retrying.
+
+Every retry gets a new `attempt_id` and records its `retry_of_attempt_id` link;
+older attempts, their exact PDF bytes and activity remain intact. If the retry
+also explicitly fails, refresh and approve its NEW failed attempt ID. Replaying
+an earlier approval returns 409 even if a later retry failed. No boolean `retry`
+flag, automatic resend or automatic message to the customer is used.
+
+`pending`, `sent` and `unknown` outcomes cannot be retried. Check the original
+chat for unknown results. Pending attempts remain locked if finalization fails;
+never delete history to force a resend. Approval, attempt and outcome logs remain
+transactional. The frontend should show Retry only to PM when `can_retry` is true,
+and disable the button while its request is running.
 
 See [delivery details](DELIVERY.md) for validation, response codes and boundaries.

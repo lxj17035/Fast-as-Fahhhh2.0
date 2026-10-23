@@ -16,7 +16,7 @@ The combined FastAPI application serves both modules. `python -m backend.server`
 
 PostgreSQL URL schemes `postgresql://`, `postgres://`, and `postgresql+psycopg://` are normalized to the installed Psycopg driver. Encoded passwords and query options such as sslmode are preserved. Existing process environment takes precedence over .env. On Replit, supply the private connection through the environment; this change does not deploy the application.
 
-The shared database must already exist. Startup creates missing prototype tables but does not create the database or alter existing schemas. Existing SQLite files are left untouched; no automatic import of older SQLite records is performed.
+The shared database must already exist. Startup creates missing prototype tables and applies the specific PostgreSQL delivery-retry upgrade. It does not create the database or migrate other schema changes. Existing SQLite files are left untouched; no automatic import of older SQLite records is performed.
 
 ## Tables and handoff
 
@@ -40,4 +40,4 @@ Runtime quotation writes use a transaction-scoped advisory lock for this small p
 
 References: [SQLAlchemy PostgreSQL/Psycopg](https://docs.sqlalchemy.org/en/20/dialects/postgresql.html), [PostgreSQL transaction/advisory locking](https://www.postgresql.org/docs/18/explicit-locking.html).
 
-The merged runtime reuses quotation_records; it does not write a second xinjie_records table. Historical JSON activity remains stored but is not fabricated into canonical history. Existing prototype schemas are not automatically altered by create_all.
+The merged runtime reuses quotation_records; it does not write a second xinjie_records table. Historical JSON activity remains stored but is not fabricated into canonical history. create_all alone does not alter existing tables. app/migrations.py adds the nullable retry predecessor column and replaces the old unique quotation constraint with initial-send/retry-link unique indexes. This serialized, transactional upgrade preserves existing attempt IDs, PDF bytes and activity links, and is safe to repeat. It requires table-alter privileges.

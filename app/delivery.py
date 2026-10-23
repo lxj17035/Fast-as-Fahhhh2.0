@@ -44,6 +44,7 @@ class SendApproval(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_version: Annotated[int, Field(strict=True, gt=0, le=2**31 - 1)]
     approved: Literal[True]
+    retry_of_attempt_id: UUID | None = None
 
     @field_validator("approved", mode="before")
     @classmethod
@@ -90,13 +91,15 @@ def duplicate_attempt(error: IntegrityError, dialect: str) -> bool:
         return (
             getattr(error.orig, "sqlstate", None) == "23505"
             and getattr(getattr(error.orig, "diag", None), "constraint_name", None)
-            == "send_attempts_quotation_id_key"
+            in {"send_attempts_initial_unique", "send_attempts_retry_unique"}
         )
     return (
         dialect == "sqlite"
         and getattr(error.orig, "sqlite_errorcode", None) == 2067
-        and str(error.orig)
-        == "UNIQUE constraint failed: send_attempts.quotation_id"
+        and str(error.orig) in {
+            "UNIQUE constraint failed: send_attempts.quotation_id",
+            "UNIQUE constraint failed: send_attempts.retry_of_attempt_id",
+        }
     )
 
 
@@ -123,13 +126,23 @@ def send_quotation(
     try:
         with integration_transaction(engine) as connection:
             previous = connection.execute(
-                select(send_attempts.c.id)
+                select(send_attempts.c.id, send_attempts.c.status,
+                       send_attempts.c.retry_of_attempt_id)
                 .where(send_attempts.c.quotation_id == saved_id)
-            ).first()
-            if previous is not None:
-                raise HTTPException(
-                    status_code=409, detail="Delivery already attempted"
-                )
+            ).mappings().all()
+            retry_of = str(approval.retry_of_attempt_id) if approval.retry_of_attempt_id else None
+            if previous:
+                # Never retry a success, an active upload or an ambiguous outcome.
+                # Referencing the exact failed attempt prevents a delayed/replayed
+                # approval from silently becoming a further retry after another failure.
+                blocked = any(row["status"] != "failed" for row in previous)
+                consumed = {row["retry_of_attempt_id"] for row in previous}
+                eligible = any(row["id"] == retry_of for row in previous)
+                if blocked or not eligible or retry_of in consumed:
+                    raise HTTPException(status_code=409,
+                        detail="Explicit approval of the current failed attempt is required; pending, sent or unknown delivery cannot be retried")
+            elif retry_of is not None:
+                raise HTTPException(status_code=409, detail="Failed attempt not found for this quotation")
             quotation = provider.reserve_for_send(
                 connection, saved_id, approval.expected_version
             )
@@ -148,6 +161,7 @@ def send_quotation(
                 send_attempts.insert().values(
                     id=attempt_id,
                     quotation_id=saved_id,
+                    retry_of_attempt_id=retry_of,
                     enquiry_id=quotation.enquiry_id,
                     version=quotation.version,
                     actor_id=actor,

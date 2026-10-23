@@ -12,6 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
 
 from app.config import Settings
+from app.migrations import upgrade_delivery_schema
 from backend.config import load_env
 from backend.errors import AppError
 from backend.drafting import OpenAIExtractor
@@ -53,6 +54,7 @@ def create_app(
             # Prototype bootstrap only; schema evolution will need migrations.
             try:
                 await run_in_threadpool(metadata.create_all, engine)
+                await run_in_threadpool(upgrade_delivery_schema, engine)
                 await run_in_threadpool(backfill_enquiries, engine)
                 await run_in_threadpool(lambda: BootstrapStore(engine=engine))
                 store = Store(engine)

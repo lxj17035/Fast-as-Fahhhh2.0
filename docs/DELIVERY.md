@@ -118,14 +118,14 @@ transaction. Outcomes map to Xinjie's `accepted`/`failed`/`uncertain`, including
 the Telegram message reference. If persistence fails after sending, the response
 is 503 with `status:unknown`; the durable pending attempt still blocks resending.
 
-A unique quotation reference blocks subsequent attempts, including another saved
-version and known failed sends. This delivery policy is stricter than Xinjie's
-standalone known-failure retry support. There is no retry endpoint. Agree a future
-reconciliation policy before allowing retries; never delete attempt rows merely
-to resend. Pending attempts after crashes must not be automatically resumed.
+Confirmed failed delivery can be retried with fresh PM approval referencing the
+current failed `retry_of_attempt_id`; see PM_APPROVAL.md. Each retry is a new
+row linked to its predecessor. Partial initial uniqueness and unique retry links
+prevent duplicate approvals. Pending, accepted or unknown delivery blocks retries.
+Never delete attempt rows to resend. Restart does not resume uploads automatically.
 
 Enquiry detail includes safe `delivery_attempts` with state, timestamps, provider
-reference and `requires_verification` for pending/unknown. Pending means processing
+reference, `retry_of_attempt_id`, `can_retry`, and `requires_verification` for pending/unknown. Pending means processing
 or unresolved. PDF bytes are not exposed there. The inbox therefore retains the
 unconfirmed outcome after reload. Part 4 now adds [persistent activity history](ACTIVITY.md)
 in the same transactions as receipt, drafting, edits, approval and outcomes.

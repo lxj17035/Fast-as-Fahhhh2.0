@@ -78,7 +78,7 @@ Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are fu
 | Telegram document sending | Implemented with explicit PM approval and saved-preview/version validation; live verification pending |
 | Replit/RunPod deployment, video, and slides | Not prepared yet |
 
-The merged combined suite passed **373 tests**, with one PostgreSQL-only check skipped for the SQLite adapter, using isolated adapters and a disposable PostgreSQL instance. This covers automatic drafting, PM approval, saved PDF upload, duplicate protection, and activity logging with mocked providers. Live AI and Telegram verification remains pending with Member 2. Tests use fictional records, local test servers, and mocked AI responses; they do not prove live provider or messaging integration.
+The merged combined suite passed **394 tests**, with two PostgreSQL-only checks skipped for the SQLite adapter, using isolated adapters and a disposable PostgreSQL instance. This covers automatic drafting, PM approval, saved PDF upload, duplicate protection, and activity logging with mocked providers. Live AI and Telegram verification remains pending with Member 2. Tests use fictional records, local test servers, and mocked AI responses; they do not prove live provider or messaging integration.
 
 ## Key quotation rules
 
@@ -119,7 +119,7 @@ if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 
 The API listens at **http://127.0.0.1:8004**. Check **http://127.0.0.1:8004/api/health**. No frontend page is served yet.
 
-For supervised PM sending, set `ENABLE_DEMO_APPROVAL=true` and use `X-Demo-Actor: pm` with `{"expected_version": N, "approved": true}` after previewing that version. Repeated attempts return 409, including known failed sends; retry recovery is deferred.
+For supervised PM sending, set `ENABLE_DEMO_APPROVAL=true` and use `X-Demo-Actor: pm` with `{"expected_version": N, "approved": true}` after previewing that version. Confirmed failures may be retried only after fresh PM approval referencing the failed `retry_of_attempt_id`. Enquiry detail exposes `can_retry`; duplicate approvals and pending/sent/unknown outcomes return 409.
 
 Set your private `DATABASE_URL` and `TELEGRAM_WEBHOOK_SECRET` in local `.env` before starting. Both modules use this same PostgreSQL database. Add `OPENAI_API_KEY` and `OPENAI_MODEL` to enable live AI requests. With either value blank, draft creation falls back to a clearly labelled manual draft. `PORT=8004` controls the local port; an existing process environment variable takes precedence over `.env`.
 
