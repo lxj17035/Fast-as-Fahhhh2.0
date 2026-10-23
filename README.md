@@ -59,7 +59,7 @@ The initial use case is a small printing business preparing quotations for items
 
 Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are future integrations. Email notifications are a stretch goal; the review inbox is the core alert mechanism.
 
-**The backend journey is implemented and locally tested. Live verification with Member 2's credentials/test chat and the frontend remain pending; a complete live demonstration is not yet claimed.**
+**The backend journey and connected frontend are implemented and locally tested. Live verification with Member 2's credentials/test chat remains pending; a complete live demonstration is not yet claimed.**
 
 ## Current implementation status
 
@@ -72,7 +72,7 @@ Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are fu
 | Manual draft fallback | Implemented and locally tested |
 | Saved-version PDF generation and local HTTP API | Implemented, tested, and sample layouts visually reviewed |
 | Activity record | Receipt, draft, PM approval, and Telegram acceptance/rejection/uncertainty are persisted and exposed by read-only APIs |
-| Frontend inbox, editor, and PDF display | Pending |
+| Frontend inbox, editor, settings, PDF display, role controls and activity | Implemented on `feature/frontend`; locally verified against the actual API with mocked providers |
 | Telegram reception | Implemented; shares the database and application with quotations; live bot verification pending |
 | Automatic drafting | Starts after persisted receipt; preserves existing PM edits on duplicate updates |
 | Telegram document sending | Implemented with explicit PM approval and saved-preview/version validation; live verification pending |
@@ -99,7 +99,7 @@ The merged combined suite passed **423 tests**, with two PostgreSQL-only checks 
 | AI adapter | Runpod GLM-5.3 Chat Completions with server-validated JSON; optional OpenAI Responses adapter |
 | PDF generation | ReportLab |
 | Tests | pytest, unittest, and pypdf; PostgreSQL integration coverage |
-| Frontend | Pending integration |
+| Frontend | Responsive JavaScript ES modules, CSS, local PDF.js preview; no build step |
 | Messaging | Telegram reception, automatic drafting, and approved PDF sending implemented; live bot verification pending |
 | Hosting / RunPod | Replit pending; Runpod public inference verified locally |
 
@@ -117,7 +117,31 @@ if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 .\.venv\Scripts\python.exe -m backend.server
 ```
 
-The API listens at **http://127.0.0.1:8004**. Check **http://127.0.0.1:8004/api/health**. No frontend page is served yet.
+The API listens at **http://127.0.0.1:8004**. Check **http://127.0.0.1:8004/api/health**. The frontend runs separately at **http://127.0.0.1:5173**; the backend does not serve frontend files.
+
+### Start the frontend
+
+With Node.js 22.13+ and pnpm installed, run from the repository root in a second terminal:
+
+```powershell
+pnpm --dir frontend install --frozen-lockfile
+node frontend/server.mjs
+```
+
+Open **http://127.0.0.1:5173** for the enquiry inbox, quotation review/editor,
+saved PDF preview, simulated PM approval, delivery history, and settings. It calls
+the existing API directly using its current CORS configuration. Backend code is
+unchanged. See [frontend setup](frontend/README.md) for a safe, isolated review
+fixture without real provider credentials and [the frontend handoff](docs/FRONTEND.md)
+for route and behavior details.
+
+Frontend verification: **14 frontend checks and 7 real-API integration checks
+passed**, with injected mocked AI/Telegram providers. Desktop/mobile layouts and
+the saved PDF were visually checked. The existing backend suite passed **274
+tests, 2 skipped** in the local SQLite-adapter run; PostgreSQL-only cases were not
+rerun. Live provider verification remains separate.
+
+### Backend approval configuration
 
 For supervised PM sending, set `ENABLE_DEMO_APPROVAL=true` and use `X-Demo-Actor: pm` with `{"expected_version": N, "approved": true}` after previewing that version. Confirmed failures may be retried only after fresh PM approval referencing the failed `retry_of_attempt_id`. Enquiry detail exposes `can_retry`; duplicate approvals and pending/sent/unknown outcomes return 409.
 
@@ -171,7 +195,7 @@ We plan to compare manual and assisted preparation using the same fictional enqu
 ## Demo boundaries and next steps
 
 - Use team-created fictional business/customer records only.
-- Complete the frontend and have Member 2 verify the real receipt-to-draft-to-approved-PDF journey with private credentials and a controlled chat.
+- Review the frontend and have Member 2 verify the real receipt-to-draft-to-approved-PDF journey with private credentials and a controlled chat.
 - Configure the real credentials privately and run `python -m scripts.check_live_config`; this reports configuration only, without printing secrets or calling providers.
 - Prepare the hosted demo/Replit link, slides, and YouTube video; update the links table when ready.
 - Confirm the final project name and event submission requirements before submitting.

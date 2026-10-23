@@ -175,7 +175,10 @@ async function loadRoute(route) {
       const page = await api.enquiries(state.offset, state.limit); if (token !== loadId) return; state.items = page.items;
     }
   } catch (error) { if (token === loadId) showError(error); }
-  if (token !== loadId) return; state.loading = false; render();
+  if (token !== loadId) return;
+  state.loading = false; render();
+  document.querySelector('#main').focus({ preventScroll: true });
+  window.scrollTo(0, 0);
 }
 function setQuote(quote) { state.quote = quote; state.form = editorForm(quote); state.dirty = false; }
 function holdKey() { return 'qf-delivery-hold-' + state.quote?.id; }
@@ -256,7 +259,9 @@ const actions = {
         state.notice = { sent: 'Telegram accepted the saved PDF. This is not a read receipt.', failed: 'Telegram explicitly rejected the document. Review the cause before approving a retry.', unknown: 'Delivery is uncertain. Check the original chat. Resending is blocked.' }[result.status];
         await refreshDetail();
       } catch (error) {
-        if (error.status >= 400 && error.status < 500 && error.status !== 409) setHold(false);
+        // All 4xx responses from this handler reject before upload; persisted
+        // attempts still independently block duplicate/pending/unknown sends.
+        if (error.status >= 400 && error.status < 500) setHold(false);
         try { await refreshDetail(); } catch { /* Unavailable reconciliation keeps the hold. */ }
         throw error;
       }

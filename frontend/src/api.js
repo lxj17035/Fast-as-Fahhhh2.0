@@ -53,8 +53,14 @@ export class Api {
     let data;
     try { data = await response.json(); }
     catch { throw new ApiError('The API returned an unreadable response. Refresh before continuing.', response.status); }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new ApiError('The API returned an invalid response. Refresh before continuing.', response.status);
+    }
     // An explicit rejection is an HTTP 502 but still a persisted delivery outcome.
     if (delivery && data.attempt_id && ['sent', 'failed', 'unknown'].includes(data.status)) return data;
+    if (delivery && response.ok) {
+      throw new ApiError('Delivery could not be confirmed. Check the original chat and refresh delivery history. Do not send again.', response.status);
+    }
     if (!response.ok) {
       const { message, fields } = errorDetails(data);
       throw new ApiError(message, response.status, fields, data);

@@ -9,7 +9,9 @@ test('local server serves application assets and never repository/private files'
   try {
     assert.equal((await fetch(base)).status, 200);
     assert.match((await fetch(base + '/src/api.js')).headers.get('content-type'), /javascript/);
-    for (const path of ['/.env', '/package.json', '/tests/api.test.mjs', '/../backend/config.py', '/%2e%2e%2f.env']) {
+    assert.equal((await fetch(base + '/vendor/pdfjs/build/pdf.mjs')).status, 200);
+    assert.equal((await fetch(base + '/vendor/pdfjs/build/pdf.worker.mjs')).status, 200);
+    for (const path of ['/.env', '/package.json', '/tests/api.test.mjs', '/../backend/config.py', '/%2e%2e%2f.env', '/node_modules/pdfjs-dist/package.json', '/vendor/pdfjs/../../.env']) {
       assert.equal((await fetch(base + path)).status, 404);
     }
   } finally { await new Promise(resolve => server.close(resolve)); }

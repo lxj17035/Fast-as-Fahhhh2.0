@@ -7,6 +7,9 @@ Close with Ctrl+C to remove the temporary database.
 from contextlib import asynccontextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import os
+import sys
+from threading import Thread
 
 from sqlalchemy import create_engine
 import uvicorn
@@ -43,7 +46,9 @@ class SyntheticSender:
 
 
 def main():
-    with TemporaryDirectory(prefix="quoteflow_frontend_qa_") as directory:
+    scratch = Path(__file__).resolve().parents[2] / '.input'
+    scratch.mkdir(exist_ok=True)
+    with TemporaryDirectory(prefix="frontend-qa-", dir=scratch) as directory:
         engine = create_engine(f"sqlite:///{Path(directory) / 'qa.db'}", connect_args={"check_same_thread": False})
         settings = Settings(database_url="synthetic-injected-test-engine", telegram_webhook_secret="synthetic-qa-secret", enable_demo_approval=True)
         app = create_app(settings, engine, ai_extractor=SyntheticExtractor(), telegram_sender=SyntheticSender())
@@ -66,7 +71,14 @@ def main():
 
         app.router.lifespan_context = lifespan
         try:
-            uvicorn.run(app, host="127.0.0.1", port=8004, access_log=False)
+            server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=int(os.environ.get('FRONTEND_QA_PORT', '8004')), access_log=False))
+
+            def stop_on_command():
+                if sys.stdin.readline().strip() == 'stop':
+                    server.should_exit = True
+
+            Thread(target=stop_on_command, daemon=True).start()
+            server.run()
         finally:
             engine.dispose()
 

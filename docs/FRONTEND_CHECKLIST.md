@@ -35,6 +35,31 @@ the one frontend dependency, pinned in package.json and pnpm-lock.yaml.
 
 ## 3. Verification and handoff
 
-- [ ] Browser checks using explicitly mocked API responses; no live provider calls.
-- [ ] API integration verification where local dependencies permit.
-- [ ] Setup and limitation documentation; backend changes verified absent.
+- [x] Browser checks using actual FastAPI with explicitly mocked providers; no live provider calls.
+- [x] API integration verification using the shipped JavaScript client and isolated Python app.
+- [x] Setup and limitation documentation; backend changes verified absent.
+
+Final evidence:
+
+- `node --test frontend/tests/*.test.mjs`: **14 passed**.
+- `node frontend/tests/integration.mjs`: **7 passed**. The runner creates its own
+  temporary database, uses an ephemeral localhost port, and shuts down/cleans up.
+- `.venv/Scripts/python.exe -m pytest -q`: **274 passed, 2 skipped**, one existing
+  Starlette/httpx deprecation warning, 31.39 seconds. This run explicitly omitted
+  TEST_DATABASE_URL; no live PostgreSQL database or external providers were used.
+- Browser: real API reads and mutations; price/save and exact saved total;
+  PDF.js canvas visibly matched the saved PDF; explicit PM approval; confirmed
+  failure and linked retry; sent locking; company/client saving; literal escaped
+  customer markup; cancelled navigation preserved unsaved pricing; unknown
+  delivery locked editing/resend and stayed blocked after a full browser reload.
+- Responsive screenshots at 1440px desktop and 390px mobile using ignored QA
+  iframe harnesses. Mobile inbox shows status badges without horizontal scrolling.
+  Temporary screenshots/harnesses are under ignored `.input/frontend-review/`.
+- Improved malformed-delivery handling, unknown-outcome session guards, PDF
+  pagination, small-screen item layout and reviewable CSS formatting.
+- JavaScript syntax, whitespace and changed-file checks passed. Existing
+  `app/`, `backend/`, `tests/`, Python dependency/config files and `.env.example`
+  have no differences from `main`. No push or deployment performed.
+
+Live Telegram/AI, real PostgreSQL integration in this environment, and hosted
+deployment remain outside this verification. See FRONTEND.md for exact limits.

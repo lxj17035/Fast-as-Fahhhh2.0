@@ -40,3 +40,15 @@ test('network failure does not retry a send', async () => {
   await assert.rejects(api.send('quote', 2), /Do not send again/);
   assert.equal(count, 1);
 });
+test('ambiguous server finalization is returned as unknown for reconciliation', async () => {
+  const api = new Api('http://api', async () => Response.json({ attempt_id: 'pending-id', status: 'unknown', detail: 'Delivery outcome could not be saved' }, { status: 503 }));
+  assert.equal((await api.send('quote', 2)).status, 'unknown');
+});
+test('malformed success cannot be mistaken for a confirmed delivery', async () => {
+  for (const payload of [null, [], { status: 'sent' }, { attempt_id: 'id', status: 'unexpected' }]) {
+    let calls = 0;
+    const api = new Api('http://api', async () => { calls++; return Response.json(payload); });
+    await assert.rejects(api.send('quote', 2), error => error instanceof ApiError);
+    assert.equal(calls, 1);
+  }
+});

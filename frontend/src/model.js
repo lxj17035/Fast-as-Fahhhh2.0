@@ -54,7 +54,7 @@ export function sendBlockers({ quote, detail, role, dirty, previewVersion, busy,
     if (quote.expiryDate < today) reasons.push('The quotation has expired.');
     const attempts = (detail?.delivery_attempts || []).filter(attempt => sameId(attempt.quotation_id, quote.id));
     if (attempts.some(attempt => attempt.status !== 'failed')) reasons.push('Delivery is pending, sent, or uncertain. Resending is blocked.');
-    if (attempts.length && !attempts.some(attempt => attempt.can_retry)) reasons.push('No failed attempt is available for a new approval.');
+    else if (attempts.length && !attempts.some(attempt => attempt.can_retry)) reasons.push('No failed attempt is available for a new approval.');
   }
   return [...new Set(reasons)];
 }
