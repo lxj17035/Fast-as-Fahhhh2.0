@@ -45,6 +45,8 @@ Small sales teams often receive customer enquiries in messages, copy details int
 
 Our proposed product connects the enquiry with business/client information, drafts the quotation content, and puts it in a review workflow. A PM checks the requirements, enters prices, previews the PDF, and approves sending. The intended result is less copying and document preparation, consistent quotation details, and a visible record of what needs review and what was sent.
 
+For a code-level explanation with Mermaid architecture and workflow diagrams, read [how the code works](docs/CODE_WALKTHROUGH.md).
+
 The initial use case is a small printing business preparing quotations for items such as event T-shirts. The same workflow could serve repair shops and other service businesses by changing business settings and item descriptions.
 
 ## Intended workflow

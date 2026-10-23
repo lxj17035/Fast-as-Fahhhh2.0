@@ -63,3 +63,17 @@ Final evidence:
 
 Live Telegram/AI, real PostgreSQL integration in this environment, and hosted
 deployment remain outside this verification. See FRONTEND.md for exact limits.
+
+## 4. Code walkthrough and Mermaid topology
+
+- [x] Added `docs/CODE_WALKTHROUGH.md` explaining the combined frontend/backend,
+  startup, Telegram receipt, AI/manual drafting, forms/state, quotation rules,
+  versioned PDFs, approved delivery/retry, storage, and activity.
+- [x] Added nine Mermaid architecture, flow, sequence, state, and storage diagrams.
+- [x] Linked the walkthrough from README.
+
+Verification: all nine diagrams parsed successfully with Mermaid 12.2.0 using a
+temporary DOM environment. Markdown fences are balanced and every local guide
+link resolves. Validation packages/scripts remain under ignored `.input/docs-check/`;
+no application dependencies changed. `git diff --check` passed. This section is
+documentation only, so application tests were not rerun.
