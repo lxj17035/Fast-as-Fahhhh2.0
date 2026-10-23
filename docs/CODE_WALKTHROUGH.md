@@ -742,3 +742,4 @@ Further references:
 - [Current PM approval and retry contract](PM_APPROVAL.md)
 - [PostgreSQL setup and storage](POSTGRESQL.md)
 - [Controlled live Telegram verification](LIVE_TEST.md)
+- [Ubuntu server deployment with Docker](DOCKER_UBUNTU.md)

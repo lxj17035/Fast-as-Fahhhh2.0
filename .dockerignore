@@ -1,0 +1,24 @@
+# Allow only the files needed by the two Docker builds.
+**
+!Dockerfile
+!pyproject.toml
+!requirements.txt
+!README.md
+!LICENSE
+!app/
+!app/**/*.py
+!backend/
+!backend/**/*.py
+!scripts/
+!scripts/**/*.py
+!frontend/
+!frontend/Dockerfile
+!frontend/package.json
+!frontend/pnpm-lock.yaml
+!frontend/index.html
+!frontend/src/
+!frontend/src/*.js
+!frontend/src/*.css
+!deploy/
+!deploy/nginx.conf
+!deploy/frontend-config.js

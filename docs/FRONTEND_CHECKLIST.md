@@ -108,3 +108,31 @@ screenshots and harnesses are under ignored `.input/usability-review/`.
 JavaScript syntax and whitespace checks passed. Backend code is unchanged;
 no live provider calls, runtime database writes, push, or deployment were performed
 for this usability update. The walkthrough and frontend handoff reflect the UI.
+
+## 6. Docker packaging and Ubuntu handoff
+
+- [x] Add Python and frontend/Nginx Dockerfiles without changing Python source.
+- [x] Use the existing localhost-bound API through a shared Nginx network namespace.
+- [x] Add Compose PostgreSQL persistence, health checks, bounded logs, and private host access.
+- [x] Exclude local secrets, virtual environments, QA fixtures, and databases from image build contexts.
+- [x] Document Ubuntu installation, server `.env`, build/start, SSH access, backups, updates, and Telegram ingress limits.
+
+Verification: official **Docker Compose 5.6.1** accepted the configuration using
+synthetic placeholder values. Checked loopback-only published web access, no
+published database/API ports, the db service URL, and database readiness.
+Official **Nginx 1.30.6 for Windows** accepted the config with only test paths and
+listen address adjusted. A temporary listener passed **9 HTTP checks** for assets,
+same-origin config, actual local API health forwarding, PDF worker MIME type, and
+blocked private paths. It was stopped afterward. This does not establish Linux
+image execution or the Docker shared network namespace at runtime.
+
+**22 frontend tests and 7 isolated API checks passed** with mocked providers.
+Python package wheel creation passed. The guide's Bash syntax, Mermaid topology,
+relative links, Markdown fences, and whitespace checks passed. Validation tools
+and fixtures are under ignored `.input/docker-check/` and `.input/docs-check/`.
+The existing Python source and dependency declarations have no changes.
+
+Docker Engine is unavailable on this Windows host. Image builds, Compose startup,
+PostgreSQL container persistence/restarts, server SSH, and live providers were
+**not run**. The Ubuntu guide provides the deployment-time verification commands.
+No server deployment, real messages, or Git push was performed.

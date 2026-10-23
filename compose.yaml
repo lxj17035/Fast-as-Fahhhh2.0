@@ -1,0 +1,77 @@
+name: quoteflow
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: quoteflow
+      POSTGRES_USER: quoteflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the server .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quoteflow -d quoteflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    logging: *logging
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    # Preserve backend.server's 127.0.0.1 binding without publishing an API port.
+    network_mode: "service:web"
+    depends_on:
+      db:
+        condition: service_healthy
+      web:
+        condition: service_started
+        restart: true
+    environment:
+      DATABASE_URL: postgresql+psycopg://quoteflow:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the server .env}@db:5432/quoteflow
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:?Set TELEGRAM_WEBHOOK_SECRET in the server .env}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      ENABLE_DEMO_APPROVAL: ${ENABLE_DEMO_APPROVAL:-false}
+      AI_PROVIDER: ${AI_PROVIDER:-manual}
+      RUNPOD_API_KEY: ${RUNPOD_API_KEY:-}
+      RUNPOD_API_BASE_URL: ${RUNPOD_API_BASE_URL:-https://api.runpod.ai/v2/b1dd8hy2hqo1nb/openai/v1}
+      RUNPOD_MODEL: ${RUNPOD_MODEL:-glm-5.3}
+      RUNPOD_MAX_TOKENS: ${RUNPOD_MAX_TOKENS:-1024}
+      RUNPOD_DAILY_REQUEST_LIMIT: ${RUNPOD_DAILY_REQUEST_LIMIT:-100}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      PORT: "8004"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8004/api/health', timeout=5).close()"]
+      interval: 10s
+      timeout: 6s
+      retries: 12
+      start_period: 30s
+    stop_grace_period: 45s
+    logging: *logging
+
+volumes:
+  postgres_data:
