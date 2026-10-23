@@ -203,6 +203,9 @@ available evidence and should be checked against the deployed revision.
 
 ## 8. Register the Telegram webhook
 
+Project Telegram bot: [@yu_xin_bot](https://t.me/yu_xin_bot), as identified by the team.
+This is the public bot username, not its private API token.
+
 Run in the configured Replit Shell. This changes the bot's webhook destination;
 use the intended team bot. It does not send a message or discard pending updates.
 

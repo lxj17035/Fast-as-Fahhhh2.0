@@ -87,6 +87,8 @@ before approval becomes available. Reuse the backend's version and send guards.
 
 ## Telegram conversations and customer follow-up
 
+Project Telegram bot: [@yu_xin_bot](https://t.me/yu_xin_bot), as identified by the team.
+
 ### Commands and enquiry routing
 
 | Incoming content | Proposed behavior |
