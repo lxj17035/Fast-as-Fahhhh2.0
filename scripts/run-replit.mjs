@@ -3,7 +3,7 @@ import { delimiter, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const pythonLibs = resolve(root, '.pythonlibs');
+const pythonLibs = resolve(root, process.env.PIP_TARGET || '.pythonlibs');
 if (!process.env.DEMO_ACCESS_USERNAME || !process.env.DEMO_ACCESS_PASSWORD) {
   throw new Error('Set DEMO_ACCESS_USERNAME and DEMO_ACCESS_PASSWORD before starting QuoteFlow.');
 }

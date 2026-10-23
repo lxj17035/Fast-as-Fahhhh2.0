@@ -121,9 +121,16 @@ in Replit Secrets before running; AI and Telegram sending still depend on their
 respective existing secrets. This setup does not register a Telegram webhook
 or send messages.
 
-The deployment build installs `requirements.txt` and the frontend dependencies
-from `frontend/pnpm-lock.yaml`. The single Run command also supervises both
-processes and stops the other if either one exits.
+`requirements.txt` lists only the runtime dependencies, with the exact constraints
+from `pyproject.toml`'s `project.dependencies`; keep these lists synchronized.
+The application itself runs from the repository rather than being pip-installed.
+`PIP_USER=false` and `PIP_TARGET=.pythonlibs` direct pip into a writable project
+directory. `PIP_TARGET` is configured in `.replit` and as a shared environment
+variable inherited by production; the deployment build also passes
+`--target .pythonlibs` explicitly. The backend adds the resolved target to
+`PYTHONPATH`. The build installs locked frontend dependencies from
+`frontend/pnpm-lock.yaml`. The single Run command supervises both processes and
+stops the other if either one exits.
 
 ## How to run the backend
 
