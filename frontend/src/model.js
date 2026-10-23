@@ -1,9 +1,14 @@
 export const VALIDITIES = { '7d': '7 days', '14d': '14 days', '1m': '1 month', '2m': '2 months', '3m': '3 months' };
 export const STATUS = {
-  needs_review: ['Needs review', 'amber'], draft: ['Draft', 'amber'],
-  sent: ['Sent', 'green'], failed: ['Failed', 'red'], send_failed: ['Send failed', 'red'],
-  unknown: ['Check delivery', 'amber'], send_uncertain: ['Check delivery', 'amber'], sending: ['Sending', 'blue'], pending: ['Pending', 'blue'],
+  needs_review: ['To review', 'amber'], draft: ['Draft', 'amber'],
+  sent: ['Sent', 'green'], failed: ['Not sent', 'red'], send_failed: ['Not sent', 'red'],
+  unknown: ['Check Telegram', 'amber'], send_uncertain: ['Check Telegram', 'amber'], sending: ['Sending', 'blue'], pending: ['Sending', 'blue'],
 };
+export function matchesInboxFilter(item, filter) {
+  if (filter === 'all') return true;
+  if (filter === 'attention') return ['failed', 'unknown'].includes(item.status);
+  return item.status === filter;
+}
 export function escapeHTML(value) {
   return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 }

@@ -2354,3 +2354,57 @@ small metadata remains visually secondary. */
     font-size:9px
   }
 }
+/* Simpler inbox and settings: fewer decisions, readable working text. */
+.simple-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.stat-button { text-align: left; color: var(--ink); }
+.stat-button:hover, .stat-button[aria-pressed="true"] { border-color: #afc9bb; background: #f9fcf8; }
+.stat-hint { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #60796a; }
+.stat-hint .icon { width: 14px; height: 14px; }
+.inbox-help { display: flex; align-items: center; gap: 8px; color: #657c6d; font-size: 12px; margin: 22px 0 0; }
+.inbox-help .icon { width: 16px; height: 16px; }
+.arrival-help { max-width: 430px; margin: 22px auto 0; font-size: 12px; text-align: left; }
+.arrival-help summary { cursor: pointer; color: var(--green); text-align: center; padding: 8px; }
+.arrival-help p { margin-top: 12px; }
+.enquiries-table th:first-child { width: 44%; }
+.enquiries-table th:nth-child(2) { width: 13%; }
+.enquiries-table th:nth-child(3) { width: 15%; }
+.enquiries-table th:nth-child(4) { width: 17%; }
+.enquiries-table th:last-child { width: 11%; }
+.row-arrow { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--green); }
+.settings-aside { display: grid; gap: 18px; align-content: start; }
+.settings-explainer { padding: 26px; }
+.settings-explainer h2 { margin-top: 20px; line-height: 1.4; }
+.settings-explainer p { color: #677c70; font-size: 13px; }
+.settings-explainer .review-clear { margin: 20px 0 0; font-size: 12px; }
+.client-drawer > summary, .demo-options > summary { cursor: pointer; padding: 22px 24px; font-size: 14px; font-weight: 600; }
+.drawer-content { padding: 0 24px 24px; }
+.drawer-content > p { font-size: 12px; color: #687e70; }
+.client-lookup { display: flex; align-items: end; gap: 10px; margin: 20px 0; }
+.client-lookup .field { margin: 0; flex: 1; }
+.demo-options { grid-column: 1 / -1; }
+.page-heading p:not(.eyebrow), .panel-heading p { font-size: 13px; color: #6b7d72; }
+.field > span { font-size: 12px; color: #47614e; }
+.field input, .field textarea, .field select { font-size: 14px; padding: 12px; }
+.enquiry-link strong { font-size: 14px; }
+.enquiry-link small, .received-date, .source-tag, .tab { font-size: 12px; }
+.btn { font-size: 12px; min-height: 42px; }
+.stat-top { font-size: 13px; }
+.stat-number { font-size: 32px; }
+.search input { font-size: 12px; }
+.badge { font-size: 11px; }
+@media (max-width: 950px) { .simple-stats { gap: 10px; } .stat-card { padding: 15px; } }
+@media (max-width: 700px) {
+  .simple-stats { grid-template-columns: 1fr 1fr 1fr; }
+  .stat-button { padding: 12px; }
+  .stat-top { font-size: 11px; }
+  .stat-top > span:first-child { max-width: none; }
+  .stat-icon, .stat-hint { display: none; }
+  .stat-number { margin: 12px 0 0; font-size: 27px; }
+  .enquiries-table td:first-child { padding-right: 65px; }
+  .row-arrow { font-size: 11px; gap: 3px; }
+  .row-arrow .icon { width: 12px; }
+  .enquiry-link strong { font-size: 13px; }
+  .table-toolbar .tab { font-size: 11px; padding: 8px; }
+  .drawer-content { padding-inline: 18px; }
+  .client-lookup { flex-wrap: wrap; }
+}

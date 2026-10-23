@@ -77,3 +77,24 @@ temporary DOM environment. Markdown fences are balanced and every local guide
 link resolves. Validation packages/scripts remain under ignored `.input/docs-check/`;
 no application dependencies changed. `git diff --check` passed. This section is
 documentation only, so application tests were not rerun.
+
+## 5. Simpler everyday use
+
+### A. Inbox and settings
+
+- [x] Replace dashboard clutter with three actionable inbox counts and four filters.
+- [x] Distinguish Not sent from Check Telegram, while grouping both under Needs checking.
+- [x] Give the empty inbox a clear first step and expandable connection help.
+- [x] Keep business settings prominent; move client references and demo/connection controls into disclosures.
+- [x] Increase working text/input sizes and use plain labels.
+
+Verification: **16 frontend tests passed**; JavaScript syntax and whitespace checks
+passed. Browser checked the running project's empty inbox and business settings;
+no runtime records were changed. Backend code is unchanged.
+
+### B. Guided quotation review
+
+- [ ] Show Details -> Preview -> Send and a single next-step explanation.
+- [ ] Add Save & preview without weakening version or explicit approval checks.
+- [ ] Keep delivery diagnostics and long activity histories out of the primary flow.
+- [ ] Verify edit/save/preview, sent/failed/unknown, mobile, and unsaved-edit behavior.
