@@ -1,0 +1,22 @@
+# Use together with compose.yaml. Configure the hostname in Cloudflare's dashboard.
+services:
+  web:
+    volumes:
+      - ./deploy/nginx-webhook.conf:/etc/nginx/conf.d/telegram.conf:ro
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Set the private CLOUDFLARE_TUNNEL_TOKEN in the server .env}
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

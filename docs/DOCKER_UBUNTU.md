@@ -1,12 +1,16 @@
 # Run QuoteFlow on Ubuntu with Docker
 
+**For your domain `hackathon.nailstore.online` behind Cloudflare Tunnel, use
+[the Cloudflare deployment guide](CLOUDFLARE_UBUNTU.md).** It reuses the Docker
+setup below and adds a tunnel container, HTTPS routing, and a staff access gate.
+
 This deploys the existing Python backend, frontend, and PostgreSQL on an Ubuntu
 server. No Python application code is changed. Use a fresh Ubuntu 24.04 LTS or
 26.04 LTS server, a sudo-capable SSH account, and access to this Git repository.
 Python, Node, pnpm, PostgreSQL, and Laragon do not need installing on that server;
 the images supply the application runtimes and database.
 
-The supplied setup is a **private, supervised demo**. Access it through SSH.
+The base Compose setup below is a **private, supervised demo**. Access it through SSH.
 The existing Sales/PM selector is simulated and is not a login. Following the
 repository's `AGENTS.md`, neither the dashboard nor the database is published to
 the internet. No domain name or HTTPS certificate is needed for SSH access.
@@ -91,7 +95,8 @@ requires at least Compose 2.17).
 ## 2. Get your reviewed branch onto the server
 
 Review the changes and push `feature/frontend` from your own computer first.
-These files are committed locally; Codex has not pushed them.
+The deployment files are on `origin/feature/frontend`; later updates should be
+reviewed and committed before pulling them onto the server.
 
 Then run on Ubuntu:
 
@@ -210,7 +215,9 @@ not configure a public ingress, register a webhook, or send a test message.
 
 A public staff dashboard needs an approved access-control design first. The
 repository explicitly excludes production identity from this MVP, so this guide
-does not expose the simulated PM role selector at a public IP/domain.
+keeps the base configuration private. The optional
+[Cloudflare guide](CLOUDFLARE_UBUNTU.md) places a Cloudflare Access email allowlist
+in front of the existing supervised demo without changing application roles.
 
 ## 7. Updates, restarts, storage, and backups
 

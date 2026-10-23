@@ -136,3 +136,25 @@ Docker Engine is unavailable on this Windows host. Image builds, Compose startup
 PostgreSQL container persistence/restarts, server SSH, and live providers were
 **not run**. The Ubuntu guide provides the deployment-time verification commands.
 No server deployment, real messages, or Git push was performed.
+
+## 7. Cloudflare Tunnel domain handoff
+
+- [x] Push `feature/frontend` to `origin` at the user's explicit request.
+- [x] Add an optional `compose.cloudflare.yaml` connector with a private server token.
+- [x] Document `hackathon.nailstore.online` -> HTTP `web:8080` and Cloudflare Access with a team email allowlist.
+- [x] Add an optional, separate webhook hostname -> `web:8081`, serving only POST `/api/webhooks/telegram`.
+- [x] Explain Ubuntu startup, Cloudflare zone/tunnel/routing, HTTPS, endpoint checks and maintenance.
+
+Verification: official Compose 5.6.1 accepted the merged configuration using a
+synthetic token. Checked four services, readiness dependencies, namespace sharing,
+the webhook config mount and absence of additional published ports. Nginx 1.30.6
+accepted both listeners with test ports/paths and an isolated mocked-provider
+backend. **8 HTTP checks passed**: five private paths blocked, GET webhook
+blocked, missing-secret POST rejected with 401, and staff API health forwarded.
+The temporary listeners/backend were stopped; user development servers were left
+running. **22 frontend tests passed**. Guide Bash syntax, Mermaid, local links,
+Markdown fences and whitespace checks passed. Python source is unchanged.
+
+Cloudflare dashboard/DNS/Access/HTTPS and Docker runtime have not been configured
+or tested here. No tunnel token or live webhook was used. The new guide records
+these limits and the server-side checks needed before a live demo.

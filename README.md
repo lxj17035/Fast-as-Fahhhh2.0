@@ -110,6 +110,7 @@ The merged combined suite passed **423 tests**, with two PostgreSQL-only checks 
 For an Ubuntu server using Docker, follow the [Docker + Ubuntu setup guide](docs/DOCKER_UBUNTU.md).
 It includes frontend/API/PostgreSQL containers, private SSH access, persistence,
 updates, and backup commands. The existing backend code remains unchanged.
+For `hackathon.nailstore.online`, use the [Cloudflare Tunnel hosting guide](docs/CLOUDFLARE_UBUNTU.md).
 
 Use PowerShell from the repository root, with Python 3.12 or newer and an accessible PostgreSQL database.
 

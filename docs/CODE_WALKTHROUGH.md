@@ -743,3 +743,4 @@ Further references:
 - [PostgreSQL setup and storage](POSTGRESQL.md)
 - [Controlled live Telegram verification](LIVE_TEST.md)
 - [Ubuntu server deployment with Docker](DOCKER_UBUNTU.md)
+- [Cloudflare Tunnel hosting on hackathon.nailstore.online](CLOUDFLARE_UBUNTU.md)
