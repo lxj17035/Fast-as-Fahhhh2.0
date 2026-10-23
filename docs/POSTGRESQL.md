@@ -22,7 +22,9 @@ The shared database must already exist. Startup creates missing prototype tables
 
 - `telegram_updates`: original message content and provider identifiers.
 - `enquiries`: normalized inbox records linked to receipts.
-- `quotation_records`: PostgreSQL JSONB records for business settings, clients, quotation snapshots, cached PDFs, draft activity, and per-enquiry client context.
+- `quotation_records`: PostgreSQL JSONB records for business settings, clients, quotation snapshots, cached PDFs, older compatibility records, and per-enquiry client context.
+- `send_attempts`: the integrated durable approval and delivery reservation.
+- `activities`: canonical transactional receipt, draft, edit, approval and delivery history.
 
 Quotation drafting reads the existing Telegram enquiry ID directly. Unknown senders receive distinct empty contact records for PM review; no customer identity is guessed. Source chat IDs and original messages are preserved. `/api/enquiries` keeps Sweeway's paginated snake_case API contract; quotation payloads remain camelCase as documented in XINJIE_HANDOFF.md.
 
@@ -37,3 +39,5 @@ For real PostgreSQL coverage, set TEST_DATABASE_URL in the test process to a dis
 Runtime quotation writes use a transaction-scoped advisory lock for this small prototype. This preserves check-version-then-write behavior across application instances; it is deliberately simple and can be refined for higher throughput later.
 
 References: [SQLAlchemy PostgreSQL/Psycopg](https://docs.sqlalchemy.org/en/20/dialects/postgresql.html), [PostgreSQL transaction/advisory locking](https://www.postgresql.org/docs/18/explicit-locking.html).
+
+The merged runtime reuses quotation_records; it does not write a second xinjie_records table. Historical JSON activity remains stored but is not fabricated into canonical history. Existing prototype schemas are not automatically altered by create_all.

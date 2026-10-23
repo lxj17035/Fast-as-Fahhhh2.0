@@ -1,36 +1,47 @@
 # PM approval and Telegram PDF sending
 
+This is the canonical API after merging Sweeway's integration. The previous body
+fields `version`, `previewedVersion`, `actor`, `role`, and `retry` are superseded
+for the public send endpoint. Do not use the isolated compatibility SendService
+contract in the frontend.
+
 ## Read, price, preview, approve
 
-1. Receive a team-created fictional enquiry via the Telegram webhook; drafting starts automatically after receipt.
-2. Read its draft with `GET /api/enquiries/:id/quotation`. While drafting is still in progress this may return 404; retry or use the existing draft endpoint after a failed attempt.
-3. PATCH the quotation with its current version, manual prices, and reviewed client/items. Resolve or dismiss missingInformation.
-4. Display `GET /api/quotations/:id/pdf?version=N` to the PM. The saved PDF is cached for that version. Edits require a new preview.
-5. POST `/api/quotations/:id/send` after the PM explicitly approves:
+1. Receive a fictional Telegram enquiry. Drafting starts automatically after durable receipt.
+2. Read `GET /api/enquiries/:id/quotation`; 404 means drafting has not completed. The explicit draft endpoint can retry.
+3. PATCH the quotation with its current `version`, reviewed client details/items and manual prices. Resolve `missingInformation`.
+4. Display `GET /api/quotations/:id/pdf?version=N`. Changes require a new preview.
+5. With private `TELEGRAM_BOT_TOKEN` and `ENABLE_DEMO_APPROVAL=true` configured, POST `/api/quotations/:id/send`:
 
-```json
-{
-  "version": 2,
-  "previewedVersion": 2,
-  "actor": "Fictional PM",
-  "role": "pm",
-  "approved": true
-}
+```http
+X-Demo-Actor: pm
+Content-Type: application/json
 ```
 
-Actor and role are labelled demo identities, not production authentication. The server requires the PM role, approval=true, the latest version, a cached preview, complete prices/details, and an unexpired quotation. It derives the recipient from the original Telegram enquiry. Request/AI recipient overrides are rejected.
+```json
+{"expected_version": 2, "approved": true}
+```
 
-TELEGRAM_BOT_TOKEN must be configured privately before starting the app. Missing/invalid token configuration returns 503 before approval is consumed. The PDF is uploaded through Telegram sendDocument as multipart data; the exact saved bytes are used. No message is sent automatically by drafting.
+`X-Demo-Actor` is simulated identity for a supervised demo. Sales is blocked.
+The server validates the current saved version, cached PDF, required client/items,
+prices, missing information and dates. The recipient comes only from the stored
+Telegram chat. The send request cannot override recipients or upload PDF URLs.
 
-## Outcomes and repeat clicks
+## Outcomes
 
-- 200, status sent: Telegram accepted the document; providerReference is its message ID. readConfirmed is always false.
-- 202, status sending: an existing attempt is still in progress. Repeated clicks return the same attempt instead of another upload.
-- 502, status send_failed: Telegram explicitly rejected the upload. Fix the cause, then submit a new PM approval with `retry: true` for a known failure. No automatic network retry occurs.
-- 202, status send_uncertain: timeout, ambiguous response, or provider 5xx. Check the original chat; the API blocks blind resend.
-- Repeating an already accepted request returns its persisted result without another upload, including after application restart.
-- If saving a result fails after an upload, the pending reservation remains locked and the API returns 503. Check the chat before any operational recovery; no exactly-once delivery guarantee is claimed.
+- 200 `sent`: Telegram accepted the document; not proof of customer reading.
+- 502 `failed`: explicit Telegram rejection.
+- 202 `unknown`: ambiguous response or timeout; check the original chat.
+- 409: a previous attempt exists, or the version/preview is stale. Repeated clicks never upload again.
+- 503: approval disabled, missing token, storage/preparation failure, or result could not be persisted.
 
-The enquiry inbox reflects sent/failed/unknown outcomes. Send attempts persist in PostgreSQL alongside immutable quotation/PDF snapshots. Read the chronological activity log at GET /api/enquiries/:id/activity or GET /api/quotations/:id/activity. Receipt, draft, approval, and Telegram result events persist in PostgreSQL. Retried requests do not overwrite or duplicate existing events. Approval is recorded atomically before upload; result/attempt/inbox changes and the result event are committed together.
+Responses after an attempt include `attempt_id` and `status`. Read the provider
+message reference, attempt state and chronological activity from
+`GET /api/enquiries/:id`; activity-only endpoints return the same history under `items`.
 
-Reference: [Telegram Bot API sendDocument](https://core.telegram.org/bots/api#senddocument).
+The merged MVP allows one send attempt per quotation, including failed attempts.
+A retry/recovery interface for known failures is deferred. Never delete attempts
+or force a resend after an unknown outcome. Pending attempts remain visible and
+locked if finalization fails. Approval, attempt and outcome logs are transactional.
+
+See [delivery details](DELIVERY.md) for validation, response codes and boundaries.

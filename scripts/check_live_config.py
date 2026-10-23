@@ -17,6 +17,7 @@ def configuration_status(values):
         database_ready = False
     checks = {
         "DATABASE_URL": database_ready,
+        "ENABLE_DEMO_APPROVAL": values.get("ENABLE_DEMO_APPROVAL", "").lower() == "true",
         "TELEGRAM_BOT_TOKEN": TelegramDocumentSender(values.get("TELEGRAM_BOT_TOKEN")).configured,
         "TELEGRAM_WEBHOOK_SECRET": bool(re.fullmatch(r"[A-Za-z0-9_-]{1,256}", values.get("TELEGRAM_WEBHOOK_SECRET", ""))),
         "OPENAI_API_KEY": bool(values.get("OPENAI_API_KEY", "").strip()),

@@ -14,17 +14,28 @@ from starlette.concurrency import run_in_threadpool
 from app.config import Settings
 from backend.config import load_env
 from backend.errors import AppError
+from backend.drafting import OpenAIExtractor
+from backend.store import Store as BootstrapStore
 from backend.server import Application, ALLOWED_ORIGINS
-from backend.store import Store
-from app.quotations import router as quotation_router
+from app.xinjie_store import Store
+from app.quotations import router as supplemental_router
 from app.automatic_drafting import AutomaticDrafting
 from app.database import backfill_enquiries, metadata
+from app.delivery import router as delivery_router
 from app.enquiries import router as enquiries_router
 from app.telegram import router
+from app.quotation_contract import QuotationProvider
+from app.telegram_client import TelegramSender
+from app.xinjie_adapter import XinjieQuotationProvider
+from app.quotation_routes import router as quotation_router
 
 
 def create_app(
-    settings: Settings | None = None, engine: Engine | None = None
+    settings: Settings | None = None,
+    engine: Engine | None = None,
+    quotation_provider: QuotationProvider | None = None,
+    telegram_sender: TelegramSender | None = None,
+    ai_extractor: object | None = None,
 ) -> FastAPI:
     if settings is None:
         load_env(Path(__file__).resolve().parent.parent / ".env")
@@ -43,9 +54,10 @@ def create_app(
             try:
                 await run_in_threadpool(metadata.create_all, engine)
                 await run_in_threadpool(backfill_enquiries, engine)
-                store = await run_in_threadpool(lambda: Store(engine=engine))
+                await run_in_threadpool(lambda: BootstrapStore(engine=engine))
+                store = Store(engine)
                 application.state.quotation_app = await run_in_threadpool(
-                    lambda: Application(store, telegram_token=settings.telegram_bot_token))
+                    lambda: Application(store, extractor=ai_extractor or OpenAIExtractor(), telegram_token=settings.telegram_bot_token))
                 application.state.automatic_drafting = AutomaticDrafting(engine, application.state.quotation_app)
             except SQLAlchemyError:
                 raise RuntimeError("Database initialization failed") from None
@@ -57,7 +69,7 @@ def create_app(
     application = FastAPI(title="QuoteFlow (working title)", lifespan=lifespan)
     application.add_middleware(CORSMiddleware, allow_origins=sorted(ALLOWED_ORIGINS),
                                allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
-                               allow_headers=["Content-Type"], expose_headers=["X-Quotation-Version"])
+                               allow_headers=["Content-Type", "X-Demo-Actor"], expose_headers=["X-Quotation-Version"])
 
     @application.exception_handler(AppError)
     async def quotation_error(request, error):
@@ -68,7 +80,22 @@ def create_app(
         return JSONResponse({"error": "Storage unavailable; no successful action is implied", "fields": {}}, status_code=503)
     application.state.settings = settings
     application.state.engine = engine
+    application.state.ai_extractor = ai_extractor
+    application.state.quotation_provider = (
+        quotation_provider
+        if quotation_provider is not None
+        else XinjieQuotationProvider()
+    )
+    application.state.telegram_sender = (
+        telegram_sender
+        if telegram_sender is not None
+        else TelegramSender(settings.telegram_bot_token)
+        if settings.telegram_bot_token
+        else None
+    )
     application.include_router(router)
     application.include_router(enquiries_router)
+    application.include_router(delivery_router)
     application.include_router(quotation_router)
+    application.include_router(supplemental_router)
     return application

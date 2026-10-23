@@ -61,8 +61,9 @@ commit. One bot per database is assumed; multiple bots need a composite key.
 Part 2 now saves a linked enquiry in the same transaction as each new receipt,
 preserving IDs and recording source as `telegram`. Startup backfills old receipts
 without replacing existing enquiries. Each text message creates a separate enquiry;
-new messages do not overwrite existing enquiries. Activity logging and teammate
-modules remain unimplemented.
+new messages do not overwrite existing enquiries. Receipt and enquiry activity
+is committed atomically; drafting starts after commit. See PM_APPROVAL.md for
+the merged saved-PDF approval/send contract.
 
 ## Tests and live setup
 
@@ -91,7 +92,7 @@ Production follow-up includes trusted identity, API access controls, retention,
 per-business isolation, rate limits, and privacy review. This supervised prototype
 does not claim live Telegram verification or completion of the whole journey.
 
-## Part 1 verification — 23 October 2026
+## Historical Part 1 verification — 23 October 2026
 
 - Python 3.14.7; PostgreSQL 18.6 in an isolated local test cluster.
 - `pytest -q --basetemp=.pytest_tmp_final` with `TEST_DATABASE_URL` configured:
@@ -103,4 +104,5 @@ does not claim live Telegram verification or completion of the whole journey.
 - One dependency deprecation warning: Starlette plans to replace HTTPX in its
   test client. Current tests pass; revisit the test adapter on dependency updates.
 - No live Telegram request or bot registration was performed. The test server was
-  stopped afterward. Enquiry conversion and later modules remain unimplemented.
+  stopped afterward. Those historical results predate enquiry/delivery integration;
+see MERGE_REVIEW.md for the current combined result.

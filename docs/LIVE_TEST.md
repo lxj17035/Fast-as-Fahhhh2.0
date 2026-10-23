@@ -4,7 +4,7 @@ This is the only remaining item in DELIVERY_CHECKLIST.md. Local mocked tests do 
 
 ## Private setup
 
-Replace the blank entries in your ignored .env with your own DATABASE_URL, TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, OPENAI_API_KEY, OPENAI_MODEL, and LIVE_TEST_CHAT_ID. Keep .env.example blank. LIVE_TEST_CHAT_ID must identify a team-controlled chat that is permitted to receive one fictional test quotation; never use a customer conversation.
+Replace the blank entries in your ignored .env with your own DATABASE_URL, TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, OPENAI_API_KEY, OPENAI_MODEL, and LIVE_TEST_CHAT_ID. Keep secret fields in .env.example blank. Set ENABLE_DEMO_APPROVAL=true only for the supervised test. LIVE_TEST_CHAT_ID must identify a team-controlled chat that is permitted to receive one fictional test quotation; never use a customer conversation.
 
 Run:
 
@@ -25,7 +25,7 @@ The report prints only boolean checks, not actual values. Exit 1 means missing/i
 7. Retrieve and review GET /api/quotations/:id/pdf?version=N. Confirm the PDF matches the saved values.
 8. Only after review, approve with the body shown in PM_APPROVAL.md. The backend routes the saved PDF to the original stored chat; it does not accept a recipient override. Submit only for the known team test enquiry.
 9. Confirm the PDF actually appears in that test chat. Check GET /api/quotations/:id/activity for receipt, draft, PM approval, and Telegram acceptance with a provider reference. Acceptance is not a read receipt.
-10. Repeat the same send request once and verify it returns the same attempt/reference without another Telegram PDF. If any outcome is uncertain, check the chat and stop; do not force a blind resend.
+10. Repeat the same send request once and verify it returns 409 without another Telegram PDF; inspect the persisted original attempt/reference in enquiry detail. If any outcome is uncertain, check the chat and stop; do not force a blind resend.
 
 ## Record the result
 

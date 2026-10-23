@@ -12,6 +12,7 @@ class Settings:
     database_url: str = field(repr=False)
     telegram_webhook_secret: str = field(repr=False)
     telegram_bot_token: str | None = field(default=None, repr=False)
+    enable_demo_approval: bool = False
 
     def __post_init__(self) -> None:
         if not self.database_url:
@@ -28,7 +29,11 @@ class Settings:
             database_url=os.environ.get("DATABASE_URL", ""),
             telegram_webhook_secret=os.environ.get("TELEGRAM_WEBHOOK_SECRET", ""),
             telegram_bot_token=os.environ.get("TELEGRAM_BOT_TOKEN") or None,
+            enable_demo_approval=(
+                os.environ.get("ENABLE_DEMO_APPROVAL", "").lower() == "true"
+            ),
         )
         return cls(database_url=postgres_url(settings.database_url).render_as_string(hide_password=False),
                    telegram_webhook_secret=settings.telegram_webhook_secret,
-                   telegram_bot_token=settings.telegram_bot_token)
+                   telegram_bot_token=settings.telegram_bot_token,
+                   enable_demo_approval=settings.enable_demo_approval)

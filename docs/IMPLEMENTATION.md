@@ -1,6 +1,10 @@
 # Lean implementation and demo checklist
 
-This document records the shared target contract. Xinjie's backend is now implemented; see [the handoff](XINJIE_HANDOFF.md) for actual routes, setup, and integration boundaries, and [his checklist](XINJIE_CHECKLIST.md) for test evidence. The shared full-journey acceptance items below remain unverified until frontend and live channel integration.
+This document records the shared target contract. Implemented backend behavior
+and actual test evidence are documented in [Telegram reception](TELEGRAM.md),
+[enquiries](ENQUIRIES.md), [approved delivery](DELIVERY.md), and
+[activity history](ACTIVITY.md). The complete frontend/live journey below remains
+subject to final integration verification; unchecked items are not evidence of completion.
 
 ## Keep the architecture small
 

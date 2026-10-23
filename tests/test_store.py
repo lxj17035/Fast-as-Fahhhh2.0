@@ -81,7 +81,10 @@ def test_sent_snapshot_and_pdf_persist_in_shared_database(engine):
 def test_postgres_two_store_instances_cannot_approve_twice(engine):
     if engine.dialect.name != "postgresql":
         pytest.skip("Cross-instance serialization uses PostgreSQL advisory locks")
-    stores = [Store(engine=engine), Store(engine=engine)]
+    # Separate engine identities avoid sharing the in-process lock, so this
+    # exercises PostgreSQL advisory locking rather than only Python serialization.
+    stores = [Store(engine=engine), Store(engine=engine.execution_options())]
+    assert stores[0].lock is not stores[1].lock
     services = [QuotationService(store, SettingsService(store)) for store in stores]
     quote = services[0].create("fictional-race", issue_date="2026-10-23")
     quote = services[0].update(quote["id"], {"version": 1, "items": [

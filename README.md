@@ -2,6 +2,7 @@
 
 > An assisted quotation workflow for small businesses that turns customer enquiries into editable drafts while keeping a PM in control of pricing and sending.
 
+
 Updated 23 October 2026 against the supplied Domain 2 challenge brief.
 
 **QuoteFlow** is a proposed name for the team's next discussion; it is not final. Other options are EnquiryFlow, QuoteBridge, and ReplyReady.
@@ -77,7 +78,7 @@ Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are fu
 | Telegram document sending | Implemented with explicit PM approval and saved-preview/version validation; live verification pending |
 | Replit/RunPod deployment, video, and slides | Not prepared yet |
 
-The combined suite passed **245 tests**, with one PostgreSQL-only check skipped for the SQLite adapter, using isolated adapters and a disposable PostgreSQL instance. This covers automatic drafting, PM approval, saved PDF upload, duplicate protection, and activity logging with mocked providers. Live AI and Telegram verification remains pending with Member 2. Tests use fictional records, local test servers, and mocked AI responses; they do not prove live provider or messaging integration.
+The merged combined suite passed **373 tests**, with one PostgreSQL-only check skipped for the SQLite adapter, using isolated adapters and a disposable PostgreSQL instance. This covers automatic drafting, PM approval, saved PDF upload, duplicate protection, and activity logging with mocked providers. Live AI and Telegram verification remains pending with Member 2. Tests use fictional records, local test servers, and mocked AI responses; they do not prove live provider or messaging integration.
 
 ## Key quotation rules
 
@@ -118,9 +119,11 @@ if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 
 The API listens at **http://127.0.0.1:8004**. Check **http://127.0.0.1:8004/api/health**. No frontend page is served yet.
 
+For supervised PM sending, set `ENABLE_DEMO_APPROVAL=true` and use `X-Demo-Actor: pm` with `{"expected_version": N, "approved": true}` after previewing that version. Repeated attempts return 409, including known failed sends; retry recovery is deferred.
+
 Set your private `DATABASE_URL` and `TELEGRAM_WEBHOOK_SECRET` in local `.env` before starting. Both modules use this same PostgreSQL database. Add `OPENAI_API_KEY` and `OPENAI_MODEL` to enable live AI requests. With either value blank, draft creation falls back to a clearly labelled manual draft. `PORT=8004` controls the local port; an existing process environment variable takes precedence over `.env`.
 
-Secrets belong only in `.env`, which is ignored by Git. `.env.example` contains placeholders. Keep this backend local: simulated roles and the standard-library server are for the supervised prototype.
+Secrets belong only in `.env`, which is ignored by Git. `.env.example` contains placeholders. Keep this backend local: simulated roles are for the supervised prototype. FastAPI/Uvicorn runs the combined backend.
 
 ### Try the implemented flow without AI credentials
 

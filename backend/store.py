@@ -3,7 +3,8 @@ import json
 import os
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from threading import RLock
+from threading import RLock, Lock
+from weakref import WeakKeyDictionary
 
 from sqlalchemy import Column, DateTime, JSON, MetaData, String, Table, create_engine, select, text
 from sqlalchemy.dialects.postgresql import JSONB, insert as pg_insert
@@ -26,17 +27,28 @@ records = Table(
 # including absent-row creation and check-version-then-update operations.
 # PostgreSQL releases it automatically at transaction commit/rollback.
 WRITE_LOCK = 7081942026
+_engine_locks = WeakKeyDictionary()
+_locks_guard = Lock()
+
+def engine_lock(engine):
+    with _locks_guard:
+        if engine not in _engine_locks:
+            _engine_locks[engine] = RLock()
+        return _engine_locks[engine]
 
 
 class Store:
-    def __init__(self, database_url=None, *, engine=None):
+    def __init__(self, database_url=None, *, engine=None, connection=None, initialize=True):
         self.lock = RLock()
-        self.connection = None
+        self.connection = connection
         self.owns_engine = engine is None
         self.engine = engine if engine is not None else create_engine(
             postgres_url(database_url if database_url is not None else os.environ.get("DATABASE_URL", "")),
             pool_pre_ping=True,
         )
+        self.lock = engine_lock(self.engine)
+        if not initialize:
+            return
         with self.engine.begin() as connection:
             if self.engine.dialect.name == "postgresql":
                 connection.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": WRITE_LOCK})

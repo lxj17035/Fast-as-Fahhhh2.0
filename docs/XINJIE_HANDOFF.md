@@ -1,3 +1,5 @@
+> Merged integration: use [PM_APPROVAL.md](PM_APPROVAL.md) for the current send body/header and [MERGE_REVIEW.md](MERGE_REVIEW.md) for verification.
+
 # Xinjie's backend handoff
 
 ## Implemented scope
@@ -64,7 +66,7 @@ Send JSON with `Content-Type: application/json` for POST/PATCH, including `{}` w
 | `GET /api/quotations/:id` | Saved quotation and version |
 | `PATCH /api/quotations/:id` | Current version plus allowed client/items/issueDate/validity/notes/missingInformation changes |
 | `GET /api/quotations/:id/pdf?version=2` | PDF bytes; header `X-Quotation-Version: 2`; use expected version to reject stale preview requests |
-| `POST /api/quotations/:id/send` | Explicit PM approval of current saved preview; original-chat-only delivery and guarded retry; see PM_APPROVAL.md |
+| `POST /api/quotations/:id/send` | Explicit PM approval of current saved preview; original-chat-only delivery and duplicate protection; see PM_APPROVAL.md |
 
 PDF rendering caches bytes per saved quotation version. Save changes, refresh the PDF preview using the returned version, then approve that version. Do not include derived fields (`total`, `lineTotal`, expiry, status, company, currency) in PATCH. The API rejects unknown fields.
 
@@ -86,17 +88,17 @@ Example quotation edit:
 
 Result: version 2, total `500.00`, expiry `2026-11-23`. Draft edits allow unknown fields to remain blank, but send validation blocks unresolved required information. Resolve or explicitly dismiss `missingInformation` during PM review. Prices allow two decimal places; quantities allow three; line amounts round half-up to two decimals and totals sum rounded line amounts. Demo currency amounts assume two decimal places.
 
-Errors return `{ "error": "message", "fields": {} }`. Invalid data -> 422 (field errors included when checking readiness); malformed JSON -> 400; unsupported content type -> 415; missing records -> 404; stale/locked version -> 409; non-PM send validation -> 403. Failed AI processing returns a saved manual draft, not a fabricated AI success. Unexpected server errors return a generic 500.
+FastAPI quotation errors return `{ "detail": { "message": "Quotation request rejected", "fields": {} } }`; validation/delivery errors may have a string or list under `detail`. Invalid data -> 422 (field errors included when checking readiness); malformed JSON -> 400; unsupported content type -> 415; missing records -> 404; stale/locked version -> 409; non-PM send validation -> 403. Failed AI processing returns a saved manual draft, not a fabricated AI success. Unexpected server errors return a generic 500.
 
 ## Integrated delivery boundary
 
 Telegram receipt and enquiry rows remain normalized in the shared database. Receipt now schedules automatic drafting after commit. Repeated receipts return existing drafts without overwriting PM edits; failed background work preserves the enquiry for manual retry or repeated receipt.
 
-Use GET /api/enquiries/:id/quotation to retrieve the automatically generated draft. Unknown senders get distinct empty client records. Review/pricing remains manual. Display the saved PDF version, then use the explicit PM send payload documented in PM_APPROVAL.md. SendService reserves one attempt, uploads the cached bytes to the stored original chat, and persists the result/inbox status and activity together. Do not bypass it with low-level helpers.
+Use GET /api/enquiries/:id/quotation to retrieve the automatically generated draft. Unknown senders get distinct empty client records. Review/pricing remains manual. Display the saved PDF version, then use the explicit PM send payload documented in PM_APPROVAL.md. The integrated delivery handler reserves one attempt, uploads the cached bytes to the stored original chat, and persists the result/inbox status and activity together. Do not bypass it with low-level helpers.
 
-GET /api/enquiries/:id/activity and GET /api/quotations/:id/activity expose chronological receipt/draft/approval/provider-result events. Provider acceptance is not proof of reading. Known failures require explicit retry approval; uncertain outcomes block blind resend.
+GET /api/enquiries/:id/activity and GET /api/quotations/:id/activity expose chronological receipt/draft/approval/provider-result events. Provider acceptance is not proof of reading. All previous attempts block resending, including known failures; unknown outcomes require checking the chat.
 
-Sent/sending/uncertain quotations remain locked. A known failed quotation can be edited or explicitly retried. Local mocked checks do not complete live AI/Telegram verification; Member 2 follows LIVE_TEST.md after filling private configuration.
+Sent/sending/uncertain quotations remain locked. A known failed quotation can be edited, but the merged delivery endpoint does not permit a second attempt. Local mocked checks do not complete live AI/Telegram verification; Member 2 follows LIVE_TEST.md after filling private configuration.
 
 ## Review commits
 

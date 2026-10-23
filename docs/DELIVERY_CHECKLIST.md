@@ -1,3 +1,5 @@
+> Final merged SQLite/PostgreSQL verification: **373 passed, 1 skipped** (the PostgreSQL case of the skipped SQLite check passed). After the Sweeway merge, use MERGE_REVIEW.md for current evidence and PM_APPROVAL.md for the send contract. Historical results below refer to earlier commits. The integrated API permits one attempt per quotation; retry is deferred.
+
 # Remaining backend delivery work
 
 Completed items are removed from this active list and recorded below.
@@ -17,7 +19,7 @@ Completed items are removed from this active list and recorded below.
 ### Merge
 
 - No MERGE_HEAD or unmerged entries exist in this checkout.
-- The earlier merge is already committed as `8aa59b9` (Merge branch main into feat/xinjie); no extra merge commit is necessary.
+- The earlier merge is already committed as `8aa59b9` (Merge branch main into feat/xinjie); the newer Sweeway delivery/activity commits are incorporated by the merge recorded in MERGE_REVIEW.md.
 
 ## Live configuration
 

@@ -33,3 +33,11 @@ def test_no_default_webhook_secret(monkeypatch):
     monkeypatch.delenv("TELEGRAM_WEBHOOK_SECRET", raising=False)
     with pytest.raises(ValueError):
         Settings.from_env()
+
+
+@pytest.mark.parametrize("enabled", ["true", "false"])
+def test_demo_approval_flag_survives_database_normalization(monkeypatch, enabled):
+    monkeypatch.setenv("DATABASE_URL", "postgres://fictional:password@localhost/test")
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", "synthetic-secret")
+    monkeypatch.setenv("ENABLE_DEMO_APPROVAL", enabled)
+    assert Settings.from_env().enable_demo_approval is (enabled == "true")
