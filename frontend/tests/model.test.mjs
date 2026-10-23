@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { quotePatch, editorForm, sendBlockers, escapeHTML, businessDate } from '../src/model.js';
+import { quotePatch, editorForm, sendBlockers, escapeHTML, businessDate, deliveryHoldResolved } from '../src/model.js';
 
 const quote = { id: 'abcd', status: 'draft', version: 2, client: { name: 'Example', address: '' }, issueDate: '2026-10-23', expiryDate: '2026-11-23', validity: '1m', notes: '', missingInformation: [], items: [{ description: 'Shirts', quantity: '20', unitPrice: '25.00', lineTotal: '500.00' }], total: '500.00' };
 const ready = { quote, detail: { source: 'telegram', telegram_chat_id: '-100123', delivery_attempts: [] }, role: 'pm', previewVersion: 2, today: '2026-10-23' };
@@ -33,4 +33,10 @@ test('unresolved facts, blank prices, expired and future quotations block approv
 test('customer markup is escaped and Kuala Lumpur date crosses UTC midnight correctly', () => {
   assert.equal(escapeHTML('<script>"&'), '&lt;script&gt;&quot;&amp;');
   assert.equal(businessDate(new Date('2026-10-22T17:00:00Z')), '2026-10-23');
+});
+test('an old failed attempt cannot clear a newer ambiguous retry hold', () => {
+  const old = { attempt_id: 'old', status: 'failed' };
+  assert.equal(deliveryHoldResolved(['old'], [old]), false);
+  assert.equal(deliveryHoldResolved(['old'], [old, { attempt_id: 'new', status: 'unknown' }]), false);
+  assert.equal(deliveryHoldResolved(['old'], [old, { attempt_id: 'new', status: 'failed' }]), true);
 });

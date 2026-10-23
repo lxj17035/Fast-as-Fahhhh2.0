@@ -4,7 +4,7 @@ import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.wasm': 'application/wasm' };
 
 export function createStaticServer() {
   return createServer(async (req, res) => {
@@ -14,9 +14,10 @@ export function createStaticServer() {
         return;
       }
       const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
-      const file = resolve(root, `.${pathname === '/' ? '/index.html' : pathname}`);
+      const vendor = pathname.match(/^\/vendor\/pdfjs\/(build\/pdf(?:\.worker)?\.mjs|cmaps\/[\w-]+\.bcmap|standard_fonts\/[\w.-]+|wasm\/[\w.-]+)$/);
+      const file = vendor ? resolve(root, 'node_modules/pdfjs-dist', vendor[1]) : resolve(root, `.${pathname === '/' ? '/index.html' : pathname}`);
       const relative = file.slice(root.length + 1).replaceAll(sep, '/');
-      if (!file.startsWith(root + sep) || !(
+      if (!file.startsWith(root + sep) || !(vendor ||
         relative === 'index.html' || relative === 'config.js' ||
         /^src\/[a-z-]+\.(js|css)$/.test(relative)
       )) {
@@ -25,7 +26,7 @@ export function createStaticServer() {
       }
       const content = await readFile(file);
       res.writeHead(200, {
-        'Content-Type': `${types[extname(file)] || 'application/octet-stream'}; charset=utf-8`,
+        'Content-Type': types[extname(file)] || 'application/octet-stream',
         'Cache-Control': 'no-store',
         'X-Content-Type-Options': 'nosniff',
         'Referrer-Policy': 'no-referrer',

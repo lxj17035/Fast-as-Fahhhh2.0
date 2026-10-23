@@ -9,6 +9,10 @@ export function escapeHTML(value) {
 }
 export const sameId = (a, b) => String(a).replaceAll('-', '').toLowerCase() === String(b).replaceAll('-', '').toLowerCase();
 export const editable = quote => quote && ['draft', 'send_failed'].includes(quote.status);
+export function deliveryHoldResolved(baseline, attempts) {
+  // Old failures cannot resolve a newer request whose response was lost.
+  return attempts.some(attempt => !baseline.includes(attempt.attempt_id) && ['failed', 'sent'].includes(attempt.status));
+}
 export function businessDate(now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }
