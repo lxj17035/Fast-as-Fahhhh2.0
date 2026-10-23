@@ -1,5 +1,4 @@
 import json
-import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -188,7 +187,7 @@ def main():
         application = create_app()
     except Exception:
         raise SystemExit("Startup configuration failed. Check DATABASE_URL and TELEGRAM_WEBHOOK_SECRET in local .env; private values are not logged.") from None
-    uvicorn.run(application, host="127.0.0.1", port=int(os.environ.get("PORT", "8004")))
+    uvicorn.run(application, host="127.0.0.1", port=8004)
 
 
 if __name__ == "__main__":
