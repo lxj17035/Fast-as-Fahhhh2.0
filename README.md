@@ -112,10 +112,13 @@ one public web entry on `0.0.0.0:$PORT` (default `8080`). The web entry serves
 the existing frontend and local PDF.js files, and proxies `/api/*` to the
 private API without retries. The frontend uses same-origin API requests.
 
-The staff UI and API require HTTP Basic authentication from the
-`DEMO_ACCESS_USERNAME` and `DEMO_ACCESS_PASSWORD` Replit Secrets. The Telegram
-webhook POST is exempt from Basic authentication and continues to require the
-existing `TELEGRAM_WEBHOOK_SECRET`. `/healthz` is public and returns only a
+The UI and API open without a browser login for the organisers' synthetic demo
+preview. `DEMO_ACCESS_USERNAME` and `DEMO_ACCESS_PASSWORD` are no longer required
+or used. An application login page is deferred until after successful initial
+screening. Anyone with the demo URL can use the simulated roles; use fictional
+data and team-controlled test chats. Explicit PM approval is still required for
+sending. The Telegram webhook continues to require the existing
+`TELEGRAM_WEBHOOK_SECRET`. `/healthz` is public and returns only a
 generic health status. Configure the existing `DATABASE_URL` and webhook secret
 in Replit Secrets before running; AI and Telegram sending still depend on their
 respective existing secrets. This setup does not register a Telegram webhook
@@ -165,12 +168,11 @@ install from the repository root:
 pnpm --dir frontend install --frozen-lockfile
 ```
 
-The web entry requires `DEMO_ACCESS_USERNAME` and `DEMO_ACCESS_PASSWORD` in the
-environment, listens on `0.0.0.0:$PORT` (default `8080`), serves the enquiry
+The web entry listens on `0.0.0.0:$PORT` (default `8080`), serves the enquiry
 inbox/editor/PDF preview/settings and local PDF.js files, and proxies `/api/*`
-to `127.0.0.1:8004`. All pages and APIs require HTTP Basic authentication except
-the Telegram webhook POST, which retains its secret validation, and the generic
-public `/healthz` endpoint. See [frontend setup](frontend/README.md) for a
+to `127.0.0.1:8004`. Pages and APIs are available without login for demo preview;
+the Telegram webhook POST retains its secret validation. See
+[frontend setup](frontend/README.md) for a
 safe, isolated review fixture and [the frontend handoff](docs/FRONTEND.md) for
 route and behavior details.
 

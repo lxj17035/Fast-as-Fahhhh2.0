@@ -4,9 +4,6 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pythonLibs = resolve(root, process.env.PIP_TARGET || '.pythonlibs');
-if (!process.env.DEMO_ACCESS_USERNAME || !process.env.DEMO_ACCESS_PASSWORD) {
-  throw new Error('Set DEMO_ACCESS_USERNAME and DEMO_ACCESS_PASSWORD before starting QuoteFlow.');
-}
 
 const python = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 const services = [
@@ -21,7 +18,7 @@ const services = [
     },
   },
   {
-    name: 'Authenticated web entry',
+    name: 'Demo preview web entry',
     command: process.execPath,
     args: ['frontend/server.mjs'],
     env: { ...process.env, PORT: process.env.PORT || '8080' },

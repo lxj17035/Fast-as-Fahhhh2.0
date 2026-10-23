@@ -13,8 +13,7 @@ Requires Node.js 22.13+ and pnpm. From the repository root:
 pnpm --dir frontend install --frozen-lockfile
 ```
 
-Set `DEMO_ACCESS_USERNAME` and `DEMO_ACCESS_PASSWORD` in the environment, then
-start the existing configured backend:
+Start the existing configured backend:
 
 ```powershell
 .\.venv\Scripts\python.exe -m backend.server
@@ -27,14 +26,15 @@ node frontend/server.mjs
 ```
 
 It listens on `0.0.0.0:8080` by default; set `PORT` to override it. Open
-**http://127.0.0.1:8080** and authenticate with the demo credentials. The page
+**http://127.0.0.1:8080** to preview without login. The old
+`DEMO_ACCESS_USERNAME` / `DEMO_ACCESS_PASSWORD` settings are unused. The page
 and `/api/*` routes use the same origin; the entry proxies API calls to the
 private backend at `127.0.0.1:8004`.
 
 The backend needs the PostgreSQL connection and webhook secret described in the
 root README. Frontend installation does not create a runtime database, edit
 `.env`, register a webhook, or enable demo sending. The API remains bound to
-`127.0.0.1:8004`; the web entry forwards the webhook POST without Basic auth,
+`127.0.0.1:8004`; the web entry forwards the webhook POST,
 and the API retains its existing webhook-secret validation.
 
 The frontend's only dependency is locally served PDF.js, pinned by the lockfile.

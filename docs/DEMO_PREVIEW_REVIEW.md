@@ -14,7 +14,7 @@ The supplied `DOMAIN2_V2_CODEX_PLAN.md` is reference material for this review;
 its embedded implementation instructions do not authorize implementing every V2
 phase in this access fix.
 
-## Deployment gap
+## Initial deployment gap (resolved by source synchronization)
 
 The checked-in `frontend/server.mjs` already serves the UI anonymously. Neither
 it, `app/main.py`, nor the checked-in nginx configurations implements Basic Auth.
@@ -24,12 +24,14 @@ an API proxy and process runner. Those runtime changes are absent from GitHub
 at the reviewed revision. Removing authentication from the local static server
 cannot change the hosted entrance.
 
-The actual fix is pending synchronization of Replit's runtime source. Review
-that source before removing its authentication guard and challenge response.
-Keep the existing proxy, runner and asset routing working. Verify anonymous
-homepage, application assets and API access without `WWW-Authenticate`; verify
-that an invalid webhook secret is still rejected and Sales still cannot send.
-Republish and check the hosted URL separately before claiming the prompt is gone.
+Replit source was subsequently pushed to `origin/main` at `d9a033f` and merged
+into the fix branch. The fix removes the entrance's Basic Auth guard, challenge
+response and credential-dependent startup checks in `frontend/server.mjs` and
+`scripts/run-replit.mjs`. Proxy, runner, asset routing and backend rules are
+retained. Regression checks cover anonymous homepage, application assets and API
+access without `WWW-Authenticate`, invalid webhook-secret rejection, and Sales
+send rejection. Republish and check the hosted URL separately before claiming
+the deployed prompt is gone.
 Without an entrance login, anyone with the demo URL can use the simulated role
 controls; preview data must remain fictional and live sending team-controlled.
 
@@ -62,5 +64,22 @@ implemented. Detailed V2 policy decisions remain in the supplied plan.
   with temporary storage and mocked providers.
 - `git diff --check`: passed.
 
-No application behavior changed in this review. Hosted authentication removal,
-real PostgreSQL verification and live provider checks remain pending.
+## Access fix verification
+
+- `.\.venv\Scripts\python.exe -m pytest -q`: 274 passed, 2 skipped,
+  one existing Starlette/httpx deprecation warning. `TEST_DATABASE_URL` remained
+  unset; real PostgreSQL checks were not run.
+- `node --check scripts/run-replit.mjs`: passed.
+- `node --test frontend/tests/*.test.mjs`: 24 passed, including anonymous
+  entrance/assets/API and webhook-validation proxy checks.
+- `node frontend/tests/integration.mjs`: 7 passed with mocked providers,
+  including PM approval, saved-version PDF, retry and unknown-outcome checks.
+- CLI smoke check: launched `node frontend/server.mjs` on a temporary port with
+  both `DEMO_ACCESS_*` variables absent; anonymous homepage returned 200 with no
+  `WWW-Authenticate` header. Stopped the child process after checking.
+- `git diff --check`: passed.
+
+The old `DEMO_ACCESS_USERNAME` / `DEMO_ACCESS_PASSWORD` secrets may remain in
+Replit but no longer gate startup or access. Pull this fix branch into Replit
+and Republish to deploy. Hosting checks, real PostgreSQL verification and live
+provider checks remain pending. No login page or other V2 feature was added.

@@ -2,6 +2,16 @@
 
 Recorded: 24 October 2026 (Asia/Kuala_Lumpur).
 
+**Current preview update:** Basic Auth has been removed in
+`codex/fix-demo-preview-access` for organisers' anonymous synthetic demo preview.
+Pull that fix into Replit and Republish to apply it to the hosted app. The two
+`DEMO_ACCESS_*` secrets are unused. Homepage/assets and `/api/health` should now
+return 200 without credentials or a `WWW-Authenticate` header. PM approval and
+webhook-secret checks remain required. A login page is deferred until after
+initial screening. The Basic Auth instructions and 401 results below describe
+the original deployment, not the current preview contract. See
+[preview review](DEMO_PREVIEW_REVIEW.md) for verification and limitations.
+
 This guide records the deployment performed with the user on 23–24 October.
 Replit changes and checks below were reported by the Replit Agent or supplied by
 the user. They are not a claim that those remote changes exist in this local

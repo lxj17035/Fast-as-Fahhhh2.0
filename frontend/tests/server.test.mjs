@@ -3,9 +3,7 @@ import assert from 'node:assert/strict';
 import { createServer as createHttpServer } from 'node:http';
 import { createStaticServer } from '../server.mjs';
 
-const username = 'staff-test-user';
-const password = 'staff-test-password';
-const auth = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+const auth = 'Basic ' + Buffer.from('old-demo-user:old-demo-password').toString('base64');
 
 function listen(server) {
   return new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -15,23 +13,23 @@ function close(server) {
   return new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
 }
 
-test('web entry protects the staff UI and serves local assets to authenticated staff', async () => {
-  const server = createStaticServer({ username, password });
+test('demo preview serves UI and assets anonymously without a browser login challenge', async () => {
+  const server = createStaticServer();
   await listen(server);
   const base = `http://127.0.0.1:${server.address().port}`;
   try {
-    assert.equal((await fetch(base)).status, 401);
-    assert.equal((await fetch(base, { headers: { Authorization: 'Basic invalid' } })).status, 401);
-    const home = await fetch(base, { headers: { Authorization: auth } });
+    const home = await fetch(base);
     assert.equal(home.status, 200);
+    assert.equal(home.headers.get('www-authenticate'), null);
+    assert.equal((await fetch(base, { headers: { Authorization: 'Basic invalid' } })).status, 200);
     assert.match(await home.text(), /QuoteFlow/);
-    const appAsset = await fetch(base + '/src/api.js', { headers: { Authorization: auth } });
+    const appAsset = await fetch(base + '/src/api.js');
     assert.equal(appAsset.status, 200);
     assert.match(appAsset.headers.get('content-type'), /javascript/);
-    assert.equal((await fetch(base + '/vendor/pdfjs/build/pdf.mjs', { headers: { Authorization: auth } })).status, 200);
-    assert.equal((await fetch(base + '/vendor/pdfjs/build/pdf.worker.mjs', { headers: { Authorization: auth } })).status, 200);
+    assert.equal((await fetch(base + '/vendor/pdfjs/build/pdf.mjs')).status, 200);
+    assert.equal((await fetch(base + '/vendor/pdfjs/build/pdf.worker.mjs')).status, 200);
     for (const path of ['/.env', '/package.json', '/tests/api.test.mjs', '/../backend/config.py', '/%2e%2e%2f.env', '/node_modules/pdfjs-dist/package.json', '/vendor/pdfjs/../../.env']) {
-      assert.equal((await fetch(base + path, { headers: { Authorization: auth } })).status, 404);
+      assert.equal((await fetch(base + path)).status, 404);
     }
   } finally {
     await close(server);
@@ -39,7 +37,7 @@ test('web entry protects the staff UI and serves local assets to authenticated s
 });
 
 test('healthz is public and does not disclose backend or configuration details', async () => {
-  const server = createStaticServer({ username, password });
+  const server = createStaticServer();
   await listen(server);
   const base = `http://127.0.0.1:${server.address().port}`;
   try {
@@ -51,7 +49,7 @@ test('healthz is public and does not disclose backend or configuration details',
   }
 });
 
-test('API proxy requires staff auth except Telegram webhook and forwards webhook validation inputs once', async () => {
+test('anonymous API proxy preserves webhook validation and strips stale browser credentials', async () => {
   const requests = [];
   const api = createHttpServer((req, res) => {
     const chunks = [];
@@ -74,16 +72,17 @@ test('API proxy requires staff auth except Telegram webhook and forwards webhook
     });
   });
   await listen(api);
-  const server = createStaticServer({ username, password, apiPort: api.address().port });
+  const server = createStaticServer({ apiPort: api.address().port });
   await listen(server);
   const base = `http://127.0.0.1:${server.address().port}`;
   try {
-    assert.equal((await fetch(base + '/api/health')).status, 401);
-    assert.equal((await fetch(base + '/api/health', { headers: { Authorization: auth } })).status, 200);
+    const health = await fetch(base + '/api/health');
+    assert.equal(health.status, 200);
+    assert.equal(health.headers.get('www-authenticate'), null);
 
     const invalid = await fetch(base + '/api/webhooks/telegram?source=test', {
       method: 'POST',
-      headers: { Origin: 'https://public.example', 'Content-Type': 'application/json' },
+      headers: { Origin: 'https://public.example', 'Content-Type': 'application/json', Authorization: auth },
       body: '{"update_id":1}',
     });
     assert.equal(invalid.status, 401);
