@@ -5,7 +5,9 @@
 Open **https://hackathon.nailstore.online/** from your computer and reach the
 QuoteFlow dashboard running on your Ubuntu server.
 
-This is a standalone guide. Docker is already installed. Follow the numbered
+This is a standalone guide. Docker and your Cloudflare Tunnel are already set up;
+the `hackathon.nailstore.online` hostname route still needs adding. Reuse the
+existing tunnel and its actual name. Follow the numbered
 steps in order; you do not need to install Python, Node, pnpm, PostgreSQL, or
 Laragon on Ubuntu. Docker supplies the application runtimes and database.
 
@@ -15,8 +17,8 @@ Laragon on Ubuntu. Docker supplies the application runtimes and database.
 | Branch | `feature/frontend` |
 | Server project directory | `~/apps/Fast-as-Fahhhh2.0` |
 | Website | `https://hackathon.nailstore.online/` |
-| Cloudflare tunnel name | `quoteflow-hackathon` |
-| Tunnel's origin service | **HTTP `web:8080`** |
+| Cloudflare tunnel name | Your existing tunnel's name; no new tunnel required |
+| Tunnel's origin service | HTTP on port **8080**; choose the address in step 6 |
 | Database | PostgreSQL 16 in Docker |
 
 The dashboard retains simulated Sales/PM roles. Cloudflare Access limits entry
@@ -28,7 +30,7 @@ flowchart LR
     Browser["Browser: https://hackathon.nailstore.online"] --> CF["Cloudflare HTTPS + Access login"]
     CF --> Tunnel["Cloudflare Tunnel"]
     subgraph Server["Your Ubuntu server / Docker Compose"]
-        Connector["cloudflared container"] --> Web["web:8080 / Nginx + dashboard"]
+        Connector["Your existing cloudflared connector"] --> Web["Nginx + dashboard / port 8080"]
         Web --> API["api / Python on shared localhost:8004"]
         API --> DB["db:5432 / PostgreSQL"]
         DB --> Disk["Persistent Docker volume"]
@@ -169,6 +171,7 @@ TELEGRAM_BOT_TOKEN=
 RUNPOD_API_KEY=
 OPENAI_API_KEY=
 CLOUDFLARE_TUNNEL_TOKEN=
+COMPOSE_FILE=compose.yaml
 EOF
 fi
 chmod 600 .env
@@ -185,6 +188,7 @@ DATABASE_URL=
 AI_PROVIDER=manual
 ENABLE_DEMO_APPROVAL=false
 CLOUDFLARE_TUNNEL_TOKEN=
+COMPOSE_FILE=compose.yaml
 ```
 
 The uppercase values above are explanations, not passwords to copy. To generate
@@ -203,29 +207,34 @@ What these settings mean:
 | WEB_PORT | Keep 8080 for the diagnostics commands below |
 | AI_PROVIDER | `manual` starts the dashboard without paid AI requests |
 | ENABLE_DEMO_APPROVAL | Keep false until a supervised team send test is configured |
-| CLOUDFLARE_TUNNEL_TOKEN | Fill this after creating the tunnel in step 6 |
+| CLOUDFLARE_TUNNEL_TOKEN | Needed only if this project's Compose starts the connector; an existing external connector keeps its own credentials |
+| COMPOSE_FILE | Select the files for your connector arrangement in step 6; base app only by default |
 
 Keep `.env` on the server and out of Git, chat, and screenshots. Do not copy the
 Windows Laragon DATABASE_URL: the database lives in a Docker service named `db`.
 Do not change POSTGRES_PASSWORD after the database volume has been initialized
 without also rotating the password in PostgreSQL.
 
-## 5. Configure Cloudflare and protect your dashboard
+## 5. Reuse Cloudflare and protect the new dashboard hostname
 
 **In your browser, open the Cloudflare dashboard.**
 
 ### 5.1 Check your domain
 
 Select the `nailstore.online` zone and confirm its status is **Active**. If it is
-not active, set the nameservers at the registrar to the nameservers Cloudflare
-assigns, then wait for activation. Keep existing unrelated DNS records.
+already active, leave its nameservers and existing records unchanged. If the zone
+has not been added/activated yet, complete that domain setup first. An existing
+tunnel alone does not create or activate your domain's DNS zone.
 
 You will use `hackathon.nailstore.online`. For this tunnel setup you do not need
 an A record pointing the hostname at the Ubuntu server IP.
 
-### 5.2 Create the staff Access application
+### 5.2 Reuse or add the staff Access application
 
-Complete this before publishing the hostname:
+Check **Access controls → Applications** for an existing application covering
+`hackathon.nailstore.online`. If it exists, review its hostname and team email
+allowlist and keep using it. Do not create a duplicate or remove other apps.
+If this hostname has no Access application, complete these steps before publishing it:
 
 1. Open **Zero Trust / Cloudflare One**. Complete the team/account setup if it is
    your first visit.
@@ -248,35 +257,106 @@ Cloudflare's menu wording may differ slightly. References:
 [create an Access application](https://developers.cloudflare.com/learning-paths/clientless-access/access-application/create-access-app/)
 and [email access policies](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/common-policies/).
 
-## 6. Create the Cloudflare Tunnel
+## 6. Reuse your existing tunnel and identify its connector
 
 **In the Cloudflare dashboard:**
 
 1. Open **Networking → Tunnels**. Some accounts show this under
    **Networks → Connectors → Cloudflare Tunnels** in Zero Trust.
-2. Select **Create tunnel** and choose **Cloudflared**.
-3. Enter the tunnel name **quoteflow-hackathon** and save.
-4. Select the **Docker** connector instructions.
-5. Find the long connector token after `--token` in the displayed command.
-6. Copy only that token. Do not run the separate `docker run` command displayed
-   by Cloudflare; the project's Compose file will start that container.
+2. Open the tunnel you already created. Keep its existing name and other routes.
+3. Check its connector status. If connected, reuse the running connector instead
+   of installing another copy. Do not rotate its token or delete the tunnel.
+4. The hostname route for this project will be added in step 9.
 
-**Back in your Ubuntu SSH terminal:**
+**On Ubuntu**, these read-only commands help identify how it runs:
+
+```bash
+systemctl is-active cloudflared
+sudo docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Networks}}'
+```
+
+`active` from the first command normally means a host service. A cloudflared
+image in the second command means a Docker connector. An inactive/not-found
+service is not an application failure if the connector is in Docker.
+
+Choose **one** matching case below. Port 8080 alone does not identify the case.
+
+### Case A: cloudflared already runs as a service on this Ubuntu server
+
+Keep that service and its credentials unchanged. Edit the project's `.env`:
 
 ```bash
 cd ~/apps/Fast-as-Fahhhh2.0
 nano .env
 ```
 
-Replace the blank token entry with your real private value:
+Set:
 
 ```dotenv
-CLOUDFLARE_TUNNEL_TOKEN=YOUR_PRIVATE_TOKEN_FROM_CLOUDFLARE
+COMPOSE_FILE=compose.yaml
 ```
 
-Save with **Ctrl+O**, **Enter**, then **Ctrl+X**. Paste the token only into this
-private file. A tunnel connector token is different from a Cloudflare API token.
-You do not need to install cloudflared separately on Ubuntu.
+Leave CLOUDFLARE_TUNNEL_TOKEN blank; the application does not need your existing
+connector's token. Step 7 starts three app containers. In step 9 use
+**HTTP `127.0.0.1:8080`** because cloudflared is on the same Ubuntu host.
+
+### Case B: cloudflared already runs in a different Docker container on this server
+
+Keep the existing container. Set `COMPOSE_FILE=compose.yaml` in the project's
+`.env`; no tunnel token is needed by this app. Step 7 starts three app containers.
+
+Check the connector's network mode, replacing the example container name with
+the actual name printed above:
+
+```bash
+sudo docker inspect --format '{{.HostConfig.NetworkMode}}' YOUR_EXISTING_CLOUDFLARED_CONTAINER
+```
+
+If it says `host`, use **HTTP `127.0.0.1:8080`** in step 9.
+If it uses a Docker bridge network, first complete step 7, then attach that
+specific existing connector to the app's network:
+
+```bash
+sudo docker network connect quoteflow_default YOUR_EXISTING_CLOUDFLARED_CONTAINER
+```
+
+If it is already connected, do not attach it again. Use **HTTP `web:8080`** in
+step 9. Its other networks remain attached, so existing routes can keep working.
+This network attachment survives a normal container restart. If that connector
+is later recreated, reconnect it or persist this extra external network in its
+own Compose configuration. Every connector replica serving this tunnel must be
+able to reach the same origin; do not add a second connector with different
+reachability and assume all traffic will use the right one.
+
+### Case C: use this project's Docker connector, or retain it if already running
+
+If this project's `quoteflow-cloudflared-1` connector already runs, keep it and
+its existing token; do not install another connector. Otherwise, use this case
+only when the existing tunnel still needs a connector on the server.
+Let this project's Compose manage cloudflared. In the existing
+tunnel's connector installation/Add replica instructions, select Docker and copy
+the connector token privately. Do not create another tunnel. Set these values
+in the Ubuntu project's `.env` using `nano .env`:
+
+```dotenv
+COMPOSE_FILE=compose.yaml:compose.cloudflare.yaml
+CLOUDFLARE_TUNNEL_TOKEN=YOUR_PRIVATE_EXISTING_TUNNEL_TOKEN
+```
+
+Step 7 starts four containers. Use **HTTP `web:8080`** in step 9.
+The colon separator is for Ubuntu/Linux. Do not paste a token in chat or shell
+commands. If there are active connectors on other machines, verify they can
+reach this origin too before adding a replica; use a connector with the right
+network access rather than disrupting another site's working tunnel.
+These cases describe your initial connector arrangement. Do not switch a running
+Case C deployment to A/B while leaving its old connector active unintentionally.
+
+### How the following commands select the right files
+
+Run the remaining `sudo docker compose ...` commands from the project root.
+Compose reads `COMPOSE_FILE` from `.env`, selecting either the three-service app
+or the app plus connector overlay. This saves repeating different `-f` flags.
+See [Docker's COMPOSE_FILE reference](https://docs.docker.com/compose/how-tos/environment-variables/envvars/).
 
 Cloudflare documents the Docker connector in its
 [tunnel setup guide](https://developers.cloudflare.com/tunnel/get-started/)
@@ -290,14 +370,14 @@ and the token environment variable in
 ```bash
 cd ~/apps/Fast-as-Fahhhh2.0
 
-# Validate the merged configuration without printing secret values.
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml config --quiet
+# Validate the selected configuration without printing secret values.
+sudo docker compose config --quiet
 
-# Build the app and start all four containers in the background.
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml up -d --build --wait --wait-timeout 180
+# Build and start the selected services in the background.
+sudo docker compose up -d --build --wait --wait-timeout 180
 
 # Inspect the result.
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml ps
+sudo docker compose ps
 ```
 
 The first build can take several minutes while images and packages download.
@@ -310,16 +390,18 @@ Expected containers:
 | db | Running / healthy | Persistent PostgreSQL storage |
 | web | Running / healthy | Nginx, dashboard, and PDF.js assets |
 | api | Running / healthy | Existing Python API |
-| cloudflared | Running | Connection from Docker to Cloudflare |
+| cloudflared | Running in Case C only | Cases A/B reuse the connector outside this project |
 
 If a command fails, inspect the relevant service before proceeding:
 
 ```bash
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml logs --tail=100 db
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml logs --tail=100 api
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml logs --tail=100 web
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml logs --tail=100 cloudflared
+sudo docker compose logs --tail=100 db
+sudo docker compose logs --tail=100 api
+sudo docker compose logs --tail=100 web
 ```
+
+For the tunnel, check its existing service/container's logs in Cases A/B.
+Use `sudo docker compose logs --tail=100 cloudflared` only in Case C.
 
 Review logs locally; do not share credentials or customer content. Do not run
 `docker compose config` without `--quiet` in shared logs because it expands secrets.
@@ -348,16 +430,17 @@ The empty API base is correct: the browser calls the same domain's `/api/...`,
 and Nginx forwards that to the Python API. Do not change it to localhost:8004
 or a Docker service name in the browser configuration.
 
-Now check the tunnel connector in Cloudflare. It should show **Healthy / Connected**.
+Now check your existing tunnel connector in Cloudflare. It should show **Healthy / Connected**.
 A running cloudflared container alone does not prove that its token or connection
 works; inspect its logs and the dashboard state.
 
 ## 9. Connect the subdomain to the dashboard
 
-**In Cloudflare, open the `quoteflow-hackathon` tunnel.**
+**In Cloudflare, open your existing tunnel using its actual name.**
 
 Go to **Routes / Published application routes / Public hostnames**, then add a
-published application with these exact settings:
+published application for this hostname. If this hostname route already exists,
+edit that route rather than creating another. Leave all other routes unchanged.
 
 | Field | Value to enter |
 | --- | --- |
@@ -365,25 +448,31 @@ published application with these exact settings:
 | Domain | `nailstore.online` |
 | Path | Leave blank |
 | Service type | **HTTP** |
-| Service URL | **web:8080** |
+| Service URL | **127.0.0.1:8080** for Case A or host-network Case B; **web:8080** for bridge-network Case B or Case C |
 
 If the interface has a single complete service address field, enter:
 
 ```text
-http://web:8080
+http://127.0.0.1:8080
 ```
+
+The address above is for the existing host service. For the Docker network cases
+identified in step 6, enter `http://web:8080` instead. Both use port 8080.
 
 Save the route. With a normal Cloudflare-managed DNS zone, the dashboard creates
 the tunnel's DNS record. If it reports that `hackathon` already has a conflicting
-record, review and replace only that hostname's record before saving again.
+record, inspect whether it already points to this tunnel. Keep a correct existing
+record; change only a conflicting record for this hostname before saving again.
 There is no need to create an A record pointing at your server. See
 [Cloudflare routing](https://developers.cloudflare.com/tunnel/concepts/routing/).
 
 Why this exact address matters:
 
-- `web` is the Nginx container's Compose service name.
+- `127.0.0.1` reaches the host's published localhost port from a host connector.
+- `web` is the Nginx container's service name on the app's Docker network.
 - `8080` is Nginx's port inside Docker.
-- `localhost:8080` would point at the cloudflared container itself.
+- `localhost:8080` inside a bridge-network connector would point at cloudflared
+  itself, so it is only appropriate for host/host-network connectors.
 - `https://web:8080` is incorrect because this internal listener uses HTTP.
 - The external browser URL still uses HTTPS through Cloudflare.
 
@@ -435,14 +524,15 @@ the database. The server starts with a separate database from Laragon.
 
 ## 12. Commands for normal maintenance
 
-Always run these from the repository root and keep **both `-f` arguments**.
+Always run these from the repository root. The `COMPOSE_FILE` value selected in
+step 6 determines which services Compose manages; retain it in the private `.env`.
 
 ### Check status and recent logs
 
 ```bash
 cd ~/apps/Fast-as-Fahhhh2.0
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml ps
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml logs --tail=100
+sudo docker compose ps
+sudo docker compose logs --tail=100
 ```
 
 ### Back up before updating
@@ -452,7 +542,7 @@ cd ~/apps/Fast-as-Fahhhh2.0
 umask 077
 mkdir -p output/backups
 chmod 700 output/backups
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml exec -T db pg_dump -U quoteflow -d quoteflow -Fc > "output/backups/quoteflow-$(date -u +%Y%m%dT%H%M%SZ).dump"
+sudo docker compose exec -T db pg_dump -U quoteflow -d quoteflow -Fc > "output/backups/quoteflow-$(date -u +%Y%m%dT%H%M%SZ).dump"
 ls -lh output/backups
 ```
 
@@ -466,20 +556,22 @@ switching the application; do not overwrite active records as a first experiment
 cd ~/apps/Fast-as-Fahhhh2.0
 git status --short
 git pull --ff-only origin feature/frontend
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml pull cloudflared
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml up -d --build --force-recreate --wait --wait-timeout 180
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml ps
+sudo docker compose up -d --build --force-recreate --wait --wait-timeout 180
+sudo docker compose ps
 curl --fail http://127.0.0.1:8080/api/health
 ```
 
 Recreating the complete stack keeps the API joined to Nginx's current shared
 network namespace. Avoid recreating only web in isolation.
+In Case C only, you can run `sudo docker compose pull cloudflared` before the
+rebuild to update that connector image. Cases A/B keep their existing connector's
+update process; this project does not replace or stop it.
 
 ### Stop and start without deleting the database
 
 ```bash
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml stop
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml start
+sudo docker compose stop
+sudo docker compose start
 ```
 
 Closing SSH does not stop these detached containers. Restart policies are set
@@ -490,7 +582,7 @@ may need starting again.
 ### After editing .env
 
 ```bash
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml up -d --force-recreate --wait --wait-timeout 180
+sudo docker compose up -d --force-recreate --wait --wait-timeout 180
 ```
 
 This applies new container environment values. Changing a database password in
@@ -505,12 +597,12 @@ change separately and keep backups.
 | `docker compose` not recognized | Install/update the Compose plugin in step 2 |
 | Permission denied on Docker socket | Use the `sudo docker ...` commands shown here |
 | POSTGRES_PASSWORD or webhook secret required | Review `.env` in the repository root; both values must be nonblank |
-| CLOUDFLARE_TUNNEL_TOKEN required | Complete step 6; the value must be the connector token, not an API key |
+| CLOUDFLARE_TUNNEL_TOKEN required | Case C requires the existing connector token; Cases A/B should select only `COMPOSE_FILE=compose.yaml` |
 | Database password authentication failed | Verify the original initialized volume's password; do not erase the volume to fix a config typo |
 | API unhealthy | Read `api` and `db` logs; confirm database health and webhook-secret format |
-| Local port 8080 already allocated | Check `sudo ss -ltnp 'sport = :8080'`; choose a free WEB_PORT in `.env` and adjust local curl commands. The tunnel origin stays `web:8080` |
+| Local port 8080 already allocated | Check `sudo ss -ltnp 'sport = :8080'`; choose a free WEB_PORT in `.env` and adjust curl commands. Host connectors must use that new host port; Docker-network connectors keep `web:8080` |
 | Cloudflare 1033 / tunnel disconnected | Check connector logs, token, and outbound network connectivity |
-| Cloudflare 502 | Confirm origin is **HTTP web:8080**, all containers are in this Compose project, and the origin health check passes |
+| Cloudflare 502 | Confirm HTTP plus the correct origin from step 6: host `127.0.0.1:8080`, or Docker-network `web:8080`; check origin health and connector reachability |
 | Domain does not resolve | Check zone activation, the exact hostname, and the tunnel DNS record |
 | SSL/certificate error | Check Cloudflare's edge certificate is active for the hostname |
 | No login code or access denied | Check OTP login settings and the exact email allowlist |
@@ -522,8 +614,8 @@ To collect diagnostics locally:
 
 ```bash
 cd ~/apps/Fast-as-Fahhhh2.0
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml ps
-sudo docker compose -f compose.yaml -f compose.cloudflare.yaml logs --tail=100 api web cloudflared
+sudo docker compose ps
+sudo docker compose logs --tail=100 api web
 curl --fail http://127.0.0.1:8080/api/health
 ```
 
@@ -539,14 +631,18 @@ When ready, follow [the optional Telegram hostname instructions](CLOUDFLARE_UBUN
 and [controlled live verification](LIVE_TEST.md). The existing overlay supports
 `hackathon-telegram.nailstore.online` → HTTP `web:8081`, an endpoint-only listener,
 so Telegram does not need to pass the staff's interactive login.
+That overlay example assumes the connector shares the app's Docker network.
+Do not change Cases A/B to Case C just to enable Telegram: the host-only base
+setup does not publish a webhook listener, and its ingress needs a separate,
+reviewed configuration. Dashboard hosting does not depend on that integration.
 
 ## Completion check
 
 - [ ] The Ubuntu repository is on `feature/frontend`.
-- [ ] Server `.env` is private and contains the generated database/webhook secrets and tunnel token.
-- [ ] db, web, and api are healthy; cloudflared is running and connected in Cloudflare.
+- [ ] Server `.env` is private, contains the generated database/webhook secrets, and selects the right COMPOSE_FILE; only Case C needs the tunnel token here.
+- [ ] db, web, and api are healthy; the reused cloudflared connector is connected in Cloudflare.
 - [ ] Local `/api/health` returns HTTP 200.
-- [ ] The published route is `hackathon.nailstore.online` → **HTTP web:8080**.
+- [ ] The route is `hackathon.nailstore.online` → HTTP port 8080, using the host or Docker address selected in step 6.
 - [ ] An approved user can sign in and visit the dashboard; an unapproved user is denied.
 - [ ] The dashboard shows Connected and Settings opens.
 

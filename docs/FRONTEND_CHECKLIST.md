@@ -172,3 +172,17 @@ two-file configuration referenced by the guide using synthetic placeholders.
 Whitespace checks passed. This section changes documentation only; application
 tests were not rerun. No backend code, server configuration, real secrets, DNS,
 Cloudflare account settings, or live messages were changed.
+
+## 9. Reuse the user's existing Cloudflare Tunnel
+
+- [x] Revise the standalone guide for an existing tunnel with the dashboard hostname not yet routed.
+- [x] Reuse existing zone, tunnel, Access application and credentials where configured; preserve other routes.
+- [x] Distinguish host-service, external Docker, and project Docker connectors, retaining origin port 8080.
+- [x] Use COMPOSE_FILE in the server `.env` so startup and maintenance commands select the matching services.
+
+Verification: Compose accepted both selections using synthetic placeholders:
+three app services without a connector token for external connectors, and four
+services for the project-managed connector. Bash syntax, Mermaid, relative links,
+Markdown fences and whitespace checks passed. Documentation-only change;
+application tests were not rerun. No tunnel, token, DNS record, server process,
+application source, or Cloudflare account setting was changed.

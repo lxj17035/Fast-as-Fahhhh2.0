@@ -1,5 +1,10 @@
 # Host hackathon.nailstore.online on Ubuntu with Cloudflare Tunnel
 
+**Already have a tunnel?** Use [step 6 of the standalone guide](SERVER_DEPLOYMENT_STEP_BY_STEP.md)
+to reuse it and choose the origin address for your existing connector. The setup
+below describes running the connector inside this project's Docker network;
+you do not need to recreate a working tunnel or change its unrelated routes.
+
 Your browser address will be **https://hackathon.nailstore.online/**. Docker runs
 the app on Ubuntu; a remotely managed Cloudflare Tunnel connects it to your domain.
 The existing backend remains bound to localhost inside Docker. No application
