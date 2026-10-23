@@ -10,7 +10,7 @@ expertMode = true
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["node", "scripts/run-replit.mjs"]
+run = ["bash", "-c", "PORT=5000 node scripts/run-replit.mjs"]
 build = ["bash", "-c", "python -m pip install -r requirements.txt && pnpm --dir frontend install --frozen-lockfile"]
 
 [workflows]
