@@ -77,3 +77,5 @@ def no_ambient_live_ai_keys(monkeypatch):
     """External calls must be explicitly mocked, even on a configured developer PC."""
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_MODEL", raising=False)
+    monkeypatch.delenv("AI_PROVIDER", raising=False)
+    monkeypatch.delenv("RUNPOD_API_KEY", raising=False)

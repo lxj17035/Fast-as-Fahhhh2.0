@@ -150,3 +150,18 @@ Review one section with `git show <commit>`. All implementation commits are on `
 - Combined real-PostgreSQL/mocked-provider pytest suite: 245 passed, 1 skipped, one dependency deprecation warning.
 - Configuration readiness helper: 3 tests passed; current live readiness is false because private bot/webhook/AI/test-chat values are missing.
 - Updated docs/DELIVERY_CHECKLIST.md so only real-credential live verification remains in the active list. The prior merge is already committed, and no new merge is pending.
+
+
+### Runpod GLM-5.3 integration
+
+- [x] Select Runpod, optional OpenAI, or manual mode explicitly.
+- [x] Connect event public Chat Completions endpoint; validate extracted JSON and keep prices blank.
+- [x] Keep keys private in .env; publish only blank secret fields in .env.example.
+- [x] Fix low reasoning, cap output, limit prompt size and persist a shared daily request budget.
+- [x] Preserve manual fallback on missing credentials, exhausted quota and provider errors; no automatic paid retry.
+- [x] Test automatic webhook drafts and duplicate/budget behavior with mocked providers.
+- [x] Run one authorized live synthetic probe: HTTP 200, one extracted item, prices blank; no Telegram message.
+- [x] Full SQLite/PostgreSQL regression: 423 passed, 2 SQLite-only skips; PostgreSQL cases passed.
+
+See RUNPOD.md for setup and the US$25 budget estimates. Local AI is ready; real
+Telegram reception/approved PDF sending, frontend and Replit deployment remain pending.

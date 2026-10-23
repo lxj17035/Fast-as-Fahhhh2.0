@@ -1,3 +1,5 @@
+> Current AI setup uses Runpod; one live synthetic extraction passed. See RUNPOD.md. Historical OpenAI-only configuration checks below are superseded; the real Telegram journey is still pending.
+
 > Final merged SQLite/PostgreSQL verification: **373 passed, 1 skipped** (the PostgreSQL case of the skipped SQLite check passed). After the Sweeway merge, use MERGE_REVIEW.md for current evidence and PM_APPROVAL.md for the send contract. Historical results below refer to earlier commits. Confirmed-failure retry is now supported; see DELIVERY_RETRY_CHECKLIST.md for current verification.
 
 # Remaining backend delivery work

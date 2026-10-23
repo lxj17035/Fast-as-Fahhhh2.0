@@ -11,7 +11,7 @@ The combined FastAPI application serves both modules. `python -m backend.server`
 1. Install Python 3.12+ and `python -m pip install -r requirements-dev.txt` in a virtual environment.
 2. Copy .env.example to .env only if .env does not exist.
 3. Add your own private DATABASE_URL and TELEGRAM_WEBHOOK_SECRET to .env. Keep actual passwords, keys, tokens, and connection strings out of Git and chat logs.
-4. Optionally configure OPENAI_API_KEY and OPENAI_MODEL. Leaving these blank uses a labelled manual drafting fallback.
+4. Configure AI_PROVIDER=runpod and private RUNPOD_API_KEY (or choose the OpenAI alternative explicitly). Missing credentials use a labelled manual fallback. Runpod daily request counters share quotation_records.
 5. Start `python -m backend.server`; visit `http://127.0.0.1:8004/api/health`.
 
 PostgreSQL URL schemes `postgresql://`, `postgres://`, and `postgresql+psycopg://` are normalized to the installed Psycopg driver. Encoded passwords and query options such as sslmode are preserved. Existing process environment takes precedence over .env. On Replit, supply the private connection through the environment; this change does not deploy the application.

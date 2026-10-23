@@ -33,8 +33,9 @@ requires trusted identity and a human approval flow.
 
 Authenticated receipt now schedules automatic drafting. Both automatic and explicit
 draft requests reuse one service and the existing `quotation_records` table.
-Configured OPENAI_API_KEY/OPENAI_MODEL enable the current OpenAI extractor; blank
-values yield a labelled manual fallback. RunPod support is still pending.
+AI_PROVIDER=runpod selects the configured GLM-5.3 public endpoint; optional
+AI_PROVIDER=openai uses its own credentials. Missing credentials, exhausted daily
+quota or provider errors yield a labelled manual fallback. See RUNPOD.md.
 
 Unknown Telegram senders receive distinct empty client records, rather than being
 associated with the seeded demo client. The PM reviews and fills their details.

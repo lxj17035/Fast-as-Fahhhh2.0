@@ -57,7 +57,7 @@ tables, not schema migrations or imports from already-used alternate branch stor
 
 ## Remaining work and owners
 
-- [ ] Xinjie: add RunPod Chat Completions support; current extractor still calls OpenAI Responses.
+- [x] Xinjie: Runpod Chat Completions support and a live synthetic extraction are completed after the original merge. See RUNPOD.md.
 - [ ] Sweeway: configure private bot/webhook/provider settings and verify the real team-chat journey, including receipt, AI draft, approved PDF and activity.
 - [ ] YieXian: frontend inbox/editor/settings, saved-version PDF preview, simulated role selector, approve button and activity/send states.
 - [ ] Team: configure Replit hosting/PostgreSQL and reachable HTTPS webhook; current server binds localhost for the supervised demo.

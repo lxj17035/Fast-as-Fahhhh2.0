@@ -4,7 +4,7 @@ This is the only remaining item in DELIVERY_CHECKLIST.md. Local mocked tests do 
 
 ## Private setup
 
-Replace the blank entries in your ignored .env with your own DATABASE_URL, TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, OPENAI_API_KEY, OPENAI_MODEL, and LIVE_TEST_CHAT_ID. Keep secret fields in .env.example blank. Set ENABLE_DEMO_APPROVAL=true only for the supervised test. LIVE_TEST_CHAT_ID must identify a team-controlled chat that is permitted to receive one fictional test quotation; never use a customer conversation.
+Replace the blank entries in your ignored .env with your own DATABASE_URL, TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, the selected AI provider configuration (AI_PROVIDER=runpod and RUNPOD_API_KEY), and LIVE_TEST_CHAT_ID. Keep secret fields in .env.example blank. Set ENABLE_DEMO_APPROVAL=true only for the supervised test. LIVE_TEST_CHAT_ID must identify a team-controlled chat that is permitted to receive one fictional test quotation; never use a customer conversation.
 
 Run:
 
@@ -12,7 +12,7 @@ Run:
 .\.venv\Scripts\python.exe -m scripts.check_live_config
 ```
 
-The report prints only boolean checks, not actual values. Exit 1 means missing/invalid-looking configuration. Exit 0 only confirms presence/format; it is not evidence that credentials, database access, or chat ownership work. Restart the backend after changing configuration.
+The report prints boolean checks and the public provider name, not secret values. Exit 1 means missing/invalid-looking configuration. Exit 0 only confirms presence/format; it is not evidence that credentials, database access, or chat ownership work. Restart the backend after changing configuration.
 
 ## Live run
 

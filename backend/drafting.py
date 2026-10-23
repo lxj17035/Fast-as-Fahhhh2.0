@@ -110,10 +110,25 @@ class OpenAIExtractor:
             raise ProviderError("AI returned an invalid draft; review manually") from None
 
 
+class DisabledExtractor:
+    def extract(self, message, context):
+        raise ProviderError("AI provider is disabled or invalid; review manually")
+
+
+def configured_extractor(store=None):
+    provider = os.environ.get("AI_PROVIDER", "openai").strip().lower()
+    if provider == "runpod":
+        from .runpod import RunpodExtractor
+        return RunpodExtractor(store=store)
+    if provider == "openai":
+        return OpenAIExtractor()
+    return DisabledExtractor()
+
+
 class DraftService:
     def __init__(self, store, settings, quotations, extractor=None):
         self.store, self.settings, self.quotations = store, settings, quotations
-        self.extractor = extractor or OpenAIExtractor()
+        self.extractor = extractor if extractor is not None else configured_extractor(store)
 
     def create(self, enquiry_id, *, manual=False):
         enquiry = self.store.get("enquiries", enquiry_id)

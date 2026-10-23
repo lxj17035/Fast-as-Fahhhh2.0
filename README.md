@@ -33,7 +33,7 @@ Built for the **Orbyte Smart SME Challenge: Less Busywork, Better Business (Doma
 | GitHub repository | [Fast-as-Fahhhh2.0](https://github.com/lxj17035/Fast-as-Fahhhh2.0) |
 | Replit project | Not set up yet - link pending |
 | Hosted live demo | Not deployed yet - link pending |
-| RunPod endpoint | Not set up yet - endpoint pending |
+| RunPod endpoint | [GLM-5.3 public API base](https://api.runpod.ai/v2/b1dd8hy2hqo1nb/openai/v1); local synthetic extraction verified |
 | Pitch slides | Not created yet - link pending |
 | YouTube pitching/demo video | Not recorded or uploaded yet - link pending |
 
@@ -68,7 +68,7 @@ Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are fu
 | Editable business/client settings and PostgreSQL persistence | Implemented and locally tested |
 | Quotation drafts, exact totals, configurable validity, version checks | Implemented and locally tested |
 | PM-role validation and send-state helpers | Implemented and locally tested; not a production identity system |
-| OpenAI structured extraction adapter | Implemented with mocked tests; live credentials/model verification pending |
+| AI extraction | Runpod GLM-5.3 integrated; one live synthetic extraction passed. OpenAI remains an optional mocked/tested alternative |
 | Manual draft fallback | Implemented and locally tested |
 | Saved-version PDF generation and local HTTP API | Implemented, tested, and sample layouts visually reviewed |
 | Activity record | Receipt, draft, PM approval, and Telegram acceptance/rejection/uncertainty are persisted and exposed by read-only APIs |
@@ -76,9 +76,9 @@ Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are fu
 | Telegram reception | Implemented; shares the database and application with quotations; live bot verification pending |
 | Automatic drafting | Starts after persisted receipt; preserves existing PM edits on duplicate updates |
 | Telegram document sending | Implemented with explicit PM approval and saved-preview/version validation; live verification pending |
-| Replit/RunPod deployment, video, and slides | Not prepared yet |
+| Replit deployment, video, and slides | Not prepared yet; Runpod public inference is configured |
 
-The merged combined suite passed **394 tests**, with two PostgreSQL-only checks skipped for the SQLite adapter, using isolated adapters and a disposable PostgreSQL instance. This covers automatic drafting, PM approval, saved PDF upload, duplicate protection, and activity logging with mocked providers. Live AI and Telegram verification remains pending with Member 2. Tests use fictional records, local test servers, and mocked AI responses; they do not prove live provider or messaging integration.
+The merged combined suite passed **423 tests**, with two PostgreSQL-only checks skipped for the SQLite adapter, using isolated adapters and a disposable PostgreSQL instance. This covers automatic drafting, PM approval, saved PDF upload, duplicate protection, and activity logging with mocked providers. Live AI and Telegram verification remains pending with Member 2. Tests use fictional records, local test servers, and mocked AI responses; they do not prove live provider or messaging integration.
 
 ## Key quotation rules
 
@@ -96,12 +96,12 @@ The merged combined suite passed **394 tests**, with two PostgreSQL-only checks 
 | --- | --- |
 | Backend | Python 3.12+, FastAPI, and SQLAlchemy/Psycopg |
 | Storage | Shared PostgreSQL via DATABASE_URL, locally and on Replit |
-| AI adapter | OpenAI Responses API with structured output; model configured locally |
+| AI adapter | Runpod GLM-5.3 Chat Completions with server-validated JSON; optional OpenAI Responses adapter |
 | PDF generation | ReportLab |
 | Tests | pytest, unittest, and pypdf; PostgreSQL integration coverage |
 | Frontend | Pending integration |
 | Messaging | Telegram reception, automatic drafting, and approved PDF sending implemented; live bot verification pending |
-| Hosting / RunPod | Not configured |
+| Hosting / RunPod | Replit pending; Runpod public inference verified locally |
 
 ## How to run the backend
 
@@ -121,7 +121,7 @@ The API listens at **http://127.0.0.1:8004**. Check **http://127.0.0.1:8004/api/
 
 For supervised PM sending, set `ENABLE_DEMO_APPROVAL=true` and use `X-Demo-Actor: pm` with `{"expected_version": N, "approved": true}` after previewing that version. Confirmed failures may be retried only after fresh PM approval referencing the failed `retry_of_attempt_id`. Enquiry detail exposes `can_retry`; duplicate approvals and pending/sent/unknown outcomes return 409.
 
-Set your private `DATABASE_URL` and `TELEGRAM_WEBHOOK_SECRET` in local `.env` before starting. Both modules use this same PostgreSQL database. Add `OPENAI_API_KEY` and `OPENAI_MODEL` to enable live AI requests. With either value blank, draft creation falls back to a clearly labelled manual draft. `PORT=8004` controls the local port; an existing process environment variable takes precedence over `.env`.
+Set your private `DATABASE_URL` and `TELEGRAM_WEBHOOK_SECRET` in local `.env` before starting. Both modules use this same PostgreSQL database. Set `AI_PROVIDER=runpod` and your private `RUNPOD_API_KEY` for GLM-5.3. Defaults are low reasoning, max 1024 output tokens and 100 attempted calls/day in the shared database. Missing configuration, exhausted quota or provider failure produces a labelled manual draft. The optional `AI_PROVIDER=openai` alternative uses its own `OPENAI_API_KEY` and `OPENAI_MODEL`. `PORT=8004` controls the local port; an existing process environment variable takes precedence over `.env`.
 
 Secrets belong only in `.env`, which is ignored by Git. `.env.example` contains placeholders. Keep this backend local: simulated roles are for the supervised prototype. FastAPI/Uvicorn runs the combined backend.
 
@@ -173,7 +173,7 @@ We plan to compare manual and assisted preparation using the same fictional enqu
 - Use team-created fictional business/customer records only.
 - Complete the frontend and have Member 2 verify the real receipt-to-draft-to-approved-PDF journey with private credentials and a controlled chat.
 - Configure the real credentials privately and run `python -m scripts.check_live_config`; this reports configuration only, without printing secrets or calling providers.
-- Prepare the hosted demo/Replit link, RunPod endpoint if used for the submission, slides, and YouTube video; update the links table when ready.
+- Prepare the hosted demo/Replit link, slides, and YouTube video; update the links table when ready.
 - Confirm the final project name and event submission requirements before submitting.
 - Keep production authentication, multi-tenancy, extra channels, payments, and advanced commercial rules outside this prototype.
 

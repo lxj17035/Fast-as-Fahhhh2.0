@@ -1,3 +1,5 @@
+> Runpod GLM-5.3 configuration, budget controls and one live synthetic verification are documented in [RUNPOD.md](RUNPOD.md).
+
 > Merged integration: use [PM_APPROVAL.md](PM_APPROVAL.md) for the current send body/header and [MERGE_REVIEW.md](MERGE_REVIEW.md) for verification.
 
 # Xinjie's backend handoff
@@ -24,7 +26,10 @@ The local `.env` contains user-specific configuration placeholders. Set DATABASE
 
 | Variable | Purpose |
 | --- | --- |
-| `OPENAI_API_KEY` | Private server-side provider key; blank produces manual fallback |
+| `AI_PROVIDER` | runpod (chosen), openai, or manual |
+| `RUNPOD_API_KEY` | Private Runpod inference key; blank produces manual fallback |
+| `RUNPOD_MAX_TOKENS` / `RUNPOD_DAILY_REQUEST_LIMIT` | Defaults 1024 output tokens / 100 calls per Kuala Lumpur day; shared persisted quota |
+| `OPENAI_API_KEY` | Optional alternative, used only with AI_PROVIDER=openai |
 | `OPENAI_MODEL` | Account-accessible Responses model supporting structured outputs; deliberately no assumed model |
 | `DATABASE_URL` | Required private PostgreSQL connection URL shared by Telegram and quotations; no SQLite runtime fallback |
 | `PORT` | Local API port, default 8004 |

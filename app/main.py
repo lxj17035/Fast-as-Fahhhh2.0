@@ -15,7 +15,6 @@ from app.config import Settings
 from app.migrations import upgrade_delivery_schema
 from backend.config import load_env
 from backend.errors import AppError
-from backend.drafting import OpenAIExtractor
 from backend.store import Store as BootstrapStore
 from backend.server import Application, ALLOWED_ORIGINS
 from app.xinjie_store import Store
@@ -59,7 +58,7 @@ def create_app(
                 await run_in_threadpool(lambda: BootstrapStore(engine=engine))
                 store = Store(engine)
                 application.state.quotation_app = await run_in_threadpool(
-                    lambda: Application(store, extractor=ai_extractor or OpenAIExtractor(), telegram_token=settings.telegram_bot_token))
+                    lambda: Application(store, extractor=ai_extractor, telegram_token=settings.telegram_bot_token))
                 application.state.automatic_drafting = AutomaticDrafting(engine, application.state.quotation_app)
             except SQLAlchemyError:
                 raise RuntimeError("Database initialization failed") from None
