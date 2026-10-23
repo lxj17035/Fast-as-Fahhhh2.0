@@ -158,3 +158,17 @@ Markdown fences and whitespace checks passed. Python source is unchanged.
 Cloudflare dashboard/DNS/Access/HTTPS and Docker runtime have not been configured
 or tested here. No tunnel token or live webhook was used. The new guide records
 these limits and the server-side checks needed before a live demo.
+
+## 8. Standalone server deployment instructions
+
+- [x] Add `docs/SERVER_DEPLOYMENT_STEP_BY_STEP.md` for the user's exact hosting outcome.
+- [x] Assume Docker is installed; include SSH, prerequisites, clone/update, private environment creation, Cloudflare Access/tunnel/routing, launch, and browser verification in one file.
+- [x] Include full maintenance, backup, diagnostics and troubleshooting commands, plus a Mermaid topology and expected results.
+- [x] Link the guide from README and distinguish prepared instructions from an actual remote deployment.
+
+Verification: all Bash command blocks passed `bash -n`; Mermaid topology parsed;
+relative links and Markdown fences passed. Official Compose accepted the exact
+two-file configuration referenced by the guide using synthetic placeholders.
+Whitespace checks passed. This section changes documentation only; application
+tests were not rerun. No backend code, server configuration, real secrets, DNS,
+Cloudflare account settings, or live messages were changed.

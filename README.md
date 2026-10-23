@@ -111,6 +111,7 @@ For an Ubuntu server using Docker, follow the [Docker + Ubuntu setup guide](docs
 It includes frontend/API/PostgreSQL containers, private SSH access, persistence,
 updates, and backup commands. The existing backend code remains unchanged.
 For `hackathon.nailstore.online`, use the [Cloudflare Tunnel hosting guide](docs/CLOUDFLARE_UBUNTU.md).
+If Docker is already installed, start with the [complete step-by-step server deployment instructions](docs/SERVER_DEPLOYMENT_STEP_BY_STEP.md).
 
 Use PowerShell from the repository root, with Python 3.12 or newer and an accessible PostgreSQL database.
 
