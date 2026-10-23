@@ -11,20 +11,31 @@ Requires Node.js 22.13+ and pnpm. From the repository root:
 
 ```powershell
 pnpm --dir frontend install --frozen-lockfile
-node frontend/server.mjs
 ```
 
-Open **http://127.0.0.1:5173**. No build step is needed. Keep this terminal open.
-In another terminal, start your existing configured backend:
+Set `DEMO_ACCESS_USERNAME` and `DEMO_ACCESS_PASSWORD` in the environment, then
+start the existing configured backend:
 
 ```powershell
 .\.venv\Scripts\python.exe -m backend.server
 ```
 
+In another terminal, start the public web entry:
+
+```powershell
+node frontend/server.mjs
+```
+
+It listens on `0.0.0.0:8080` by default; set `PORT` to override it. Open
+**http://127.0.0.1:8080** and authenticate with the demo credentials. The page
+and `/api/*` routes use the same origin; the entry proxies API calls to the
+private backend at `127.0.0.1:8004`.
+
 The backend needs the PostgreSQL connection and webhook secret described in the
 root README. Frontend installation does not create a runtime database, edit
-`.env`, register a webhook, or enable demo sending. The existing API remains at
-http://127.0.0.1:8004. Its existing CORS configuration allows this frontend origin.
+`.env`, register a webhook, or enable demo sending. The API remains bound to
+`127.0.0.1:8004`; the web entry forwards the webhook POST without Basic auth,
+and the API retains its existing webhook-secret validation.
 
 The frontend's only dependency is locally served PDF.js, pinned by the lockfile.
 There are no external fonts, image services, analytics, or CDN requests. If you

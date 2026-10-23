@@ -1,0 +1,1 @@
+- [Replit early installer](replit-early-installer.md) — verify automatic package installation separately; the hosting flag and a passing custom build do not prove it is skipped or correctly targeted.

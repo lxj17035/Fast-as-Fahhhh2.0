@@ -1,2 +1,2 @@
-// Public connection address only. Never put provider keys or database credentials here.
-export const API_BASE_URL = 'http://127.0.0.1:8004';
+// Empty base keeps API requests on the authenticated public web origin.
+export const API_BASE_URL = '';

@@ -40,7 +40,7 @@ export class Api {
     } catch {
       throw new ApiError(delivery
         ? 'Delivery could not be confirmed. Check the original Telegram chat and refresh the delivery history. Do not send again.'
-        : 'Cannot reach the backend. Start the Python API at ' + this.base + ' and try again.');
+      : 'Cannot reach the API. Check the server connection and try again.');
     }
     if (pdf && response.ok) {
       const blob = await response.blob();

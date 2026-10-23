@@ -105,6 +105,33 @@ The merged combined suite passed **423 tests**, with two PostgreSQL-only checks 
 | Messaging | Telegram reception, automatic drafting, and approved PDF sending implemented; live bot verification pending |
 | Hosting / RunPod | Replit pending; Runpod public inference verified locally |
 
+## Run on Replit
+
+The Replit Run command starts the existing Python API on `127.0.0.1:8004` and
+one public web entry on `0.0.0.0:$PORT` (default `8080`). The web entry serves
+the existing frontend and local PDF.js files, and proxies `/api/*` to the
+private API without retries. The frontend uses same-origin API requests.
+
+The staff UI and API require HTTP Basic authentication from the
+`DEMO_ACCESS_USERNAME` and `DEMO_ACCESS_PASSWORD` Replit Secrets. The Telegram
+webhook POST is exempt from Basic authentication and continues to require the
+existing `TELEGRAM_WEBHOOK_SECRET`. `/healthz` is public and returns only a
+generic health status. Configure the existing `DATABASE_URL` and webhook secret
+in Replit Secrets before running; AI and Telegram sending still depend on their
+respective existing secrets. This setup does not register a Telegram webhook
+or send messages.
+
+`requirements.txt` lists only the runtime dependencies, with the exact constraints
+from `pyproject.toml`'s `project.dependencies`; keep these lists synchronized.
+The application itself runs from the repository rather than being pip-installed.
+`PIP_USER=false` and `PIP_TARGET=.pythonlibs` direct pip into a writable project
+directory. `PIP_TARGET` is configured in `.replit` and as a shared environment
+variable inherited by production; the deployment build also passes
+`--target .pythonlibs` explicitly. The backend adds the resolved target to
+`PYTHONPATH`. The build installs locked frontend dependencies from
+`frontend/pnpm-lock.yaml`. The single Run command supervises both processes and
+stops the other if either one exits.
+
 ## How to run the backend
 
 For an Ubuntu server using Docker, follow the [Docker + Ubuntu setup guide](docs/DOCKER_UBUNTU.md).
@@ -124,23 +151,28 @@ if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 .\.venv\Scripts\python.exe -m backend.server
 ```
 
-The API listens at **http://127.0.0.1:8004**. Check **http://127.0.0.1:8004/api/health**. The frontend runs separately at **http://127.0.0.1:5173**; the backend does not serve frontend files.
+The API listens at **http://127.0.0.1:8004**. Check
+**http://127.0.0.1:8004/api/health**. The public web entry serves the frontend
+and proxies same-origin API calls. On Replit, use the single configured Run
+command; locally, start the API and web entry separately as described below.
 
 ### Start the frontend
 
-With Node.js 22.13+ and pnpm installed, run from the repository root in a second terminal:
+With Node.js 22.13+ and pnpm installed, run the existing locked dependency
+install from the repository root:
 
 ```powershell
 pnpm --dir frontend install --frozen-lockfile
-node frontend/server.mjs
 ```
 
-Open **http://127.0.0.1:5173** for the enquiry inbox, quotation review/editor,
-saved PDF preview, simulated PM approval, delivery history, and settings. It calls
-the existing API directly using its current CORS configuration. Backend code is
-unchanged. See [frontend setup](frontend/README.md) for a safe, isolated review
-fixture without real provider credentials and [the frontend handoff](docs/FRONTEND.md)
-for route and behavior details.
+The web entry requires `DEMO_ACCESS_USERNAME` and `DEMO_ACCESS_PASSWORD` in the
+environment, listens on `0.0.0.0:$PORT` (default `8080`), serves the enquiry
+inbox/editor/PDF preview/settings and local PDF.js files, and proxies `/api/*`
+to `127.0.0.1:8004`. All pages and APIs require HTTP Basic authentication except
+the Telegram webhook POST, which retains its secret validation, and the generic
+public `/healthz` endpoint. See [frontend setup](frontend/README.md) for a
+safe, isolated review fixture and [the frontend handoff](docs/FRONTEND.md) for
+route and behavior details.
 
 Frontend verification: **14 frontend checks and 7 real-API integration checks
 passed**, with injected mocked AI/Telegram providers. Desktop/mobile layouts and
@@ -152,7 +184,14 @@ rerun. Live provider verification remains separate.
 
 For supervised PM sending, set `ENABLE_DEMO_APPROVAL=true` and use `X-Demo-Actor: pm` with `{"expected_version": N, "approved": true}` after previewing that version. Confirmed failures may be retried only after fresh PM approval referencing the failed `retry_of_attempt_id`. Enquiry detail exposes `can_retry`; duplicate approvals and pending/sent/unknown outcomes return 409.
 
-Set your private `DATABASE_URL` and `TELEGRAM_WEBHOOK_SECRET` in local `.env` before starting. Both modules use this same PostgreSQL database. Set `AI_PROVIDER=runpod` and your private `RUNPOD_API_KEY` for GLM-5.3. Defaults are low reasoning, max 1024 output tokens and 100 attempted calls/day in the shared database. Missing configuration, exhausted quota or provider failure produces a labelled manual draft. The optional `AI_PROVIDER=openai` alternative uses its own `OPENAI_API_KEY` and `OPENAI_MODEL`. `PORT=8004` controls the local port; an existing process environment variable takes precedence over `.env`.
+Set your private `DATABASE_URL` and `TELEGRAM_WEBHOOK_SECRET` in local `.env`
+before starting. Both modules use this same PostgreSQL database. Set
+`AI_PROVIDER=runpod` and your private `RUNPOD_API_KEY` for GLM-5.3. Defaults are
+low reasoning, max 1024 output tokens and 100 attempted calls/day in the shared
+database. Missing configuration, exhausted quota or provider failure produces
+a labelled manual draft. The optional `AI_PROVIDER=openai` alternative uses its
+own `OPENAI_API_KEY` and `OPENAI_MODEL`. The API always stays bound to
+`127.0.0.1:8004`; `PORT` selects the public web-entry port.
 
 Secrets belong only in `.env`, which is ignored by Git. `.env.example` contains placeholders. Keep this backend local: simulated roles are for the supervised prototype. FastAPI/Uvicorn runs the combined backend.
 
