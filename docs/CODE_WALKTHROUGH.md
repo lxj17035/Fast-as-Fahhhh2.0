@@ -66,6 +66,7 @@ Fast-as-Fahhhh2.0/
 │   │   ├── app.js             Screens, state, navigation, and user actions
 │   │   ├── api.js             HTTP client for the existing backend endpoints
 │   │   ├── model.js           Form conversion and frontend approval checks
+│   │   ├── experience.js      Human-readable next steps and incomplete fields
 │   │   ├── pdf-viewer.js      Renders saved backend PDF bytes with PDF.js
 │   │   └── styles.css         Desktop, tablet, and mobile layouts
 │   └── tests/                 Frontend checks and isolated integration tooling
@@ -306,13 +307,35 @@ The `state` object in `app.js` keeps these concepts separate:
 quantities/prices to null and preserves explicitly entered zero prices.
 
 While `dirty` is true, the UI labels the total as the **last saved total** and
-disables PDF loading and sending. The browser does not calculate the payable
+disables direct PDF loading and sending. **Save & preview** first persists the
+edits, then fetches the PDF for the returned version. The browser does not calculate the payable
 total or expiry itself. `discardEdits()` protects navigation, and a
 `beforeunload` handler warns about closing/reloading with unsaved work.
 
 `render()` constructs the interface. Structural changes render the screen again;
 typing into the quotation uses `updateEditorIndicators()` to update warnings
 without replacing the input and moving the text cursor.
+
+### Guided everyday workflow
+
+The review screen shows **Details -> Preview -> Send**. On desktop, the original
+message and editor sit beside the PDF; mobile places them in one column.
+`experience.js` supplies plain-language guidance based on the current form,
+saved version, rendered PDF, selected role, and delivery history. Incomplete
+detail links focus the relevant field, opening its disclosure when necessary.
+This guidance never replaces the existing `sendBlockers()` or backend validation.
+
+**Save draft** allows unfinished work, including blank prices. **Save & preview**
+captures the form before disabling controls, saves if there are edits, and fetches
+the PDF for the saved version. If PDF loading fails after a successful save, the
+saved version is retained. Neither button sends anything. Sending still requires
+a PM, a successfully rendered current PDF, and a fresh confirmation checkbox.
+
+Unknown facts remain visible until explicitly reviewed. Dates and notes are
+under Optional changes; draft summaries, references, diagnostics, and activity
+expand when needed. An uncertain send shows Check Telegram and offers Refresh
+status; it cannot offer another send. A confirmed rejection shows Not sent and
+can offer a fresh approval only when the existing retry rules permit it.
 
 ### API adapter and errors
 
@@ -330,10 +353,14 @@ Malformed responses cannot be treated as confirmed success.
 The inbox loads 25 records per page. Counts, search, and status filters apply to
 the loaded page and are labelled accordingly; there is no global search/count
 endpoint. Refresh is explicit, so background polling cannot overwrite edits.
+The four filters are All, To review, Sent, and Needs checking. Needs checking
+groups failed and unknown outcomes while preserving their distinct labels.
 
 Settings updates change the business defaults. Client editing loads an existing
 client by ID because the API currently has no client-list endpoint. The client
-ID for a Telegram enquiry is shown in its quotation editor.
+ID for a Telegram enquiry is shown under More details in quotation review.
+Business profile fields are prominent; client lookup and advanced demo options
+are expandable sections.
 
 The Sales/PM selector is visibly simulated. The current editor permits both
 roles to prepare quotation fields, including prices. PM retains final approval
@@ -695,10 +722,11 @@ node frontend/tests/integration.mjs
 .\.venv\Scripts\python.exe -m frontend.tests.preview_backend
 ```
 
-The recorded frontend implementation checks passed 14 frontend tests and 7
-real-API checks with mocked providers. Its portable backend run passed 274 tests
-with 2 PostgreSQL-only skips. These are recorded verification results, not a
-new test run performed merely by writing this guide.
+The usability update passed 22 frontend tests and 7 real-API checks with mocked
+providers. Browser checks covered desktop and 390px mobile, save/preview, unsaved
+navigation, explicit PM approval, rejected-send retry, sent protection, and
+unknown delivery. The earlier portable backend run passed 274 tests with 2
+PostgreSQL-only skips; that suite was not rerun for this frontend-only update.
 
 The later Laragon startup verified a PostgreSQL connection plus successful
 frontend, health, inbox, and settings HTTP responses. That startup did not

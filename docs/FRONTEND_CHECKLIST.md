@@ -94,7 +94,17 @@ no runtime records were changed. Backend code is unchanged.
 
 ### B. Guided quotation review
 
-- [ ] Show Details -> Preview -> Send and a single next-step explanation.
-- [ ] Add Save & preview without weakening version or explicit approval checks.
-- [ ] Keep delivery diagnostics and long activity histories out of the primary flow.
-- [ ] Verify edit/save/preview, sent/failed/unknown, mobile, and unsaved-edit behavior.
+- [x] Show Details -> Preview -> Send and a single next-step explanation.
+- [x] Add Save & preview without weakening version or explicit approval checks.
+- [x] Keep delivery diagnostics and long activity histories out of the primary flow.
+- [x] Verify edit/save/preview, sent/failed/unknown, mobile, and unsaved-edit behavior.
+
+Verification: **22 frontend tests passed** and **7 isolated real-API checks passed**
+with temporary storage and mocked providers. Browser review covered field-focus
+links, reviewed facts, save/versioned PDF, Sales/PM guidance, an unsaved-navigation
+cancel, fresh explicit approval, failed retry, sent locking, and uncertain-send
+locking. Mobile inbox, PDF and approval were checked at 390px. Temporary QA
+screenshots and harnesses are under ignored `.input/usability-review/`.
+JavaScript syntax and whitespace checks passed. Backend code is unchanged;
+no live provider calls, runtime database writes, push, or deployment were performed
+for this usability update. The walkthrough and frontend handoff reflect the UI.

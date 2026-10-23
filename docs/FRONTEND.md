@@ -16,6 +16,7 @@ frontend/
     app.js                  Routes, state, screens, and interactions
     api.js                  Existing FastAPI endpoint adapter and error handling
     model.js                Payload normalization and frontend approval guards
+    experience.js           Next-step guidance and links to incomplete details
     pdf-viewer.js           Local PDF.js rendering of the backend's saved bytes
     styles.css              Responsive green/neutral workspace design
   tests/
@@ -42,10 +43,18 @@ Hash routes preserve refresh/deep links without backend routing changes:
 - `#/settings`: business profile, currency/default validity, existing-client
   load/edit, and optional demo-role attribution on edits.
 
-At desktop widths the review has message context, editor, and preview columns.
-At tablet widths the preview/approval sit below the context/editor. On mobile,
-these become a single column and the inbox becomes a compact list with visible
-status badges. Navigation is an icon rail at narrow widths, with accessible names.
+The review follows Details -> Preview -> Send, with a next-step card explaining
+what needs attention. On desktop, the customer message and editor share the main
+column beside the saved PDF. On mobile, these become a single column and the
+inbox becomes a compact list with visible status badges. Navigation is an icon
+rail at narrow widths, with accessible names. Dates/notes, technical references,
+draft summaries, and activity are expandable; unresolved facts stay prominent.
+
+The inbox offers All, To review, Sent, and Needs checking filters. The latter
+groups confirmed failures and uncertain deliveries, retaining distinct Not sent
+and Check Telegram labels. Empty inboxes explain how to get started. Business
+settings emphasize the company profile; client lookup and demo options expand
+only when needed.
 
 ## Existing backend integration
 
@@ -74,8 +83,11 @@ information is not filled in by the UI. Untrusted message/AI text is escaped.
 
 ## Approval, uncertainty, and version handling
 
-1. Save edits with the current version. A 409 keeps local edits visible and asks
+1. Save draft permits incomplete work. Save & preview saves edits with the current
+   version and then loads the saved PDF; it never sends. A 409 keeps local edits visible and asks
    the user to reload the saved record; it never silently overwrites a conflict.
+   If PDF loading fails after a successful save, the saved version stays current
+   and the user can retry preview without repeating the save.
 2. Explicitly load the actual backend PDF for that saved version. PDF.js renders
    those bytes locally, with page navigation and an Open PDF link. Rendering must
    succeed before approval is enabled. Edited or reloaded quotations need preview
@@ -109,7 +121,7 @@ There are no background sends or provider requests from the browser.
 - Search/filter/counts apply to the currently loaded inbox page, explicitly labelled.
   The backend has no global filtering or total-count API.
 - Clients load by ID because the backend exposes no client-list endpoint. The
-  relevant Telegram client ID appears in the quotation editor.
+  relevant Telegram client ID appears under More details in quotation review.
 - Simulated `/api/demo/enquiries` records are not part of the normalized Telegram
   inbox. The UI does not invent inbox rows from them.
 - Refresh is explicit; the UI does not poll over unsaved edits. Navigation/reload
@@ -122,3 +134,8 @@ There are no background sends or provider requests from the browser.
   results in other docs were not rerun as part of this frontend work.
 
 Setup and safe QA commands are in [frontend/README.md](../frontend/README.md).
+
+Usability verification: **22 frontend tests and 7 isolated API checks passed**.
+Browser review covered desktop and 390px mobile, unsaved navigation, saved-version
+PDFs, Sales/PM guidance, explicit approval, failed retry, sent protection, and
+unknown-delivery protection. Providers were mocked; no customer messages were sent.
