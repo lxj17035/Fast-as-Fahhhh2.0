@@ -13,8 +13,8 @@ After each section, update this checklist before handing work back.
 - [x] B2 — Telegram enquiry routing & assignment — `ce5daac`; verification below.
 - [x] B3 — Conversation Room APIs — `f5e2f7f`; verification below.
 - [x] B4 — Shared quotation items and versions — `5dbac4b`; verification below.
-- [ ] B5 — Manager review, approval & delivery contracts — **next section**.
-- [ ] A1 — Core AI System Prompt and dynamic context.
+- [x] B5 — Manager review, approval & delivery contracts — `734d232`; verification below.
+- [ ] A1 — Core AI System Prompt and dynamic context — **next phase / new chat**.
 - [ ] A2 — Requirement extraction & sufficiency.
 - [ ] A3 — Clarification suggestions and follow-up analysis.
 - [ ] A4 — Quotation change suggestions.
@@ -33,6 +33,7 @@ User authorized completing **one whole phase at a time**: finish Backend B2–B5
 updating this checklist after every tested section, then stop and hand off to a
 new chat for Phase 2. Do not start Automation/AI or frontend in this chat.
 Backend V2 changes remain local and undeployed until explicitly published.
+**Phase 1 complete.** Continue Phase 2 using [the phase handoff](V2_PHASE_HANDOFF.md).
 
 ## Goal
 
@@ -45,7 +46,7 @@ Implement an approachable Malaysian SME enquiry-to-quotation workflow, adaptable
 3. For every section: inspect impacted files, make minimal necessary edits, add or update tests, run relevant tests, review `git diff`, then **commit that section only if tests pass**. If blocked, report the blocker and do not claim success or make a misleading commit. Stage specific paths, not `git add .`.
 4. Never commit `.env`, tokens, private data, `.input/`, `.output/`, or generated scratch files. Check `.gitignore` and staged diffs. Do not change the Codex model configuration as part of V2 work.
 5. Preserve immutable sent PDFs and their historical metadata, human approval for pricing and sending, and a traceable customer conversation. No AI-initiated customer messages.
-6. After each completed section, update this document's implementation checklist and the section's verification record with changed files, exact test commands/results, implementation commit hash and remaining gaps. Report the result after committing. Wait for a user instruction before starting the next section if operating interactively.
+6. After each completed section, update this document's implementation checklist and the section's verification record with changed files, exact test commands/results, implementation commit hash and remaining gaps. Report the result after committing. The user authorized one whole phase per chat: continue its sections in order, then stop at the phase boundary and provide a written handoff for a new chat.
 
 ## Confirmed V2 business rules
 
@@ -151,6 +152,19 @@ found during verification was fixed. Exact files/commands and limitations:
 
 ### B5 — Manager review, approval & delivery contracts
 Enforce Staff/Manager permissions, manager pricing and send authority, reuse current issue date/valid-for calculation and implement preview/send-ready data contracts and PDF snapshot logic. Tests: Staff cannot approve/send, Manager can, expiry consistent, PDF unchanged after send, failures not falsely marked Sent. Commit: `feat(backend): enforce manager quotation approval`.
+
+**Completed — 24 October 2026.** Implementation commit `734d232`. Enforced
+Manager-only pricing, rejected provider-supplied prices, added version-bound
+final review with actual PDF/hash and deterministic summary, and saved approved
+summary/source snapshots. Messages arriving during AI analysis or delivery
+remain subject to fresh review; immutable sent PDFs and unknown-result holds
+are preserved. Full merged SQLite + disposable PostgreSQL regression:
+**590 passed, 4 skipped, 1 existing deprecation warning**. The four skips are
+PostgreSQL-only cases under SQLite; their PostgreSQL counterparts all passed.
+Frontend unit tests **24 passed**; mocked API integration **7 passed**. Exact
+commands/files and focused checks: [backend phase report](V2_BACKEND_PROGRESS.md).
+Actual PDF-plus-summary transport is A5; product UI is F1–F5. No live-provider
+check, V2 push or deployment was performed. Stop here for a new Phase 2 chat.
 
 ## Phase 2 — Automation / AI (after Backend)
 
