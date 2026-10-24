@@ -128,6 +128,18 @@ def patch_quotation(quotation_id: UUID, request: Request, patch: dict = Body(...
             return saved
 
 
+@router.post("/quotations/{quotation_id}/submit-review")
+def submit_review(quotation_id: UUID, request: Request, patch: dict = Body(...)):
+    actor = require_demo_staff(request)
+    with services(request) as (store, settings, quotations):
+        with store.transaction():
+            require_profile(quotations.get(quotation_id.hex), settings.active_profile_id())
+            saved = quotations.submit_for_review(quotation_id.hex, patch, actor)
+            record_quotation_activity(store, saved, action="quotation_submitted", result="submitted",
+                                      actor_id=actor, role=actor, actor_origin="simulated")
+            return saved
+
+
 @router.get("/enquiries/{enquiry_id}/quotations")
 def quotation_history(enquiry_id: UUID, request: Request):
     with services(request) as (store, settings, _):

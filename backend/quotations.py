@@ -232,8 +232,43 @@ class QuotationService:
                 if not isinstance(reviewed, list) or reviewed != self.source_ids(value["enquiryId"]):
                     raise AppError("Customer conversation changed; reload and review every current message", 409)
                 value["reviewedMessageIds"] = reviewed
+            if value.get("reviewSubmission"):
+                value["reviewSubmission"]["invalidatedBy"] = role or "edit"
             value["version"] += 1
             value["status"] = "draft"
+            self.store.put("quotations", quotation_id, value)
+            return value
+
+    def submit_for_review(self, quotation_id, patch, role):
+        """Persist an explicit handoff against the exact saved version and sources."""
+        object_fields(patch, {"version", "sourceMessageIds"})
+        if role not in {"sales", "pm"}:
+            raise AppError("Staff or Manager must submit explicitly", 403)
+        with self.store.transaction():
+            value = self.get(quotation_id)
+            expected_version(value, patch.get("version"))
+            if value["status"] not in {"draft", "send_failed"} or self.delivered_pdf(quotation_id):
+                raise AppError("Quotation is protected by delivery", 409)
+            sources = self.source_ids(value["enquiryId"])
+            if patch.get("sourceMessageIds") != sources or not self.source_is_current(value):
+                raise AppError("Review and save the latest customer requirements before submitting", 409)
+            fields = {}
+            if not value["client"]["name"].strip():
+                fields["client.name"] = "Customer name is required"
+            if not value["items"]:
+                fields["items"] = "At least one item is required"
+            for index, item in enumerate(value["items"]):
+                for key in ("description", "quantity", "unit"):
+                    if item.get(key) in (None, ""):
+                        fields[f"items.{index}.{key}"] = "Required before review"
+            if value["missingInformation"]:
+                fields["missingInformation"] = "Resolve all flagged details before review"
+            if parse_date(value["expiryDate"]) < business_today() or parse_date(value["issueDate"]) > business_today():
+                fields["issueDate"] = "Check quotation dates"
+            if fields:
+                raise AppError("Quotation is not ready for review", fields=fields)
+            value["reviewSubmission"] = {"version": value["version"], "sourceMessageIds": sources,
+                                         "submittedAt": datetime.now(timezone.utc).isoformat(), "submittedBy": role}
             self.store.put("quotations", quotation_id, value)
             return value
 
@@ -317,7 +352,7 @@ class QuotationService:
                          version=1, status="draft", parentQuotationId=quotation_id, relationship=relationship,
                          parentQuotationNumber=original["number"],
                          issueDate=issue, expiryDate=expiry_date(issue, value["validity"]),
-                         reviewedMessageIds=[], draftMode="manual", draftError=None,
+                         reviewedMessageIds=[], reviewSubmission=None, draftMode="manual", draftError=None,
                          missingInformation=["Review the customer request before preparing this quotation"])
             for key in ("approvedBy", "providerReference", "sendError"):
                 value.pop(key, None)

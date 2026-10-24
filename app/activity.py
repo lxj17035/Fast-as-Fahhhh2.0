@@ -15,6 +15,7 @@ ACTIONS = frozenset({
     "enquiry_created",
     "quotation_draft_created",
     "quotation_updated",
+    "quotation_submitted",
     "pm_approved",
     "pdf_send_attempted",
     "pdf_send_succeeded",

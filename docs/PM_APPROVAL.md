@@ -115,3 +115,22 @@ For a confirmed summary failure after PDF acceptance, final review returns
 approved source IDs. The frozen PDF remains previewable even after new customer
 messages arrive. This recovery completes delivery of already-approved content;
 it does not acknowledge or apply the newer requirements.
+## Explicit Staff submission (24 October 2026)
+
+POST `/api/quotations/:id/submit-review`, enabled simulated Staff/Manager header,
+body `{ "version": N, "sourceMessageIds": ["..."] }`. The existing shared
+transaction checks active profile, exact saved version, current reviewed incoming
+IDs and unresolved same-chat messages, customer name, items/units/quantities,
+missing facts and dates. Prices and PDF preview are not prerequisites. It stores
+`reviewSubmission` (version, sourceMessageIds, submittedAt, submittedBy) in existing
+quotation JSON, plus transactional `quotation_submitted` activity. No schema
+migration, notification, queue or customer send.
+
+Any save, including explicit AI apply, increments version and marks prior evidence
+`invalidatedBy`; prices are retained under existing Staff price restrictions.
+New incoming/unresolved messages invalidate the handoff by source comparison even
+without a quotation mutation. Staff must save/reconfirm and resubmit. Manager's
+own edits also invalidate the old version/PDF review; the Manager retains the
+pricing task while sources remain current. Direct Manager preparation/review
+remains available from All, subject to all existing send guards. Submission is
+handoff evidence, never approval or send authority. Revision does not inherit it.
