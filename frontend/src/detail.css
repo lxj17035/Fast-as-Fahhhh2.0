@@ -76,3 +76,8 @@
  .detail-conversation { padding:14px; }
  .detail-conversation .conversation-list li { width:96%; }
 }
+/* Staff has three draft actions; keep every action inside the narrow editor. */
+@media(max-width:650px) {
+ .detail-workspace .editor-bottom .editor-buttons { flex-direction:column; align-items:stretch; width:100%; min-width:0; }
+ .detail-workspace .editor-bottom .editor-buttons .btn { flex:none; width:100%; white-space:normal; }
+}
