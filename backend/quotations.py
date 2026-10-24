@@ -1,3 +1,4 @@
+from .titles import short_title
 import calendar
 from copy import deepcopy
 from datetime import date, datetime, timedelta, timezone
@@ -180,6 +181,7 @@ class QuotationService:
                 "expiryDate": expiry_date(issue, company["defaultValidity"]),
                 "items": items, "total": total, "notes": "",
                 "summary": extracted.get("summary", ""),
+                "shortTitle": short_title(extracted.get("shortTitle", "")),
                 "missingInformation": extracted.get("missingInformation", []),
                 "draftMode": draft_mode, "draftError": draft_error,
                 "reviewedMessageIds": reviewed_source,

@@ -5,6 +5,14 @@ optional OpenAI adapter. Backend supplies pinned validated profile, company/clie
 and attributed conversation context. Unknowns remain unknown; industry details
 are notes, and prices/recipient/approval/send fields are rejected.
 
+The extraction schema now requests display-only `shortTitle`, in the customer's
+language, with stated quantity/product and no client identity, dates or prices.
+Validation caps Chinese titles at 15 characters and English at six words/60
+characters. Older provider fixtures without this field remain compatible.
+Initial quotations save it in JSON alongside the full summary; later analysis
+does not silently overwrite the saved title. Old inbox rows use compact saved
+item/quantity text, then message/summary fallback, without extra inference.
+
 Initial draft creation retains its analysis. A newly received assigned customer
 reply triggers renewed analysis, without updating the saved quotation. Duplicate
 updates do not spend another request. Completed unchanged snapshots are reused;

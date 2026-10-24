@@ -7,11 +7,13 @@ from uuid import uuid4
 
 from .errors import AppError, object_fields, text
 from .quotations import normalize_items
+from .titles import short_title
 
 EXTRACTION_SCHEMA = {
     "type": "object", "additionalProperties": False,
     "properties": {
         "summary": {"type": "string"},
+        "shortTitle": {"type": "string"},
         "clientName": {"type": ["string", "null"]},
         "clientAddress": {"type": ["string", "null"]},
         "items": {"type": "array", "items": {
@@ -40,7 +42,7 @@ EXTRACTION_SCHEMA = {
             "properties": {"update_id": {"type": "string"}, "confirmation_update_id": {"type": "string"}},
             "required": ["update_id", "confirmation_update_id"]}},
     },
-    "required": ["summary", "clientName", "clientAddress", "items", "missingInformation",
+    "required": ["summary", "shortTitle", "clientName", "clientAddress", "items", "missingInformation",
                  "clarificationSuggestions", "assignmentSuggestions", "relationshipIntent", "proposedChanges"],
 }
 INSTRUCTIONS = """You assist a fictional SME with enquiry analysis. Use the single
@@ -75,7 +77,13 @@ one change per item; avoid adding an item already present. Respect Staff-edited
 content; changes are suggestions only. For post-send grouping, relationshipIntent
 is revision for explicit amendment/combine, additional for explicit independent
 quotation, unclear for ambiguous grouping (ask Staff/customer), otherwise none.
-Do not infer Additional merely from a different purpose. Never mutate a sent PDF. Return JSON following the required schema."""
+Do not infer Additional merely from a different purpose. Never mutate a sent PDF. Generate shortTitle for the inbox in the customer's language, using only the
+main product/service and explicitly stated quantity. Use at most 6 English words
+or 15 Chinese characters. Exclude customer names, addresses, deadlines,
+introductory phrases, prices, recipients and authority. Do not invent quantities
+or specifications. For no clear product/service use a neutral title in the
+customer's language. Examples: 20 black T-shirts; 500 business cards.
+Keep the full summary separate. Return JSON following the required schema."""
 
 
 def business_context(settings, enquiry):
@@ -97,6 +105,8 @@ def validate_extraction(value):
     if not {"summary", "clientName", "clientAddress", "items", "missingInformation"} <= set(value):
         raise AppError("AI response is missing required fields")
     result = {"summary": text(value["summary"], "summary", required=True, limit=2000)}
+    if "shortTitle" in value:
+        result["shortTitle"] = short_title(value["shortTitle"])
     for key in ("clientName", "clientAddress"):
         result[key] = None if value[key] is None else text(value[key], key)
     if not isinstance(value["items"], list) or len(value["items"]) > 100:
