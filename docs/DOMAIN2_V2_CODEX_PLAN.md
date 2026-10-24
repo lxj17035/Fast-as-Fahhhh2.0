@@ -10,8 +10,8 @@ verification below; an unchecked section may contain reusable existing code.
 After each section, update this checklist before handing work back.
 
 - [x] B1 — Business Profiles & shared data scope — `6b77031`; verification below.
-- [ ] B2 — Telegram enquiry routing & assignment — **next section**.
-- [ ] B3 — Conversation Room APIs.
+- [x] B2 — Telegram enquiry routing & assignment — `ce5daac`; verification below.
+- [ ] B3 — Conversation Room APIs — **next section**.
 - [ ] B4 — Shared quotation items and versions.
 - [ ] B5 — Manager review, approval & delivery contracts.
 - [ ] A1 — Core AI System Prompt and dynamic context.
@@ -28,9 +28,11 @@ After each section, update this checklist before handing work back.
 - [ ] T2 — Cleaning and Repair compatibility.
 - [ ] T3 — Post-send changes.
 
-Current implementation branch: `codex/feat-business-profiles`. B1 is committed
-locally; this section has not been pushed or deployed. Continue with B2 only
-when requested, preserving the phase order below.
+Current implementation branch: `codex/feat-domain2-v2` (includes B1).
+User authorized completing **one whole phase at a time**: finish Backend B2–B5,
+updating this checklist after every tested section, then stop and hand off to a
+new chat for Phase 2. Do not start Automation/AI or frontend in this chat.
+Backend V2 changes remain local and undeployed until explicitly published.
 
 ## Goal
 
@@ -111,6 +113,15 @@ and hosted migration/deployment have not been performed for B1.
 
 ### B2 — Telegram enquiry routing & assignment
 Implement/reuse inbound message persistence, command handling, enquiry association and Needs Assignment actions/history. Tests: `/start`, `/help`, clear follow-up, new distinct order, ambiguous message, later clarification, Staff-confirmed assignment not overwritten, profile switching. Commit: `feat(backend): route telegram messages to enquiries`.
+
+**Completed — 24 October 2026.** Implementation commit `ce5daac`. Commands,
+conservative follow-up/new-order routing, validated reply references, Staff
+assignment actions/history, profile/chat isolation and restart-safe backfill
+implemented. Exact files/commands: [backend phase report](V2_BACKEND_PROGRESS.md).
+SQLite regression: **99 passed, 1 skipped**. Focused SQLite + PostgreSQL B2:
+**22 passed**. Existing real-API mocked integration: **7 passed**. Diff checks
+passed. No live customer messages or deployment. AI reassessment remains A3;
+confirmed Staff assignment cannot be overwritten through the backend action.
 
 ### B3 — Conversation Room APIs
 Support message listing, staff-authored outgoing message actions, message attribution and history. Prevent AI outbound authority. Tests: correct enquiry conversation, role/permission checks, original messages retained, outbound delivery failure recorded. Commit: `feat(backend): support enquiry conversations`.
