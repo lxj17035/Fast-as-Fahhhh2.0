@@ -19,6 +19,7 @@ ACTIONS = frozenset({
     "pdf_send_succeeded",
     "pdf_send_failed",
     "delivery_unknown",
+    "message_assigned",
 })
 SAFE_ERROR_CODES = frozenset({
     "invalid_response",
@@ -100,3 +101,10 @@ def optional_demo_actor(request: Request) -> dict:
     if not request.app.state.settings.enable_demo_approval:
         raise HTTPException(status_code=503, detail="Demo approval is disabled")
     return {"actor_id": actor, "role": actor, "actor_origin": "simulated"}
+
+
+def require_demo_staff(request: Request) -> str:
+    actor = optional_demo_actor(request)
+    if actor["role"] not in {"sales", "pm"}:
+        raise HTTPException(status_code=403, detail="Explicit Staff action is required")
+    return actor["role"]

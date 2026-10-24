@@ -168,6 +168,7 @@ def test_inbox_pagination_has_stable_timestamp_and_id_order(client, engine, head
     for number in range(3):
         payload = deepcopy(update)
         payload["update_id"] += number
+        payload["message"]["text"] = f"New quotation request {number}"
         client.post(WEBHOOK, headers=headers, json=payload)
     records = rows(engine, enquiries)
     old_time = datetime(2025, 1, 1, tzinfo=timezone.utc)

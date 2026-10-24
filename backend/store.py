@@ -12,7 +12,7 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.pool import StaticPool
 
 from app.db_url import postgres_url
-from app.database import metadata as inbound_metadata, enquiries, telegram_updates
+from app.database import metadata as inbound_metadata, enquiries, telegram_updates, message_links
 from .errors import AppError
 from .settings import profile_id, require_profile
 
@@ -98,9 +98,13 @@ class Store:
             statement = statement.where(enquiries.c.id == key)
         result = []
         for row in connection.execute(statement).mappings():
+            messages = connection.execute(select(telegram_updates.c.original_text).join(
+                message_links, message_links.c.update_id == telegram_updates.c.update_id
+            ).where(message_links.c.enquiry_id == row["id"])
+                .order_by(telegram_updates.c.received_at, telegram_updates.c.update_id)).scalars().all()
             context = connection.execute(select(records.c.body).where(
                 records.c.kind == "enquiry_context", records.c.id == row["id"])).scalar_one_or_none() or {}
-            result.append({"id": row["id"], "text": row["original_text"], "source": row["source"],
+            result.append({"id": row["id"], "text": "\n\n".join(messages) if messages else row["original_text"], "source": row["source"],
                            "business_profile_id": row["business_profile_id"],
                            "chatId": str(row["chat_id"]), "clientId": context.get("clientId"),
                            "providerUpdateId": str(row["update_id"]),

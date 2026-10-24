@@ -59,9 +59,9 @@ def main():
             async with original_lifespan(application):
                 for index, message in enumerate([
                     "Example Events needs 20 printed cotton T-shirts. Address: 12 Demo Road. Please share a quotation.",
-                    "Fictional Workshop: quotation for 20 staff uniforms with our front logo.",
-                    "Demo Market requests printed tote bags for a community event. Quantity to be confirmed.",
-                    "Example Studio: please quote for event crew shirts. <script>alert('test')</script>",
+                    "New quotation: Fictional Workshop needs 20 staff uniforms with our front logo.",
+                    "New quotation: Demo Market requests printed tote bags. Quantity to be confirmed.",
+                    "New quotation: Example Studio needs event crew shirts. <script>alert('test')</script>",
                 ]):
                     save_update(engine, 9000 + index, 100 + index, -1001234567890, message)
                     application.state.automatic_drafting.run(9000 + index)

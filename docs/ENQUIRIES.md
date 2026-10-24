@@ -5,15 +5,22 @@ Use the same FastAPI application and PostgreSQL database as
 
 ## Persistence and upgrade
 
-Each accepted Telegram text message creates one enquiry with a UUID `id`, source
+Each newly routed quotation request creates an enquiry with a UUID `id`, source
 `telegram`, status `needs_review`, and the original receipt timestamp. A unique
 foreign key `telegram_update_id` links it to the immutable original receipt.
 Original text, chat ID, message ID and update ID remain stored in that receipt.
 V2 B1 pins `business_profile_id` from the manually selected demo profile at
 intake. Existing enquiries never move when selection changes. See
 [business profiles](BUSINESS_PROFILES.md) for migration and scope rules.
-Two distinct messages in the same chat create separate enquiries; no implicit
-conversation grouping or customer matching occurs.
+V2 B2 stores every receipt with a `message_links` association. `/start` and
+`/help` are commands, clear follow-ups/reply references join the matching
+enquiry, and explicitly independent requests create separate enquiries. Ambiguous
+messages remain in Needs Assignment instead of being guessed or discarded.
+`GET /api/assignments` lists them for the active profile; Staff explicitly posts
+`{action: assign, enquiry_id}`, `{action: new}` or `{action: unrelated}` to
+`/api/assignments/{update_id}` with `X-Demo-Actor: sales|pm` and demo approval
+enabled. Profile/chat checks and append-only association history are retained;
+resolved Staff decisions cannot be overwritten by AI or a repeated action.
 
 The receipt and enquiry commit together. If enquiry creation fails, neither new
 row is saved, and the webhook returns a retryable failure. Duplicate delivery
@@ -58,7 +65,12 @@ Illustrative response (fictional data):
 
 `GET /api/enquiries/{id}`
 
-Returns the same enquiry fields plus `messages`, currently one original message:
+Returns the same enquiry fields plus chronological `messages`. Each message
+also includes `assigned_by` and `assignment_history`; its original receipt is
+unchanged. Telegram reply references are resolved only within the same profile
+and chat. Plain text without clear association stays for Staff review.
+
+Example incoming message:
 
 ```json
 {

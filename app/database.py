@@ -55,6 +55,17 @@ enquiries = Table(
         name="enquiries_status_check",
     ),
 )
+message_links = Table(
+    "message_links", metadata,
+    Column("update_id", BigInteger, ForeignKey("telegram_updates.update_id"), primary_key=True),
+    Column("business_profile_id", String(40), nullable=False),
+    Column("enquiry_id", String(36), ForeignKey("enquiries.id")),
+    Column("status", String(20), nullable=False),
+    Column("assigned_by", String(20), nullable=False),
+    Column("history", JSON, nullable=False),
+    CheckConstraint("status IN ('assigned', 'needs_assignment', 'command', 'unrelated')",
+                    name="message_links_status_check"),
+)
 send_attempts = Table(
     "send_attempts",
     metadata,
@@ -131,7 +142,8 @@ def backfill_enquiries(engine: Engine) -> None:
             enquiries,
             telegram_updates.c.update_id == enquiries.c.telegram_update_id,
         )
-        .where(enquiries.c.id.is_(None))
+        .outerjoin(message_links, message_links.c.update_id == telegram_updates.c.update_id)
+        .where(enquiries.c.id.is_(None), message_links.c.update_id.is_(None))
     )
     with engine.begin() as connection:
         receipts = connection.execute(missing).all()
@@ -142,13 +154,21 @@ def backfill_enquiries(engine: Engine) -> None:
                 .on_conflict_do_nothing(index_elements=["telegram_update_id"])
             )
             connection.execute(statement)
+        # Existing enquiries keep their original association. New V2 commands
+        # and unassigned messages already have links and are never backfilled.
+        for row in connection.execute(select(enquiries)).mappings():
+            connection.execute(insert(message_links).values(
+                update_id=row["telegram_update_id"], business_profile_id=row["business_profile_id"],
+                enquiry_id=row["id"], status="assigned", assigned_by="legacy", history=[],
+            ).on_conflict_do_nothing(index_elements=[message_links.c.update_id]))
 
 
 def save_update(
-    engine: Engine, update_id: int, message_id: int, chat_id: int, text: str
+    engine: Engine, update_id: int, message_id: int, chat_id: int, text: str,
+    reply_to_message_id: int | None = None,
 ) -> bool:
     """Commit receipt, enquiry and real events; False means an existing receipt."""
-    from app.activity import record_activity
+    from app.routing import route_receipt
     from app.xinjie_store import Store, integration_transaction
     from backend.settings import SettingsService
 
@@ -168,28 +188,8 @@ def save_update(
                 )
             )
             receipt_inserted = True
-            enquiry = enquiry_values(update_id, received_at, identity)
-            connection.execute(enquiries.insert().values(**enquiry))
-            record_activity(
-                connection,
-                enquiry_id=enquiry["id"],
-                action="telegram_received",
-                result="received",
-                actor_id="system",
-                role="system",
-                actor_origin="system",
-                provider_reference=str(update_id),
-                timestamp=received_at,
-            )
-            record_activity(
-                connection,
-                enquiry_id=enquiry["id"],
-                action="enquiry_created",
-                result="created",
-                actor_id="system",
-                role="system",
-                actor_origin="system",
-            )
+            route_receipt(connection, update_id, message_id, chat_id, text,
+                          received_at, identity, reply_to_message_id)
     except IntegrityError as error:
         # Enquiry constraint failures must roll back and be retried, not swallowed.
         if receipt_inserted:

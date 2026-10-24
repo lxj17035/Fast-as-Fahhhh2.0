@@ -5,12 +5,12 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.engine import RowMapping
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.database import activities, enquiries, send_attempts, telegram_updates
+from app.database import activities, enquiries, send_attempts, telegram_updates, message_links
 from app.xinjie_store import Store
 
 router = APIRouter(prefix="/api/enquiries", tags=["enquiries"])
@@ -38,6 +38,8 @@ class OriginalMessage(BaseModel):
     chat_id: str
     text: str
     received_at: datetime
+    assigned_by: str = "legacy"
+    assignment_history: list[dict] = Field(default_factory=list)
 
 
 class DeliveryAttempt(BaseModel):
@@ -136,6 +138,11 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
             identity = Store(connection.engine, connection).get("settings", "active_profile")["business_profile_id"]
             statement = statement.where(enquiries.c.business_profile_id == identity)
             row = connection.execute(statement).mappings().one_or_none()
+            messages = connection.execute(select(telegram_updates, message_links.c.assigned_by,
+                                                  message_links.c.history).join(
+                message_links, message_links.c.update_id == telegram_updates.c.update_id
+            ).where(message_links.c.enquiry_id == str(enquiry_id))
+                .order_by(telegram_updates.c.received_at, telegram_updates.c.update_id)).mappings().all()
             attempts = connection.execute(
                 select(
                     send_attempts.c.id,
@@ -168,12 +175,15 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
         **summary(row).model_dump(),
         messages=[
             OriginalMessage(
-                update_id=str(row["update_id"]),
-                message_id=str(row["message_id"]),
-                chat_id=str(row["chat_id"]),
-                text=row["original_text"],
-                received_at=utc_timestamp(row["received_at"]),
+                update_id=str(message["update_id"]),
+                message_id=str(message["message_id"]),
+                chat_id=str(message["chat_id"]),
+                text=message["original_text"],
+                received_at=utc_timestamp(message["received_at"]),
+                assigned_by=message.get("assigned_by", "legacy"),
+                assignment_history=message.get("history", []),
             )
+            for message in (messages or [row])
         ],
         delivery_attempts=[
             DeliveryAttempt(

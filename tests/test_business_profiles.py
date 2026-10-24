@@ -216,7 +216,7 @@ def test_concurrent_profile_switch_and_receipt_keep_consistent_scope(client, eng
     def receive(index):
         if index % 2:
             app.settings.select_profile({"business_profile_id": "repair" if index % 3 else "cleaning"})
-        save_update(engine, 81000 + index, 91000 + index, -71000, "Synthetic concurrent enquiry")
+        save_update(engine, 81000 + index, 91000 + index, -71000, "New quotation: Synthetic concurrent enquiry")
 
     with ThreadPoolExecutor(max_workers=4) as pool:
         list(pool.map(receive, range(8)))

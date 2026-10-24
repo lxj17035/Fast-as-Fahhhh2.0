@@ -24,6 +24,7 @@ from app.database import backfill_enquiries, metadata
 from app.delivery import router as delivery_router
 from app.enquiries import router as enquiries_router
 from app.telegram import router
+from app.routing import router as assignment_router
 from app.quotation_contract import QuotationProvider
 from app.telegram_client import TelegramSender
 from app.xinjie_adapter import XinjieQuotationProvider
@@ -96,6 +97,7 @@ def create_app(
         else None
     )
     application.include_router(router)
+    application.include_router(assignment_router)
     application.include_router(enquiries_router)
     application.include_router(delivery_router)
     application.include_router(quotation_router)

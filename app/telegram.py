@@ -28,11 +28,17 @@ class TelegramChat(BaseModel):
         return value
 
 
+class TelegramReply(BaseModel):
+    model_config = ConfigDict(strict=True)
+    message_id: Annotated[int, Field(gt=0, le=MAX_INTEGER)]
+
+
 class TelegramMessage(BaseModel):
     model_config = ConfigDict(strict=True)
     message_id: Annotated[int, Field(gt=0, le=MAX_INTEGER)]
     chat: TelegramChat
     text: Annotated[str, Field(min_length=1, max_length=4096)] | None = None
+    reply_to_message: TelegramReply | None = None
 
     @field_validator("text")
     @classmethod
@@ -87,6 +93,7 @@ async def receive_update(request: Request, background_tasks: BackgroundTasks) ->
             update.message.message_id,
             update.message.chat.id,
             update.message.text,
+            update.message.reply_to_message.message_id if update.message.reply_to_message else None,
         )
     except SQLAlchemyError:
         raise HTTPException(
