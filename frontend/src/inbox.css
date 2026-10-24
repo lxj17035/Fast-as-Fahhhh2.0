@@ -69,3 +69,6 @@
 @media(max-width:420px) { .inbox-shell .inbox-body { margin-left:58px; } .inbox-shell .inbox-bar { flex-wrap:wrap; gap:8px; } .inbox-shell .inbox-tools { flex-wrap:wrap; } }
 
 .inbox-shell .inbox-tools { display:flex; justify-content:flex-end; gap:12px; }
+/* Keep the display-only channel switch below the refresh action. */
+.inbox-shell .inbox-tools { flex-direction:column; align-items:flex-end; gap:8px; }
+.inbox-shell .inbox-tools > label { display:flex; align-items:flex-start; max-width:100%; text-align:right; }

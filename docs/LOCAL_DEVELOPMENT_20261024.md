@@ -11,3 +11,6 @@ Added transactional submit-review, saved version/source evidence and activity. S
 
 ## Staff handoff UI and navigation
 42 frontend checks passed. Updated journeys.mjs passed Printing/Cleaning/Repair desktop 1365x900/mobile 390x844, automatic new-message notice with unsaved input retained, formal unpriced submission, Manager pricing, current saved PDF/hash/summary, cancel/confirm send, Revision/Additional and original PDF retention. Browser plugin absent; existing Playwright/Edge used on ephemeral ports with temporary DB/mocked Runpod HTTP/Telegram. First browser run exposed a test assuming Quote on new-message reopening; corrected to explicitly select Quote. Existing 8091/8092 preview processes are preserved. No publish/live providers.
+
+## Synthetic-channel switch placement
+Owner follow-up: place Show synthetic channel examples below Refresh inbox. CSS-only layout change; existing toggle stays local-only. Verified on existing 8091 without restarting it at 1365/390/360: below-button geometry, toggle interaction, no overflow/page errors; 5 inbox checks passed. Screenshots under ignored .input/local-preview/refresh-switch-*.png.
