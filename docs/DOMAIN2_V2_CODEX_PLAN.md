@@ -11,8 +11,8 @@ After each section, update this checklist before handing work back.
 
 - [x] B1 — Business Profiles & shared data scope — `6b77031`; verification below.
 - [x] B2 — Telegram enquiry routing & assignment — `ce5daac`; verification below.
-- [ ] B3 — Conversation Room APIs — **next section**.
-- [ ] B4 — Shared quotation items and versions.
+- [x] B3 — Conversation Room APIs — `f5e2f7f`; verification below.
+- [ ] B4 — Shared quotation items and versions — **next section**.
 - [ ] B5 — Manager review, approval & delivery contracts.
 - [ ] A1 — Core AI System Prompt and dynamic context.
 - [ ] A2 — Requirement extraction & sufficiency.
@@ -125,6 +125,14 @@ confirmed Staff assignment cannot be overwritten through the backend action.
 
 ### B3 — Conversation Room APIs
 Support message listing, staff-authored outgoing message actions, message attribution and history. Prevent AI outbound authority. Tests: correct enquiry conversation, role/permission checks, original messages retained, outbound delivery failure recorded. Commit: `feat(backend): support enquiry conversations`.
+
+**Completed — 24 October 2026.** Implementation commit `f5e2f7f`. Chronological
+conversation API, explicit Staff text send, original-chat routing, persistent
+delivery outcomes and request-id replay protection implemented. SQLite routing/
+transport/conversation regression: **45 passed**. Combined conversation and
+existing delivery suite with SQLite + PostgreSQL: **107 passed**. Diff checks
+passed. Exact files/commands: [backend phase report](V2_BACKEND_PROGRESS.md).
+Live providers not called; AI suggestion generation and frontend remain A3/F3.
 
 ### B4 — Shared quotation items and versions
 Reuse existing Quotation models where possible. Implement generic item fields and notes, draft workflow, selected change application, basic stale-data/atomicity protection, revision vs additional relationship and immutable sent version. Tests: printing/cleaning/repair items, amount totals, incomplete input blocking formal quotation, revision preserves prior PDF, additional independent quotation. Commit: `feat(backend): support generic quotation drafts and revisions`.
