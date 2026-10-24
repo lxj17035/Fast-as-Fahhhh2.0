@@ -92,3 +92,11 @@ requires matched Runpod request/usage evidence and remains incomplete.
 - [x] Verified all 15 README local links resolve, Markdown fences are balanced, and `git diff --check` passes.
 
 Documentation-only change. Application tests and live provider/hosted checks were not rerun; README test counts are explicitly attributed to historical source verification. The existing checkout remains on `codex/feat-domain2-v2`, matching the reviewed remote-tracking main before this edit.
+
+## Organiser README format (24 October 2026)
+
+- [x] Matched the supplied organiser sample sections to QuoteFlow's actual implementation, tree, entry points, Runpod Chat Completions integration and Apache 2.0 license.
+- [x] Added explicit pending submission PDFs, contributor handles, slide/video links and evidence checklist without claiming completion.
+- [x] Verified required section headings, local link targets, balanced Markdown fences and git diff whitespace checks.
+
+Documentation only; application suites, fresh setup and live hosted/provider checks were not rerun. Reviewed current template options for a separate slide-style recommendation; no presentation was created.
