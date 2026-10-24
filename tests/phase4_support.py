@@ -16,6 +16,14 @@ CASES = {
                      notes='Cotton; blue front print', question='Please confirm print colour and quantity.',
                      initial='Fictional Events needs 20 cotton T-shirts with front print; please quote.',
                      answer='Actually 30 cotton T-shirts, blue front print, please revise the quantity.'),
+    'cleaning': dict(name='Office cleaning', unit='visit', quantity=2, price='180.50',
+                     notes='120 square metres; windows excluded', question='Please confirm area and number of visits.',
+                     initial='Fictional Office requests cleaning; please quote. Scope to be confirmed.',
+                     answer='Please quote 2 visits for 120 square metres; windows excluded.'),
+    'repair': dict(name='Laptop keyboard replacement', unit='job', quantity=1, price='95.75',
+                   notes='Fictional Model X; replace keyboard only', question='Please confirm device and repair scope.',
+                   initial='Fictional Workshop needs laptop repair; please quote. Scope to be confirmed.',
+                   answer='Please quote 1 job: Fictional Model X; replace keyboard only.'),
 }
 
 

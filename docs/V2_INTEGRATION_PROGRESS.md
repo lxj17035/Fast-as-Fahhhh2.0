@@ -57,3 +57,25 @@ ownership nor proves Replit's private configuration. Do not copy local secrets
 into reports. The hosted V2 build, sanitized Replit provider configuration,
 fresh controlled Telegram intake and correlated Runpod request/usage evidence
 remain required. No extra live call was made merely to spend credit.
+
+## T2 — Cleaning and Repair (passed)
+
+T1 implementation commit: `9ffb415`. T2 changes `tests/phase4_support.py`,
+`tests/test_phase4_journeys.py`, `frontend/tests/journeys.mjs`, this report and
+the plan. No application code changed. Both profiles repeat the full clarification
+and approved PDF/summary journey: Cleaning 2 visits at MYR 180.50 = 361.00;
+Repair 1 keyboard-replacement job at MYR 95.75. Scope/device details stay in
+generic notes. Captured validated Runpod context uses the chosen business and
+custom company, with no Printing identity/items. PDF text retains the correct
+company/service/unit/notes; switching scope hides the prior enquiry/conversation/
+quotation/PDF and switching back preserves its exact sent PDF bytes.
+
+- `TEST_DATABASE_URL=<disposable-local-db> .venv/Scripts/python.exe -m pytest -q tests/test_phase4_journeys.py --basetemp=.input/v2-t2-api -p no:cacheprovider`:
+  **6 passed** (T1 + T2, SQLite/PostgreSQL), one existing Starlette warning.
+- `QF_PLAYWRIGHT_MODULE=<installed-module> node frontend/tests/journeys.mjs`:
+  **3 complete browser journeys passed**, all three profiles, actual UI/proxy/API,
+  temporary SQLite, mocked providers. Desktop/mobile, rendered saved PDF/hash,
+  unit/notes/price/total, explicit clarification/review/approval and history passed.
+  No page/console errors or page overflow. Cleaning desktop and Repair mobile
+  screenshots visually reviewed; artifacts remain ignored `.input/phase4/`.
+- `git diff --check`: passed. Live/hosted checks remain separate.

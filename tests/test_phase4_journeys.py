@@ -127,3 +127,26 @@ def test_t1_printing_complete_journey(journey, engine, headers, update):
     assert attempt['version'] == quote['version'] and attempt['pdf_bytes'] == pdf
     assert attempt['summary_text'] == review['telegram_summary']
     assert client.get(f"/api/enquiries/{enquiry['id']}/quotation").json()['status'] == 'sent'
+
+
+@pytest.mark.parametrize('identity,total', [('cleaning', '361.00'), ('repair', '95.75')])
+def test_t2_services_complete_journey_and_pinned_scope(journey, headers, update, identity, total):
+    client, _, contexts = journey
+    company = 'Fictional ' + identity.title() + ' Acceptance Services'
+    assert client.patch(f'/api/business-profiles/{identity}', json={'companyName': company}).status_code == 200
+    enquiry, quote, review, pdf, rendered = complete_journey(journey, headers, update, identity)
+    assert quote['total'] == total and quote['business_profile_id'] == identity
+    assert quote['items'][0]['unit'] == CASES[identity]['unit']
+    assert CASES[identity]['notes'] in rendered and company in rendered
+    assert review['business_profile']['companyName'] == company
+    assert all(c['businessProfile']['id'] == identity and c['company']['companyName'] == company for c in contexts)
+    assert all('T-shirt' not in str(c) and 'Print Studio' not in str(c) for c in contexts)
+    assert 'T-shirt' not in rendered and 'Print Studio' not in rendered
+    assert client.patch('/api/business-profiles/active', json={'business_profile_id': 'printing'}).status_code == 200
+    assert client.get('/api/enquiries').json()['items'] == []
+    for path in (f"/api/enquiries/{enquiry['id']}", f"/api/enquiries/{enquiry['id']}/conversation",
+                 f"/api/quotations/{quote['id']}", review['pdf']['url']):
+        assert client.get(path).status_code == 404
+    client.patch('/api/business-profiles/active', json={'business_profile_id': identity})
+    assert client.get(review['pdf']['url']).content == pdf
+    assert current_quote(client, enquiry['id'])['business_profile_id'] == identity

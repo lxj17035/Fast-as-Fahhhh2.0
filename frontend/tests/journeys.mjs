@@ -30,7 +30,13 @@ let browser;
 const errors = [];
 const cases = [{ profile: 'printing', name: 'Event T-shirts', unit: 'pcs', quantity: '30', price: '25.00', total: '750.00',
   notes: 'Cotton; blue front print', initial: 'Fictional Events needs 20 cotton T-shirts with front print; please quote.',
-  answer: 'Actually 30 cotton T-shirts, blue front print, please revise the quantity.' }];
+  answer: 'Actually 30 cotton T-shirts, blue front print, please revise the quantity.' },
+  { profile: 'cleaning', name: 'Office cleaning', unit: 'visit', quantity: '2', price: '180.50', total: '361.00',
+    notes: '120 square metres; windows excluded', initial: 'Fictional Office requests cleaning; please quote. Scope to be confirmed.',
+    answer: 'Please quote 2 visits for 120 square metres; windows excluded.' },
+  { profile: 'repair', name: 'Laptop keyboard replacement', unit: 'job', quantity: '1', price: '95.75', total: '95.75',
+    notes: 'Fictional Model X; replace keyboard only', initial: 'Fictional Workshop needs laptop repair; please quote. Scope to be confirmed.',
+    answer: 'Please quote 1 job: Fictional Model X; replace keyboard only.' }];
 
 try {
   const backend = new Api(`http://127.0.0.1:${apiPort}`);
@@ -69,6 +75,7 @@ try {
       await new Promise(r => setTimeout(r, 100));
     }
     assert.equal(quote.draftMode, 'ai'); assert.equal(quote.total, null);
+    assert.equal(quote.items[0].description, c.name);
     await page.goto(url);
     assert.equal(new URL(page.url()).origin, url);
     await page.getByRole('heading', { name: 'Enquiries.', exact: true }).waitFor();
@@ -114,6 +121,8 @@ try {
     await notice('Your draft is saved');
     quote = await api.quotation(enquiry.id);
     assert.equal(quote.total, c.total);
+    assert.equal(quote.items[0].unit, c.unit); assert.equal(quote.items[0].notes, c.notes);
+    assert.equal(quote.business_profile_id, c.profile);
     await page.getByRole('button', { name: 'Manager Review & Send', exact: true }).click();
     const approve = page.getByRole('button', { name: 'Approve & Send', exact: true });
     await approve.waitFor();

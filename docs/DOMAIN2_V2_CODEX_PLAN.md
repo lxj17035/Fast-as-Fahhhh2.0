@@ -25,7 +25,7 @@ After each section, update this checklist before handing work back.
 - [x] F4 — Generic Quotation Editor - `6d2d26b`; [verification](V2_FRONTEND_PROGRESS.md).
 - [x] F5 — Manager Review & Send - `9fef80d`; [verification](V2_FRONTEND_PROGRESS.md).
 - [x] T1 — Printing end to end; SQLite/PostgreSQL + actual desktop/mobile UI, [evidence](V2_INTEGRATION_PROGRESS.md).
-- [ ] T2 — Cleaning and Repair compatibility.
+- [x] T2 — Cleaning and Repair compatibility; complete API/UI journeys, [evidence](V2_INTEGRATION_PROGRESS.md).
 - [ ] T3 — Post-send changes.
 - [x] RP1 - One bounded live V2 Runpod check: HTTP 200; 1,362 tokens; [sanitized evidence](V2_RUNPOD_RP1.md).
 - [ ] RP2 — Release/T1: verify the published Replit app actually calls Runpod and capture submission proof.
@@ -280,6 +280,11 @@ Hosted/live RP2 remains separate and blocked on the published V2 build/evidence.
 
 ### T2 — Cleaning and Repair compatibility
 Repeat representative cases using dynamic profiles and item notes. Ensure no Printing-specific behavior leaks.
+
+**Completed locally — 24 October 2026.** T1/T2 combined six SQLite/PostgreSQL
+cases and three complete desktop/mobile UI journeys passed. Dynamic company
+context, generic units/notes, exact totals and pinned scope/PDFs verified with
+mocked providers. [Files/commands/limits](V2_INTEGRATION_PROGRESS.md).
 
 ### T3 — Post-send changes
 Clear Revision; explicit Additional; ambiguous grouping asks Staff; historical PDFs untouched. Include negative tests for unauthorized AI send/pricing, wrong business profile, duplicate sends and unknown delivery result. Commit tests in the relevant section or one final tests commit only after passing.
