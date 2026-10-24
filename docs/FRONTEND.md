@@ -348,3 +348,9 @@ No usable changes means no region. Explicit apply reports Changes applied to
 Quote and offers Go to Quote. Recovery-only Analyze messages / Retry analysis
 uses running/completed/failed state and existing source/version checks. Quote
 always keeps manual editing and draft saving. No AI automatic overwrite or send.
+
+Formal submission also changes the browser-session Close signature, even when the
+saved quote version is unchanged. A previously closed Staff row therefore reopens
+for Manager after inbox refresh. Verification: 46 frontend checks passed; actual
+API/browser check passed Close -> same-version submit -> Refresh -> Manager To do
+on a temporary database with mocked providers. No backend Close state is implied.

@@ -35,7 +35,7 @@ export function enquiryRow(item, quote, detail, assignments, failed = false) {
   const itemTitle = firstItem ? `${firstItem.quantity ?? ''} ${firstItem.description || ''}`.trim() : '';
   const candidate = savedTitle || (itemTitle ? itemTitle.split(/\s+/).slice(0,4).join(' ') : '') || summary || original;
   const title = /[\u3400-\u9fff]/u.test(original) && !/[\u3400-\u9fff]/u.test(candidate) ? original.slice(0,15) : /[\u3400-\u9fff]/u.test(candidate) ? candidate.slice(0,15) : candidate.split(/\s+/).slice(0,6).join(' ');
-  const closedSignature = JSON.stringify([item.status, quote?.version, detail?.messages?.map(m => m.update_id)]);
+  const closedSignature = JSON.stringify([item.status, quote?.version, detail?.messages?.map(m => m.update_id), quote?.reviewSubmission?.submittedAt]);
   return { key: item.id, id: item.id, title: title.length > 40 ? title.slice(0, 39) + '…' : title, name: quote?.client?.name || 'Customer', source: item.source || 'telegram', date: item.created_at, stage, signature: closedSignature,
     text: failed ? 'Details unavailable · Open to check' : ({ 'need-info': 'Check customer details and latest messages', 'need-price': 'Needs a price', ready: 'Saved prices · Manager review required', sent: 'Sent to customer', attention: 'Check delivery history before another send' })[stage] };
 }

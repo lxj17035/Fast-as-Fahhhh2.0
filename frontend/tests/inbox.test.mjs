@@ -49,3 +49,10 @@ test('only formal current handoff routes to Manager; Staff edits and new message
  assert.equal(submissionCurrent({...quote,version:2},detail),false);
  assert.equal(stageFor(item,quote,{...detail,messages:[{update_id:'1'},{update_id:'2'}]},[],'2026-10-24'),'need-info');
 });
+
+test('a formal handoff reopens a locally closed row even without changing quote version',()=>{
+ const before=enquiryRow(item,{...quote,reviewSubmission:null},detail,[]);
+ const after=enquiryRow(item,{...quote,reviewSubmission:{...quote.reviewSubmission,submittedAt:'2026-10-24T12:00:00Z'}},detail,[]);
+ assert.notEqual(after.signature,before.signature);
+ assert.equal(after.stage,'need-price');
+});
