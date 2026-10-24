@@ -137,3 +137,9 @@ reran successfully after shared styling changes. PostgreSQL container removed.
 Final F5 recovery-copy browser rerun passed against actual temporary API and
 mocked summary failure. Phase 3 ends here; continue T1-T3/RP2 in a new chat.
 The phase-end fast-forward publication is verified separately from deployment.
+
+Final DESIGN.md lint attempt: `npx --offline -p @google/design.md designmd lint DESIGN.md`
+could not run (ENOTCACHED; package absent from local npm cache). No dependency
+installed. Existing frontmatter/token mapping was manually checked; this lint is
+not reported as passed. Final static audit retains the three documented delegated
+button false positives and no unresolved ownership/encoding findings.
