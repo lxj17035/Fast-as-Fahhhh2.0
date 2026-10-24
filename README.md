@@ -26,12 +26,12 @@ This README reflects the code in `origin/main` at `90a8491` (24 October 2026). T
 | Resource | Link or status |
 | --- | --- |
 | Repository | [Fast-as-Fahhhh2.0](https://github.com/lxj17035/Fast-as-Fahhhh2.0) |
-| Published demo URL | [QuoteFlow on Replit](https://fast-as-fahhhh-20.replit.app/) — recorded in the release handoff; current V2 publication and hosted verification remain pending |
+| Live Demo | [QuoteFlow on Replit](https://fast-as-fahhhh-20.replit.app/#/) — published and browser-accessible; inbox and connected Business settings checked on 24 October 2026 |
 | RunPod Endpoint | [GLM-5.3 API base](https://api.runpod.ai/v2/b1dd8hy2hqo1nb/openai/v1) |
 | Slide Deck | Link pending |
 | Demo Video | Link pending |
 
-The published URL is not evidence that the latest source or complete live journey has been verified. See [release handoff](docs/V2_PHASE_HANDOFF.md).
+Read-only hosted checks confirmed the inbox, simulated Staff/Manager selector, and connected Business settings with the Cleaning profile on 24 October 2026. This confirms demo availability; the exact deployed commit, complete Telegram delivery journey, provider usage evidence, and security rescan were not verified in this check. See [release handoff](docs/V2_PHASE_HANDOFF.md) for the broader acceptance requirements.
 
 ## Overview
 
@@ -200,7 +200,7 @@ For an isolated preview without provider credentials or runtime PostgreSQL, foll
 
 On Replit, configure PostgreSQL and the private provider/webhook values in Secrets, then use the configured Run command. `.replit` sets the public web port to `5000`; the API remains private on `127.0.0.1:8004`. The launcher supervises both processes.
 
-Runtime dependencies are declared in `pyproject.toml` and mirrored in `requirements.txt`. The Replit build installs Python packages into `.pythonlibs` and frontend packages from the pnpm lockfile. Hosted publication, dependency checks/security rescan, and the live acceptance journey still require verification.
+Runtime dependencies are declared in `pyproject.toml` and mirrored in `requirements.txt`. The Replit build installs Python packages into `.pythonlibs` and frontend packages from the pnpm lockfile. The published demo is accessible. Hosted dependency checks/security rescan and the complete live acceptance journey still require verification.
 
 - [Replit deployment guide](docs/REPLIT_DEPLOYMENT_GUIDE.md)
 - [Docker and Ubuntu setup](docs/DOCKER_UBUNTU.md)
@@ -231,7 +231,7 @@ Generated output is ignored under `output/pdf/`. Review rendered PDFs after layo
 
 ## How We Use Replit (Required)
 
-Replit provides the configured demo app environment and a recorded published demo URL. The repository contains its run/deployment configuration and a launcher for the Node web entry and Python API. Private values belong in Replit Secrets. Current V2 publication and hosted acceptance remain pending; collaborative Multiplayer development is not claimed.
+Replit hosts the published demo at the Live Demo link above; read-only browser checks confirmed the inbox and connected Business settings on 24 October 2026. The repository contains its run/deployment configuration and a launcher for the Node web entry and Python API. Private values belong in Replit Secrets. The deployed pages expose the Staff/Manager workflow and active business profile. Complete hosted acceptance remains pending; collaborative Multiplayer development is not claimed.
 
 **Proof of use:** required PDF pending. Planned file: `submission/SDC2026_Fast_as_Fahhhhh_Replit_POU.pdf`. See [release handoff](docs/V2_PHASE_HANDOFF.md) for current evidence and limits.
 
@@ -284,9 +284,11 @@ QuoteFlow is an enquiry-to-quotation module for an Orbyte-style connected busine
 
 The intended benefit is less copying, clearer review ownership, and consistent quotations for Malaysian micro and small businesses. A 30% reduction in preparation time is a target to measure with paired fictional-enquiry trials, not an achieved result. The intended SDG 8 contribution is improved SME productivity and support for small-business growth.
 
-Current release work is to publish and verify the tested V2 build, complete controlled Telegram/provider acceptance and RP2 evidence, and prepare submission slides/video. Production identity, multi-tenancy, extra channels, queue infrastructure, payments, and advanced commercial rules are outside this MVP. The inbox is the core alert mechanism; email remains optional.
+The demo is published and accessible. Remaining release work is to verify the complete hosted journey and deployed version, complete controlled Telegram/provider acceptance and RP2 evidence, and prepare submission slides/video. Production identity, multi-tenancy, extra channels, queue infrastructure, payments, and advanced commercial rules are outside this MVP. The inbox is the core alert mechanism; email remains optional.
 
 ## Submission Checklist
+
+- [x] Published demo link added; inbox and connected Business settings accessible in a read-only browser check on 24 October 2026.
 
 - [x] Team name, Domain 2 and SDG track filled in.
 - [ ] Slide deck link added.

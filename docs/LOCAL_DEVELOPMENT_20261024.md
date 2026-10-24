@@ -106,3 +106,12 @@ Documentation only; application suites, fresh setup and live hosted/provider che
 - [x] Broadened README problem/product positioning to WhatsApp, Telegram, Instagram and Facebook enquiries at the owner's request.
 - [x] Explicitly retained Telegram as the implemented demo channel and the other integrations as future extensions; no application behavior or contracts changed.
 - [x] Checked channel-scope wording, all 20 local links, Markdown fences and git diff whitespace. Documentation only; application/live tests not rerun.
+
+## Published demo availability (24 October 2026)
+
+- [x] Opened https://fast-as-fahhhh-20.replit.app/#/ in a browser. Inbox loaded without login, displayed Telegram enquiry rows, Staff/Manager role selector and current task controls.
+- [x] Opened Settings using its navigation link. Page showed Connected, active Cleaning profile and fictional business settings; Staff fields were disabled as expected.
+- [x] Updated README to mark the demo published/browser-accessible while retaining separate complete-journey, deployed-commit, provider evidence and security-rescan limits.
+- [x] All 20 README local links resolve, Markdown fences balance and git diff whitespace checks pass.
+
+Read-only navigation only. No settings/profile changes, AI calls, quotation edits, approvals or customer messages were performed. Application suites and full hosted acceptance were not run. This availability check supersedes older README publication-pending wording, not the remaining release acceptance requirements.
