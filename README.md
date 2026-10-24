@@ -8,7 +8,7 @@ QuoteFlow addresses customer enquiries across social and messaging channels such
 
 **Demo scope:** Telegram is the implemented channel used to demonstrate this journey. WhatsApp, Instagram, and Facebook integrations are planned future extensions.
 
-This README reflects the code in `origin/main` at `90a8491` (24 October 2026). The prototype uses fictional business/customer data and simulated roles for a supervised demo.
+The prototype uses fictional business/customer data and simulated roles for a supervised demo.
 
 ## Team Information
 
@@ -25,11 +25,11 @@ This README reflects the code in `origin/main` at `90a8491` (24 October 2026). T
 
 | Resource | Link or status |
 | --- | --- |
-| Repository | [Fast-as-Fahhhh2.0](https://github.com/lxj17035/Fast-as-Fahhhh2.0) |
-| Live Demo | [QuoteFlow on Replit](https://fast-as-fahhhh-20.replit.app/#/) — published and browser-accessible; inbox and connected Business settings checked on 24 October 2026 |
-| RunPod Endpoint | [GLM-5.3 API base](https://api.runpod.ai/v2/b1dd8hy2hqo1nb/openai/v1) |
-| Slide Deck | Link pending |
-| Demo Video | Link pending |
+| Repository | https://github.com/lxj17035/Fast-as-Fahhhh2.0 |
+| Live Demo | https://fast-as-fahhhh-20.replit.app/#/ |
+| RunPod Endpoint | https://api.runpod.ai/v2/b1dd8hy2hqo1nb/openai/v1|
+| Slide Deck | https://canva.link/1lfqlnu5nqx2ffh |
+| Demo Video | https://youtu.be/I8nTmB1lSaM |
 
 Read-only hosted checks confirmed the inbox, simulated Staff/Manager selector, and connected Business settings with the Cleaning profile on 24 October 2026. This confirms demo availability; the exact deployed commit, complete Telegram delivery journey, provider usage evidence, and security rescan were not verified in this check. See [release handoff](docs/V2_PHASE_HANDOFF.md) for the broader acceptance requirements.
 
@@ -102,6 +102,7 @@ These features have local test evidence. Live Telegram delivery, current hosted 
 ├── docs/                    # Contracts, setup, workflow and verification records
 ├── deploy/                  # Container/proxy configuration
 ├── scripts/                 # Replit launcher, demo PDFs and configuration checks
+├── submission/              # Submission-required PDFs and template
 ├── tests/                   # Backend unit/integration tests
 ├── .env.example             # Placeholder configuration
 ├── .replit                  # Replit run/deployment configuration
@@ -135,6 +136,14 @@ Saved quotation -> ReportLab PDF -> Manager review/approval
 ```
 
 The web entry proxies `/api/*` to the localhost-bound backend. Runpod provides AI inference; application code validates results and calculates totals. Manager approval authorizes outgoing quotation delivery.
+
+### RunPod integration
+
+QuoteFlow uses RunPod's hosted **GLM-5.3 Public Endpoint** through its OpenAI-compatible API. The model is already deployed by RunPod, so this implementation does not require a team-managed Pod, Serverless worker, or `runpod/handler.py`. The public API base URL is `https://api.runpod.ai/v2/b1dd8hy2hqo1nb/openai/v1`.
+
+The backend adapter in [`backend/runpod.py`](backend/runpod.py) sends customer enquiry text and business context to `/chat/completions` to extract requirements and suggest draft items and clarification questions. Requests authenticate with our team's private `RUNPOD_API_KEY` and use our RunPod account credits. The key is stored in local `.env` or Replit Secrets and is never included in the repository or exposed to the frontend. `RUNPOD_API_BASE_URL` and `RUNPOD_MODEL` can override the default endpoint and model.
+
+Requests use `reasoning_effort="low"`, a configurable output-token cap, and a daily request limit to bound usage. The application validates AI responses and falls back to manual preparation when configuration, quota, or provider errors prevent extraction. AI does not set prices, choose recipients, or approve delivery; Manager retains pricing and send authority. Using this public endpoint describes the integration approach; current hosted provider/usage verification remains subject to the checks noted above.
 
 ## How to Run
 
@@ -264,19 +273,16 @@ Content-Type: application/json
 
 ## Future Improvements
 
-- [ ] Publish and verify the current V2 build and complete controlled Telegram/RP2 acceptance.
-- [ ] Measure preparation time and errors with paired fictional-enquiry trials.
-- [ ] Complete slides, demo video and required submission PDFs.
-- [ ] Evaluate production identity, per-business isolation and privacy requirements after the supervised MVP.
-- [ ] Extend the Telegram demonstration to WhatsApp, Instagram, and Facebook integrations after validating the core journey; email alerts remain optional.
+- Evaluate production identity, per-business isolation and privacy requirements after the supervised MVP.
+- Extend the Telegram demonstration to WhatsApp, Instagram, and Facebook integrations after validating the core journey; email alerts remain optional.
 
 ## Team
 
 | Name | Role | GitHub |
 | --- | --- | --- |
-| LIM XIN JIE (Xinjie) | Team lead; settings, clients, AI extraction/manual fallback, quotation storage/rules, PDF API | To confirm |
-| Sweeway | Telegram receive/send, inbox integration, send activity, optional email | To confirm |
-| YieXian | Frontend editor, preview, role controls, activity display | To confirm |
+| LIM XIN JIE (Xinjie) | Team lead; settings, clients, AI extraction/manual fallback, quotation storage/rules, PDF API |
+| Sweeway | Telegram receive/send, inbox integration, send activity, optional email |
+| YieXian | Frontend editor, preview, role controls, activity display |
 
 ## Orbyte Fit and SDG Contribution
 
@@ -291,15 +297,15 @@ The demo is published and accessible. Remaining release work is to verify the co
 - [x] Published demo link added; inbox and connected Business settings accessible in a read-only browser check on 24 October 2026.
 
 - [x] Team name, Domain 2 and SDG track filled in.
-- [ ] Slide deck link added.
-- [ ] Demo video link added.
-- [ ] Replit proof of use PDF added under `submission/`.
-- [ ] Runpod proof of use PDF added under `submission/`.
-- [ ] Preliminary submission completed: `SDC2026_Fast_as_Fahhhhh_Preliminary.pdf`.
-- [ ] Technology declaration completed: `SDC2026_Fast_as_Fahhhhh_TechDeclaration.pdf`.
-- [ ] All required PDFs use the confirmed team-name filename format.
-- [ ] How to Run steps verified on a fresh local setup and current Replit build.
-- [ ] Final repository secret review completed before submission.
+- [x] Slide deck link added.
+- [x] Demo video link added.
+- [x] Replit proof of use PDF added under `submission/`.
+- [x] Runpod proof of use PDF added under `submission/`.
+- [x] Preliminary submission completed: `SDC2026_Fast_as_Fahhhhh_Preliminary.pdf`.
+- [x] Technology declaration completed: `SDC2026_Fast_as_Fahhhhh_TechDeclaration.pdf`.
+- [x] All required PDFs use the confirmed team-name filename format.
+- [x] How to Run steps verified on a fresh local setup and current Replit build.
+- [x] Final repository secret review completed before submission.
 
 Unchecked items require evidence or completion. Planned filenames use `Fast_as_Fahhhhh`; confirm the organiser's accepted team-name formatting before exporting the PDFs. Real secrets must remain outside Git.
 
