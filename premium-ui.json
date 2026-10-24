@@ -1,0 +1,1 @@
+{"profile":"product-admin","sourceRoots":["frontend/src"],"locale":"en-MY","canonicalMap":"docs/FRONTEND.md","requiredCapabilities":["Select/Listbox","Date","Form","Scrollbar","Toast","CRUD"],"ownership":{"Select/Listbox":"native","Date":"native"}}

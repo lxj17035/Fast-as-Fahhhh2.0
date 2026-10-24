@@ -68,8 +68,9 @@ Invoke-RestMethod -Method Patch -Uri 'http://127.0.0.1:8004/api/business-profile
   -ContentType 'application/json' -Body '{"business_profile_id":"cleaning"}'
 ```
 
-Until F1 is implemented, select profiles through this API, then reload the
-existing frontend. Old open records from another profile return 404. Do not
+F1 now exposes profile selection in Business settings with an explicit Switch
+business profile action. It resets loaded workspace records and protects unsaved
+edits. Settings writes target the named profile. The API remains available. Old open records from another profile return 404. Do not
 switch profiles during a supervised demo review/send unless you intend to
 change the workspace context for every browser.
 

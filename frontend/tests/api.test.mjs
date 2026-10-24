@@ -2,6 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Api, ApiError, errorDetails } from '../src/api.js';
 
+test('profile selection and edits use explicit profile contracts', async () => {
+  const calls = [];
+  const api = new Api('http://api', async (url, options) => {
+    calls.push({ url, ...options }); return Response.json({});
+  });
+  await api.profiles(); await api.selectProfile('cleaning');
+  await api.saveProfile('printing', { companyName: 'Fictional Print' });
+  assert.equal(calls[0].url, 'http://api/api/business-profiles');
+  assert.deepEqual(JSON.parse(calls[1].body), { business_profile_id: 'cleaning' });
+  assert.equal(calls[2].url, 'http://api/api/business-profiles/printing');
+  assert.deepEqual(JSON.parse(calls[2].body), { companyName: 'Fictional Print' });
+});
+
 test('quotation mutation uses current backend contract and simulated actor header', async () => {
   const calls = [];
   const api = new Api('http://127.0.0.1:8004/', async (url, options) => {

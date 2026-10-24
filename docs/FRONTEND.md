@@ -139,3 +139,28 @@ Usability verification: **22 frontend tests and 7 isolated API checks passed**.
 Browser review covered desktop and 390px mobile, unsaved navigation, saved-version
 PDFs, Sales/PM guidance, explicit approval, failed retry, sent protection, and
 unknown-delivery protection. Providers were mocked; no customer messages were sent.
+
+## Canonical UI Map
+
+Visual context: [DESIGN.md](../DESIGN.md). Preserve existing shared primitives.
+Product sources: [workflow](WORKFLOW.md), [profile scope](BUSINESS_PROFILES.md),
+[approval](PM_APPROVAL.md), [AI analysis](AI_ANALYSIS.md).
+
+| Capability | Canonical owner | Source of truth | Allowed variants | Verification |
+| --- | --- | --- | --- | --- |
+| Select/Listbox | app.js native select and validitySelect | DESIGN.md; platform owns popup geometry | native | profile browser QA and API integration |
+| Date | app.js input helper; native date | WORKFLOW.md existing validity engine | native | saved PDF/API checks |
+| Form | app.js input, task, errorBox and submit handler | API validation; edits remain after rejection | settings/client/quotation | API tests and browser QA |
+| Scrollbar | styles.css global baseline | DESIGN.md runtime token mapping | geometry only | desktop/mobile browser QA |
+| Toast | app.js noticeBox and errorBox | inline role=status and role=alert | success/warning/error | browser QA |
+| CRUD | app.js loadRoute, navigate, discardEdits and task | profile and quotation API contracts | stay on successful edit | isolated actual API integration |
+
+F1: Settings lists Printing, Cleaning and Repair from `/api/business-profiles`.
+An explicit switch writes the shared active selection, discards old workspace
+records/PDF/client state, resets inbox paging/search and reloads settings. Unsaved
+edits use the existing discard dialog; cancellation retains them. Business edits
+PATCH the named profile, so another browser changing active scope cannot redirect
+the save. Existing enquiries and sent snapshots stay with the original profile.
+The profile label remains in the sidebar; profile choice never comes from AI.
+Native select/date popup geometry is deliberately platform owned. Textareas grow
+with entered content. No frontend package install or build is required for F1.

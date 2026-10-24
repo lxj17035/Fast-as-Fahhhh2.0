@@ -14,6 +14,7 @@ const state = {
   error: null, notice: '', noticeKind: 'info', offset: 0, limit: 25, items: [], filter: 'all', search: '',
   detail: null, quote: null, form: null, dirty: false, previewVersion: null, pdfURL: null,
   settings: null, client: null, settingsDirty: false, clientDirty: false, hold: false, holdBaseline: [],
+  profiles: [], activeProfile: '', selectedProfile: '', profileLabel: '',
   pdfReady: false, pdfPage: 1, pdfPages: 0, companyName: 'Demo business workspace', focusPreview: false, expanded: {},
 };
 let loadId = 0;
@@ -39,6 +40,7 @@ function dateOnly(value) { return value ? new Intl.DateTimeFormat('en-MY', { day
 function button(label, action, { kind = 'secondary', symbol, disabled = false } = {}) {
   return `<button type="button" class="btn ${kind}" data-action="${action}" ${disabled ? 'disabled' : ''}>${symbol ? icon(symbol) : ''}${label}</button>`;
 }
+function growTextarea(field) { field.style.height = 'auto'; field.style.height = field.scrollHeight + 2 + 'px'; }
 function showError(error) { state.error = { message: error.message || 'Something went wrong.', fields: error.fields || {}, status: error.status }; }
 function noticeBox() { return state.notice ? `<div data-page-notice class="message ${state.noticeKind}" role="status">${icon(state.noticeKind === 'warning' ? 'alert' : 'check')}<span>${e(state.notice)}</span></div>` : ''; }
 function errorBox() {
@@ -55,12 +57,20 @@ function render() {
   document.title = `${settings ? 'Settings' : review ? 'Quotation review' : 'Inbox'} · QuoteFlow`;
   root.innerHTML = `<aside class="sidebar">
     <a href="#/" class="brand" data-nav="/" aria-label="QuoteFlow inbox"><span class="brand-symbol">${icon('inbox')}</span>QuoteFlow<span class="brand-dot">.</span></a>
-    <div class="workspace"><span class="workspace-avatar">QF</span><div><strong id="company-name">${e(state.companyName)}</strong><span>Fictional business workspace</span></div></div>
+    <div class="workspace"><span class="workspace-avatar">QF</span><div><strong id="company-name">${e(state.companyName)}</strong><span id="profile-label">${e(state.profileLabel || 'Fictional business workspace')}</span></div></div>
     <p class="nav-label">WORKSPACE</p><nav aria-label="Main navigation"><a href="#/" data-nav="/" aria-label="Enquiry inbox" class="nav-item ${!settings ? 'active' : ''}" ${!settings ? 'aria-current="page"' : ''}>${icon('inbox')}<span>Enquiry inbox</span>${state.items.length ? `<span class="nav-count">${state.items.length}</span>` : ''}</a><a href="#/settings" data-nav="/settings" aria-label="Settings" class="nav-item ${settings ? 'active' : ''}" ${settings ? 'aria-current="page"' : ''}>${icon('settings')}<span>Settings</span></a></nav>
     <div class="sidebar-bottom"><div class="human-note">${icon('shield')}<strong>Assisted by AI.<br>Approved by you.</strong><p>You stay in control of pricing and every outgoing quotation.</p></div><div class="demo-label"><i></i>SYNTHETIC DATA DEMO</div><small>Orbyte Smart SME Challenge</small></div>
     </aside><div class="app-body"><header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong>${settings ? 'Settings' : review ? 'Quotation review' : 'Enquiry inbox'}</strong></div><div class="topbar-right"><div id="connection">${connection()}</div><div class="role-control"><span class="avatar">${state.role === 'pm' ? 'PM' : 'S'}</span><label>Demo role<select id="role" aria-label="Simulated role"><option value="sales" ${state.role === 'sales' ? 'selected' : ''}>Sales</option><option value="pm" ${state.role === 'pm' ? 'selected' : ''}>PM</option></select></label></div></div></header>
     <main id="main" tabindex="-1" ${state.loading ? 'aria-busy="true"' : ''}>${state.loading ? '<div class="loading"><span class="spinner"></span><h2>Loading your workspace</h2><p>Getting your saved details…</p></div>' : settings ? settingsPage() : review ? reviewPage() : inboxPage()}</main>
     <footer class="app-footer"><span>QuoteFlow <span>/</span> Enquiry to quotation, connected.</span><span>Supervised demo · Times in Kuala Lumpur</span></footer></div>`;
+  root.querySelectorAll('textarea').forEach(growTextarea);
+  for (const [name, message] of Object.entries(state.error?.fields || {})) {
+    const field = Array.from(root.querySelectorAll('[name]')).find(item => item.name === name);
+    if (!field) continue;
+    field.setAttribute('aria-invalid', 'true');
+    const hint = document.createElement('small'); hint.id = 'field-error-' + name.replace(/[^a-z0-9-]/gi, '-');
+    hint.className = 'field-error'; hint.textContent = message; field.setAttribute('aria-describedby', hint.id); (field.closest('label') || field).after(hint);
+  }
   if (!state.loading && review && state.form) updateEditorIndicators();
   const canvas = document.querySelector('#pdf-canvas');
   if (canvas) {
@@ -126,15 +136,15 @@ function input(label, name, value, { type = 'text', max = 500, placeholder = '',
 function validitySelect(value, name = 'validity') { return `<label class="field"><span>Valid for</span><select name="${name}">${Object.entries(VALIDITIES).map(([code, label]) => `<option value="${code}" ${code === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>`; }
 function editor() {
   const q = state.quote, f = state.form, locked = !editable(q) || state.busy;
-  return `<form id="quote-form"><fieldset ${locked ? 'disabled' : ''}>
-    <div class="editor-section"><h3 class="form-section-title">Customer</h3><div class="field-grid">${input('Customer name', 'clientName', f.client.name, { placeholder: 'Name on the quotation' })}<label class="field"><span>Address <small>Optional</small></span><textarea name="clientAddress" rows="2" maxlength="500" placeholder="Leave blank if unknown">${e(f.client.address)}</textarea></label></div></div>
+  return `<form id="quote-form" novalidate><fieldset ${locked ? 'disabled' : ''}>
+    <div class="editor-section"><h3 class="form-section-title">Customer</h3><div class="field-grid">${input('Customer name', 'clientName', f.client.name, { placeholder: 'Name on the quotation' })}<label class="field"><span>Address <small>Optional</small></span><textarea style="resize: none" name="clientAddress" rows="2" maxlength="500" placeholder="Leave blank if unknown">${e(f.client.address)}</textarea></label></div></div>
     <div class="editor-section"><h3 class="form-section-title">Items & prices</h3><p class="field-note pricing-note">Prices in ${e(q.currency)}. Leave a price blank if you’re still checking it.</p>
-      <div class="item-head"><span>Item description</span><span>Quantity</span><span>Unit price</span><span></span></div><div id="item-rows" tabindex="-1">${f.items.map((item, i) => `<div class="item-row"><textarea name="item-description-${i}" rows="2" maxlength="2000" aria-label="Item ${i + 1} description" placeholder="What are you quoting for?">${e(item.description)}</textarea><input name="item-quantity-${i}" inputmode="decimal" aria-label="Item ${i + 1} quantity" placeholder="Qty" value="${e(item.quantity)}" /><input name="item-price-${i}" inputmode="decimal" aria-label="Item ${i + 1} unit price" placeholder="Price" value="${e(item.unitPrice)}" /><button type="button" class="icon-button" data-action="remove-item" data-index="${i}" aria-label="Remove item ${i + 1}">${icon('close')}</button></div>`).join('')}</div>
+      <div class="item-head"><span>Item description</span><span>Quantity</span><span>Unit price</span><span></span></div><div id="item-rows" tabindex="-1">${f.items.map((item, i) => `<div class="item-row"><textarea style="resize: none" name="item-description-${i}" rows="2" maxlength="2000" aria-label="Item ${i + 1} description" placeholder="What are you quoting for?">${e(item.description)}</textarea><input name="item-quantity-${i}" inputmode="decimal" aria-label="Item ${i + 1} quantity" placeholder="Qty" value="${e(item.quantity)}" /><input name="item-price-${i}" inputmode="decimal" aria-label="Item ${i + 1} unit price" placeholder="Price" value="${e(item.unitPrice)}" /><button type="button" class="icon-button" data-action="remove-item" data-index="${i}" aria-label="Remove item ${i + 1}">${icon('close')}</button></div>`).join('')}</div>
       ${!f.items.length ? '<p class="no-items">Add the first item to begin.</p>' : ''}${button('Add another item', 'add-item', { symbol: 'plus', kind: 'text', disabled: locked || f.items.length >= 100 })}
       <div class="total-bar"><div><span id="total-label">Saved total</span><small id="total-note">Valid through ${e(dateOnly(q.expiryDate))}</small></div><strong>${q.total === null ? 'Prices needed' : `${e(q.currency)} ${e(q.total)}`}</strong></div>
     </div>
     ${f.missingInformation.length ? `<div class="editor-section" id="missing-review" tabindex="-1"><div class="missing-info"><strong>${icon('alert')} Please check</strong><p>Confirm each point using the customer’s message. Mark it checked once it’s resolved or you’ve decided it isn’t needed.</p>${f.missingInformation.map((item, i) => `<div class="missing-row"><span>${e(item)}</span><button type="button" class="text-link" data-action="dismiss-missing" data-index="${i}">Mark checked</button></div>`).join('')}</div></div>` : ''}
-    <details class="editor-options" ${disclosure('options')}><summary>Dates & notes <span>Optional changes</span></summary><div class="drawer-content"><div class="field-grid">${input('Issue date', 'issueDate', f.issueDate, { type: 'date' })}${validitySelect(f.validity)}</div><p class="field-note">The saved quote is valid through ${e(dateOnly(q.expiryDate))}. Save date changes to update this.</p><label class="field notes-field"><span>Notes for the customer <small>Optional</small></span><textarea name="notes" rows="3" maxlength="4000" placeholder="Add any reviewed terms or a helpful note…">${e(f.notes)}</textarea></label></div></details>
+    <details class="editor-options" ${disclosure('options')}><summary>Dates & notes <span>Optional changes</span></summary><div class="drawer-content"><div class="field-grid">${input('Issue date', 'issueDate', f.issueDate, { type: 'date' })}${validitySelect(f.validity)}</div><p class="field-note">The saved quote is valid through ${e(dateOnly(q.expiryDate))}. Save date changes to update this.</p><label class="field notes-field"><span>Notes for the customer <small>Optional</small></span><textarea style="resize: none" name="notes" rows="3" maxlength="4000" placeholder="Add any reviewed terms or a helpful note…">${e(f.notes)}</textarea></label></div></details>
     </fieldset><div class="editor-bottom"><span>${locked && !state.busy ? 'Protected after sending or while delivery is unconfirmed.' : 'Save a draft at any time. Preview before sending.'}</span><div class="editor-buttons"><button class="btn secondary" type="submit" id="save-quote" ${locked || !state.dirty ? 'disabled' : ''}>Save draft</button><button class="btn primary" type="button" id="save-preview" data-action="save-preview" ${locked ? 'disabled' : ''}>${icon('file')} ${state.dirty ? 'Save & preview' : 'Preview quote'}</button></div></div></form>`;
 }
 function pdfContent() {
@@ -173,39 +183,52 @@ function activityHistory() {
 function settingsPage() {
     return `<section class="page-heading"><div><h1>Business settings<span class="heading-dot">.</span></h1><p>Your company details and defaults for new quotes.</p></div>${button('Refresh', 'refresh', { symbol: 'refresh', disabled: state.busy })}</section>${errorBox()}${noticeBox()}
     <div class="settings-grid">
+      <section class="panel settings-panel profile-panel"><div class="panel-heading"><div><h2>Demo business profile</h2><p>Choose the business for this workspace and new enquiries.</p></div>${icon('settings')}</div>
+        <form id="profile-form" novalidate><fieldset ${state.busy || !state.profiles.length ? 'disabled' : ''}><label class="field"><span>Business profile</span><select name="business_profile_id" id="business-profile" aria-label="Business profile" aria-describedby="profile-help">${state.profiles.map(profile => `<option value="${e(profile.id)}" ${profile.id === state.selectedProfile ? 'selected' : ''}>${e(profile.industry)} — ${e(profile.companyName)}</option>`).join('')}</select></label><p id="profile-help" class="field-note">Active: <strong>${e(state.profileLabel || 'Unavailable')}</strong>. Switching changes the workspace for everyone using this demo. Existing enquiries stay with their original business. AI cannot choose this profile.</p></fieldset><div class="form-bottom"><p>Save your edits before switching, or discard them when asked.</p><button class="btn primary" ${state.busy || !state.profiles.length || state.selectedProfile === state.activeProfile ? 'disabled' : ''}>Switch business profile</button></div></form>
+      </section>
       <section class="panel settings-panel"><div class="panel-heading"><div><h2>Your business</h2><p>These details appear on new quotations.</p></div>${icon('settings')}</div>
-        ${state.settings ? `<form id="settings-form"><fieldset ${state.busy ? 'disabled' : ''}>
+        ${state.settings ? `<form id="settings-form" novalidate><fieldset ${state.busy ? 'disabled' : ''}>
           ${input('Company name', 'companyName', state.settings.companyName, { extra: 'required' })}
-          <label class="field"><span>Company address</span><textarea name="companyAddress" rows="3" maxlength="500">${e(state.settings.companyAddress)}</textarea></label>
+          <label class="field"><span>Company address</span><textarea style="resize: none" name="companyAddress" rows="3" maxlength="500">${e(state.settings.companyAddress)}</textarea></label>
           <div class="field-grid">${input('Currency', 'currency', state.settings.currency, { max: 3, extra: 'required pattern="[A-Z]{3}" title="Three uppercase letters, e.g. MYR"' })}${validitySelect(state.settings.defaultValidity, 'defaultValidity')}</div>
           <p class="field-note">Dates use Kuala Lumpur time. You can change the validity on each quote.</p>
         </fieldset><div class="form-bottom"><p>Quotes you already saved keep their original details.</p><button type="submit" class="btn primary" ${state.busy ? 'disabled' : ''}>Save business details</button></div></form>` : `<div class="empty-state"><p>We couldn’t load your business details.</p>${button('Try again', 'refresh')}</div>`}
       </section>
       <div class="settings-aside"><section class="panel settings-explainer"><span class="note-icon">${icon('file')}</span><h2>Set up once. Review each quote.</h2><p>Your company details and usual validity are added to new drafts.</p><p>Check the customer’s name and address directly in their quotation. You can leave an unknown address blank.</p><div class="review-clear">${icon('shield')} Updating settings won’t change a sent quote.</div></section>
       <details class="panel settings-panel client-drawer" ${state.client ? 'open' : ''}><summary>Manage a saved client</summary><div class="drawer-content"><p class="field-note">For an existing client record. You can find its reference under More details in their quotation.</p>
-        <form id="load-client" class="client-lookup">${input('Client reference', 'clientId', state.client?.id || 'demo-client', { extra: 'required' })}<button class="btn secondary" ${state.busy ? 'disabled' : ''}>Find client</button></form>
-        <div id="client-editor">${state.client ? `<form id="client-form"><fieldset ${state.busy ? 'disabled' : ''}>${input('Client name', 'name', state.client.name, { extra: 'required' })}<label class="field"><span>Client address <small>Optional</small></span><textarea name="address" rows="3" maxlength="500">${e(state.client.address)}</textarea></label></fieldset><div class="form-bottom"><p>Previously saved quotes keep their original client details.</p><button class="btn primary" ${state.busy ? 'disabled' : ''}>Save client</button></div></form>` : ''}</div>
+        <form novalidate id="load-client" class="client-lookup">${input('Client reference', 'clientId', state.client?.id || (state.activeProfile === 'printing' ? 'demo-client' : 'demo-client-' + state.activeProfile), { extra: 'required' })}<button class="btn secondary" ${state.busy ? 'disabled' : ''}>Find client</button></form>
+        <div id="client-editor">${state.client ? `<form id="client-form" novalidate><fieldset ${state.busy ? 'disabled' : ''}>${input('Client name', 'name', state.client.name, { extra: 'required' })}<label class="field"><span>Client address <small>Optional</small></span><textarea style="resize: none" name="address" rows="3" maxlength="500">${e(state.client.address)}</textarea></label></fieldset><div class="form-bottom"><p>Previously saved quotes keep their original client details.</p><button class="btn primary" ${state.busy ? 'disabled' : ''}>Save client</button></div></form>` : ''}</div>
       </div></details></div>
       <details class="panel demo-options"><summary>Demo and connection options</summary><div class="drawer-content"><p>Roles are simulated for this supervised demo. A project manager must approve each send.</p><label class="checkbox-label"><input type="checkbox" id="record-actor" ${state.recordActor ? 'checked' : ''} /> Record the selected demo role on quotation edits</label><p class="field-note">Use this only when your backend has <code>ENABLE_DEMO_APPROVAL=true</code>. Otherwise, edits are recorded without a named actor.</p><p class="field-note">Server: <code>${e(API_BASE_URL || 'same origin')}</code>. Private keys stay on the server.</p></div></details>
     </div>`;
 }
 async function health() {
+  const token = loadId;
   try { await api.health(); state.connected = true; } catch { state.connected = false; }
   const el = document.querySelector('#connection'); if (el) el.innerHTML = connection();
   try {
-    const settings = await api.settings(); state.companyName = settings.companyName;
+    const settings = await api.settings(); if (token !== loadId) return; state.companyName = settings.companyName;
+    state.activeProfile = settings.business_profile_id;
+    state.profileLabel = ({ printing: 'Printing', cleaning: 'Cleaning', repair: 'Repair' })[state.activeProfile] || '';
     const name = document.querySelector('#company-name'); if (name) name.textContent = state.companyName;
+    const label = document.querySelector('#profile-label'); if (label) label.textContent = state.profileLabel;
   } catch { /* Connection errors are displayed by the page's own request. */ }
 }
 async function loadRoute(route) {
   const token = ++loadId;
     state.route = route; state.loading = true; state.error = null; state.notice = ''; state.noticeKind = 'info'; state.dirty = false;
   state.settingsDirty = false; state.clientDirty = false; revokePDF();
-  state.detail = null; state.quote = null; state.form = null; state.client = null; state.settings = null; state.hold = false; state.holdBaseline = []; state.expanded = {};
+  state.profiles = []; state.detail = null; state.quote = null; state.form = null; state.client = null; state.settings = null; state.hold = false; state.holdBaseline = []; state.expanded = {};
   render(); health();
   try {
     if (route === '/settings') {
-      const settings = await api.settings(); if (token !== loadId) return; state.settings = settings;
+      const profiles = await api.profiles(); if (token !== loadId) return;
+      state.profiles = profiles.items; state.activeProfile = profiles.active_business_profile_id;
+      state.selectedProfile = state.activeProfile;
+      const profile = state.profiles.find(item => item.id === state.activeProfile);
+      if (!profile) throw Error('The active business profile could not be loaded. Refresh to try again.');
+      state.settings = { ...profile, business_profile_id: profile.id };
+      state.companyName = profile.companyName; state.profileLabel = profile.industry;
     } else if (/^\/enquiries\/[a-fA-F0-9-]{32,36}$/.test(route)) {
       const id = route.split('/')[2];
       const [d, q] = await Promise.allSettled([api.enquiry(id), api.quotation(id)]);
@@ -243,10 +266,11 @@ function setHold(value) {
 }
 function ask({ title, content, confirm = 'Continue', danger = false, approval = false }) {
   return new Promise(resolve => {
+    const previousFocus = document.activeElement;
     const dialog = document.createElement('dialog'); dialog.className = 'confirm-dialog'; dialog.setAttribute('aria-labelledby', 'dialog-title');
-    dialog.innerHTML = `<form method="dialog"><div class="dialog-icon">${icon(approval ? 'send' : 'alert')}</div><h2 id="dialog-title">${e(title)}</h2>${content}${approval ? '<label class="checkbox-label approval-check"><input type="checkbox" id="confirm-approval" required /> I checked this PDF and approve sending it to this Telegram chat.</label>' : ''}<div class="dialog-actions"><button type="button" class="btn secondary" data-cancel>Cancel</button><button type="submit" class="btn ${danger ? 'danger' : 'primary'}" ${approval ? 'disabled' : ''}>${e(confirm)}</button></div></form>`;
+    dialog.innerHTML = `<form method="dialog" novalidate><div class="dialog-icon">${icon(approval ? 'send' : 'alert')}</div><h2 id="dialog-title">${e(title)}</h2>${content}${approval ? '<label class="checkbox-label approval-check"><input type="checkbox" id="confirm-approval" required /> I checked this PDF and approve sending it to this Telegram chat.</label>' : ''}<div class="dialog-actions"><button type="button" class="btn secondary" data-cancel>Cancel</button><button type="submit" class="btn ${danger ? 'danger' : 'primary'}" ${approval ? 'disabled' : ''}>${e(confirm)}</button></div></form>`;
     document.body.append(dialog);
-    const finish = value => { dialog.close(); dialog.remove(); resolve(value); };
+    const finish = value => { dialog.close(); dialog.remove(); if (previousFocus?.isConnected) previousFocus.focus(); resolve(value); };
     dialog.querySelector('[data-cancel]').onclick = () => finish(false);
     dialog.addEventListener('cancel', event => { event.preventDefault(); finish(false); });
     dialog.querySelector('form').onsubmit = event => { event.preventDefault(); finish(true); };
@@ -259,7 +283,7 @@ async function discardEdits() { return !hasEdits() || ask({ title: 'Leave unsave
 async function navigate(route) { if (state.busy || route === state.route || !(await discardEdits())) return; state.dirty = state.settingsDirty = state.clientDirty = false; location.hash = route; }
 async function task(work) {
     if (state.busy) return; state.busy = true; state.error = null; state.notice = ''; state.noticeKind = 'info'; render();
-  try { await work(); } catch (error) { showError(error); } finally { state.busy = false; render(); }
+  try { await work(); } catch (error) { showError(error); } finally { state.busy = false; render(); if (state.error) root.querySelector('[aria-invalid="true"]')?.focus(); }
 }
 function captureQuote(form) {
   const data = new FormData(form);
@@ -360,6 +384,7 @@ root.addEventListener('click', async event => {
   const action = actions[target.dataset.action]; if (action) await action(target);
 });
 root.addEventListener('input', event => {
+  if (event.target.tagName === 'TEXTAREA') growTextarea(event.target);
   if (event.target.closest('#quote-form') && !state.busy) { captureQuote(event.target.form); state.dirty = true; state.notice = ''; root.querySelector('[data-page-notice]')?.remove(); updateEditorIndicators(); }
   if (event.target.id === 'search') { state.search = event.target.value; document.querySelector('#enquiry-results').innerHTML = inboxResults(); }
   if (event.target.closest('#settings-form')) { state.settingsDirty = true; state.settings[event.target.name] = event.target.value; }
@@ -369,6 +394,7 @@ root.addEventListener('toggle', event => {
   if (event.target.dataset?.disclosure) state.expanded[event.target.dataset.disclosure] = event.target.open;
 }, true);
 root.addEventListener('change', event => {
+  if (event.target.id === 'business-profile') { state.selectedProfile = event.target.value; render(); }
   if (event.target.id === 'role') { if (state.busy) { event.target.value = state.role; return; } state.role = event.target.value; writeSession('qf-role', state.role); render(); }
   if (event.target.id === 'record-actor') { state.recordActor = event.target.checked; writeSession('qf-actor', String(state.recordActor)); }
 });
@@ -376,9 +402,21 @@ root.addEventListener('submit', async event => {
   event.preventDefault(); if (state.busy) return; const form = event.target;
   if (form.id === 'quote-form') {
     await saveQuoteAndPreview(false);
+  } else if (form.id === 'profile-form') {
+    const identity = state.selectedProfile;
+    if (!identity || identity === state.activeProfile || !(await discardEdits())) return;
+    await task(async () => {
+      await api.selectProfile(identity);
+      state.items = []; state.offset = 0; state.filter = 'all'; state.search = '';
+      state.client = null; state.detail = null; state.quote = null; state.form = null; revokePDF();
+      state.dirty = state.settingsDirty = state.clientDirty = false;
+      // Invalidate every in-flight request from the previous workspace.
+      await loadRoute('/settings');
+      state.notice = 'Business profile switched. New enquiries use this business; existing enquiries keep their original profile.';
+    });
   } else if (form.id === 'settings-form') {
     const data = new FormData(form); const patch = Object.fromEntries(['companyName', 'companyAddress', 'currency', 'defaultValidity'].map(key => [key, data.get(key)]));
-    await task(async () => { state.settings = await api.saveSettings(patch); state.companyName = state.settings.companyName; state.settingsDirty = false; state.notice = 'Business settings saved. Existing quotation snapshots are unchanged.'; });
+    await task(async () => { state.settings = await api.saveProfile(state.settings.business_profile_id, patch); state.companyName = state.settings.companyName; state.profiles = state.profiles.map(profile => profile.id === state.settings.business_profile_id ? { ...profile, ...state.settings } : profile); state.settingsDirty = false; state.notice = 'Business settings saved. Existing quotation snapshots are unchanged.'; });
   } else if (form.id === 'load-client') {
     const id = new FormData(form).get('clientId').trim();
     if (state.clientDirty && !(await ask({ title: 'Discard client edits?', content: '<p>Loading another client will discard the current unsaved client changes.</p>', confirm: 'Discard and load', danger: true }))) return;

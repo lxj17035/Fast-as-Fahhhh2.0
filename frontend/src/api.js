@@ -81,6 +81,9 @@ export class Api {
     return this.request(`/api/quotations/${encodeURIComponent(id)}/send`, { method: 'POST', body, role: 'pm', delivery: true });
   }
   settings() { return this.request('/api/settings'); }
+  profiles() { return this.request('/api/business-profiles'); }
+  selectProfile(id) { return this.request('/api/business-profiles/active', { method: 'PATCH', body: { business_profile_id: id } }); }
+  saveProfile(id, body) { return this.request(`/api/business-profiles/${encodeURIComponent(id)}`, { method: 'PATCH', body }); }
   saveSettings(body) { return this.request('/api/settings', { method: 'PATCH', body }); }
   client(id) { return this.request(`/api/clients/${encodeURIComponent(id)}`); }
   saveClient(id, body) { return this.request(`/api/clients/${encodeURIComponent(id)}`, { method: 'PATCH', body }); }

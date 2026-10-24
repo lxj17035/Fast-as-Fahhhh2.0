@@ -10,7 +10,8 @@ V2 B1 extends the backend to three fictional profiles (Printing, Cleaning,
 Repair) with one manually selected active profile. New enquiries retain their
 profile for life; switching profiles changes the demo workspace scope without
 moving existing records. See [business profile contract](BUSINESS_PROFILES.md).
-Frontend selection and the remaining V2 conversation workflow are separate work.
+F1 adds explicit profile selection in Business settings; selection changes the
+shared demo workspace. Remaining V2 conversation/review UI is separate work.
 
 ## One complete journey
 

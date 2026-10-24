@@ -100,6 +100,26 @@ try {
     assert.ok(sendBlockers({ quote: await api.quotation(other.id), detail, role: 'pm', previewVersion: q.version }).length);
     await assert.rejects(api.send(q.id, q.version, result.attempt_id), error => error.status === 409);
   });
+  await test('actual API: profile switches isolate enquiries and preserve named settings and saved PDFs', async () => {
+    const profiles = await api.profiles();
+    assert.deepEqual(profiles.items.map(item => item.id), ['printing', 'cleaning', 'repair']);
+    for (const identity of ['cleaning', 'repair']) {
+      assert.equal((await api.selectProfile(identity)).business_profile_id, identity);
+      assert.equal((await api.settings()).business_profile_id, identity);
+      assert.equal((await api.enquiries()).items.length, 0);
+      await assert.rejects(api.enquiry(enquiry.id), error => error.status === 404);
+      await assert.rejects(api.pdf(quote.id, quote.version), error => error.status === 404);
+    }
+    await api.saveProfile('cleaning', { companyName: 'Fictional Cleaning Service' });
+    assert.equal((await api.settings()).business_profile_id, 'repair');
+    await api.selectProfile('cleaning');
+    assert.equal((await api.settings()).companyName, 'Fictional Cleaning Service');
+    await api.selectProfile('printing');
+    assert.equal((await api.enquiry(enquiry.id)).business_profile_id, 'printing');
+    assert.deepEqual(new Uint8Array(await (await api.pdf(quote.id, quote.version)).blob.arrayBuffer()), originalPDF);
+    await assert.rejects(api.selectProfile('unknown'), error => error.status === 422);
+    assert.equal((await api.settings()).business_profile_id, 'printing');
+  });
 } finally {
   const exited = new Promise(resolve => child.once('exit', resolve));
   if (child.exitCode === null && !startupError) {

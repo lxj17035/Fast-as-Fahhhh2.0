@@ -243,6 +243,8 @@ Wire Staff explicitly sent messages and Manager-authorized quotation PDF + deter
 ## Phase 3 — Frontend (after Automation/AI)
 
 ### F1 — Business Profile Settings
+
+**Implemented and verified; commit blocked (24 October 2026).** Shared profile selection and pinned settings saves; 25 frontend tests and 8 isolated actual-API checks passed. Desktop/mobile browser QA passed. Git index is read-only in this session. Exact files, checks and limitations: [Phase 3 report](V2_FRONTEND_PROGRESS.md).
 Reuse existing Settings UI patterns; choose active demo profile and show business context. Do not let AI choose profile. Test UX and switching. Commit: `feat(ui): configure demo SME profiles`.
 
 ### F2 — Enquiry list & Needs Assignment

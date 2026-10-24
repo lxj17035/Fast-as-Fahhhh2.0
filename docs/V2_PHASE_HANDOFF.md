@@ -108,3 +108,12 @@ not the hosted app. Model left unit unknown despite stated visits, and listed
 unagreed pricing as missing: Staff must review those flags, Manager sets prices.
 No pricing/recipient/send authority was granted. No retry or billing-balance
 verification. RP2 remains required after frontend and before demo recording.
+
+
+## F1 working-tree checkpoint (24 October 2026)
+
+F1 profile settings implemented and locally verified: 25 frontend tests and
+8 actual-API mocked integration checks passed; desktop/mobile browser QA passed.
+See [frontend progress](V2_FRONTEND_PROGRESS.md). **Uncommitted:** this session
+has read-only `.git` access and Git cannot create `index.lock`. Commit the tested
+F1 working tree before implementing F2. F2–F5 and Phase 4 remain pending.
