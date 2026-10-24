@@ -39,7 +39,8 @@ availability; sending still checks configuration and actual transport outcome.
 
 The F4/F5 frontend sends explicit simulated roles, acknowledges reviewed incoming
 IDs on explicit save, and renders the final saved PDF and deterministic summary
-on one Manager confirmation view. Phase 4 and live/hosted checks remain.
+on one Manager confirmation view. Phase 4 T1-T3 local acceptance has passed;
+live/hosted RP2 remains. See [integration evidence](V2_INTEGRATION_PROGRESS.md).
 
 ## Outcomes
 

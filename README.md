@@ -267,3 +267,17 @@ Latest verification: 31 frontend checks, 10 mocked real-API checks, and full
 SQLite/disposable PostgreSQL backend regression **644 passed, 5 skipped**.
 Desktop/mobile Edge interactions passed. No live Telegram or hosted V2 verification
 is claimed. Continue with [Phase 4 handoff](docs/V2_PHASE_HANDOFF.md).
+
+## V2 Phase 4 local acceptance (24 October 2026)
+
+T1-T3 now verify complete Printing/Cleaning/Repair journeys through actual API
+and desktop/mobile UI, plus post-send clarification, Revision/Additional, immutable
+historical PDFs and negative send checks. All external providers are mocked.
+Focused database acceptance: **14 passed** on isolated SQLite/disposable PostgreSQL.
+Final merged backend suite: **658 passed, 5 skipped**; frontend **31 passed** and
+mocked actual-API integration **10 passed**. All three complete profile browser
+journeys and post-send forks passed on installed Edge desktop/mobile.
+See [verification](docs/V2_INTEGRATION_PROGRESS.md) and [release handoff](docs/V2_PHASE_HANDOFF.md).
+RP2 remains blocked until the updated Replit build is published and verified.
+The [Pillow source/build fix](docs/PILLOW_SECURITY.md) also needs a hosted rebuild
+and security rescan; local fixes are not proof of hosted remediation.

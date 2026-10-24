@@ -24,16 +24,19 @@ After each section, update this checklist before handing work back.
 - [x] F3 — Conversation Room - `4355e3c`; [verification](V2_FRONTEND_PROGRESS.md).
 - [x] F4 — Generic Quotation Editor - `6d2d26b`; [verification](V2_FRONTEND_PROGRESS.md).
 - [x] F5 — Manager Review & Send - `9fef80d`; [verification](V2_FRONTEND_PROGRESS.md).
-- [x] T1 — Printing end to end; SQLite/PostgreSQL + actual desktop/mobile UI, [evidence](V2_INTEGRATION_PROGRESS.md).
-- [x] T2 — Cleaning and Repair compatibility; complete API/UI journeys, [evidence](V2_INTEGRATION_PROGRESS.md).
-- [x] T3 — Post-send changes and negative integration; 14 database cases + browser forks, [evidence](V2_INTEGRATION_PROGRESS.md).
+- [x] T1 — Printing end to end — `9ffb415`; SQLite/PostgreSQL + actual desktop/mobile UI, [evidence](V2_INTEGRATION_PROGRESS.md).
+- [x] T2 — Cleaning and Repair compatibility — `7adf602`; complete API/UI journeys, [evidence](V2_INTEGRATION_PROGRESS.md).
+- [x] T3 — Post-send changes and negative integration — `de48358`; 14 database cases + browser forks, [evidence](V2_INTEGRATION_PROGRESS.md).
 - [x] RP1 - One bounded live V2 Runpod check: HTTP 200; 1,362 tokens; [sanitized evidence](V2_RUNPOD_RP1.md).
 - [ ] RP2 — Release/T1: verify the published Replit app actually calls Runpod and capture submission proof.
 
 Current implementation branch: `codex/feat-domain2-v2` (includes B1).
 User authorized completing **one whole phase per chat**, testing and committing
 one section at a time. Phases 1 and 2 (A1-A5) are complete and committed.
-Phase 3 F1-F5 is complete; next chat is Phase 4 T1-T3/RP2. Completed phases must be pushed to origin
+Phase 3 F1-F5 and local Phase 4 T1-T3 are complete. RP2 remains blocked on the
+updated hosted build and correlated live evidence. The reported Pillow issue has
+a local dependency/build fix `fcc7c71`; hosted rebuild/scan verification is pending.
+Completed phases must be pushed to origin
 and origin/main under the phase-end rule below; deployment is verified separately.
 Use [the handoff](V2_PHASE_HANDOFF.md) and [Phase 2 evidence](V2_AI_PROGRESS.md).
 

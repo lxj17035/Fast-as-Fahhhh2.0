@@ -44,6 +44,15 @@ frontend/server.mjs` is sufficient to start it.
 
 ## Review without provider credentials
 
+Phase 4 repeatable acceptance is available with `node frontend/tests/journeys.mjs`
+from the repository root. It launches the actual UI/proxy/API on ephemeral
+localhost ports, uses a temporary SQLite test adapter and mocked Runpod HTTP and
+Telegram, and closes the servers when finished. It requires existing Playwright
+and Edge (`QF_PLAYWRIGHT_MODULE` can identify an installed module;
+`QF_BROWSER_CHANNEL` and `QF_TEST_PYTHON` are optional overrides). It never reads
+`.env`, accesses runtime records or sends customer messages. See
+[Phase 4 evidence and commands](../docs/V2_INTEGRATION_PROGRESS.md).
+
 To exercise the real backend using disposable test data, stop any backend on
 port 8004 first, then run this **QA-only** fixture from the repository root:
 

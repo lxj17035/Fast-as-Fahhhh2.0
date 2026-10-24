@@ -5,9 +5,10 @@ Existing branch: `codex/feat-domain2-v2`. Do not switch checkout during a run.
 
 ## Current checkpoint
 
-Phases 1 (B1-B5), 2 (A1-A5) and 3 (F1-F5) are complete.
-Next chat: Phase 4 T1-T3/RP2 and release verification. No V2 deployment or
-new live provider call was performed in Phase 3. Synthetic preview and simulated
+Phases 1 (B1-B5), 2 (A1-A5), 3 (F1-F5) and local Phase 4 T1-T3 are complete.
+Next step: Replit dependency rebuild/security scan, publish V2, then RP2 live
+verification. RP2 is blocked and remains unchecked. No V2 deployment or
+new live provider call was performed in Phase 4. Synthetic preview and simulated
 Staff/Manager roles remain; production identity/channels/queues are out of scope.
 
 | Section | Implementation commit | Section verification |
@@ -29,29 +30,69 @@ Exact source files, commands, limitations and static audit exceptions:
 No backend business logic or PDF template changed in Phase 3. Saved PDF bytes
 are verified against the final review SHA-256 in the browser before approval.
 
-## Continue Phase 4
+## Phase 4 local acceptance checkpoint
+
+| Section | Commit | Verification |
+| --- | --- | --- |
+| T1 complete Printing | `9ffb415` | 2 SQLite/PostgreSQL cases; full actual UI desktop/mobile |
+| T2 complete Cleaning/Repair | `7adf602` | Combined 6 database cases; 3 industry UI journeys |
+| T3 post-send/negative | `de48358` | Combined 14 database cases; unclear/Revision/Additional UI flows |
+| Pillow dependency/build floor | `fcc7c71` | Pillow 13.0.0 locally; 10 PDF/readiness tests; 32 compatible packages |
+
+Detailed files, exact commands, evidence, browser environment and release blockers:
+[Phase 4 report](V2_INTEGRATION_PROGRESS.md). External AI/Telegram transports
+were mocked; real services, routing, storage, API, JS client, PDF renderer and
+browser were used. Original sent PDF bytes/metadata remain unchanged after forks.
+No application behavior/PDF template changed. Replit's published older UI and
+`/api/business-profiles` returning Not Found were checked read-only.
+
+Remote `origin/main` publication commit `1f6eca4` was preserved through normal
+merge `c2f2c48`. Publication is distinct from hosted deployment.
+
+Final Phase 4 merged regression (including Pillow source/build fix): **658 passed,
+5 skipped, 1 existing Starlette warning**, 872.69s, isolated SQLite and fresh
+localhost PostgreSQL 16. Container removed afterwards. Frontend **31 passed**,
+mocked actual API **10 passed**; all three complete profile UI journeys and
+post-send unclear/Revision/Additional flows passed. Exact commands and limitations
+are in the [Phase 4 report](V2_INTEGRATION_PROGRESS.md).
+
+## Continue release verification
 
 Read AGENTS.md, README.md, docs/WORKFLOW.md and
 [canonical plan](DOMAIN2_V2_CODEX_PLAN.md) before changes. Use
 [AI analysis contract](AI_ANALYSIS.md), [approval contract](PM_APPROVAL.md),
 [frontend contract](FRONTEND.md) and current source as authoritative behavior.
-Test and commit each section before the next. Stop at the phase boundary;
+T1-T3 were tested/committed separately. Stop at the phase boundary;
 perform the plan's standing-authorized origin/working-branch and origin/main
 publication while preserving remote changes. Publication is not deployment.
 
-- T1: complete synthetic Printing journey through real UI/API with attributed
+- T1 (passed locally): complete synthetic Printing journey through real UI/API with attributed
   clarification/customer answer, explicit current-message review, Manager pricing,
   final saved PDF plus matching summary and approved send. Verify histories/dates.
-- T2: representative Cleaning and Repair cases, dynamic context and generic notes;
+- T2 (passed locally): representative Cleaning and Repair cases, dynamic context and generic notes;
   no Printing assumptions. Phase 3 verified profile switching and generic field
   contracts; it does not replace these complete cross-profile scenarios.
-- T3: explicit Revision/Additional and unclear grouping, immutable old PDF,
+- T3 (passed locally): explicit Revision/Additional and unclear grouping, immutable old PDF,
   negative authority/scope/stale/duplicate/unknown cases. Phase 3 includes focused
   backend/API safeguards; retain the full integration acceptance checklist.
 - RP2: separately verify the published Replit provider configuration, then a fresh
   fictional enquiry in a team-controlled Telegram chat. Capture sanitized matching
   hosted application and Runpod evidence before recording. No customer sends.
   Missing access is a blocker, never evidence of completion.
+
+Before RP2, sync the tested main into Replit without overwriting private Secrets
+or unrelated local changes. Follow [Pillow remediation](PILLOW_SECURITY.md): the
+local source now requires Pillow >=13.0.0,<14 and upgrades existing `.pythonlibs`
+files during deployment build. The user-reported Replit scan still needs an
+actual hosted dependency rebuild/import check and fresh scan. Other critical/high
+findings are not claimed fixed. Republish only after reviewing those results.
+The user confirmed the old hosted UI was expected because V2 had not been republished.
+
+Published URL: `https://fast-as-fahhhh-20.replit.app/`. Local configuration presence
+shows a bot token, webhook secret, Runpod configuration/key and LIVE_TEST_CHAT_ID;
+demo approval is disabled locally. No secret values were printed or changed. A test chat
+means a team-controlled conversation with the bot, not its token. Verify ownership
+before sending; local `.env` is not proof of hosted Secrets/provider selection.
 
 ## Frontend behavior to retain
 

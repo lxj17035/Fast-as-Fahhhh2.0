@@ -2,6 +2,12 @@
 
 24 October 2026, Asia/Kuala_Lumpur. Branch `codex/feat-domain2-v2`.
 
+Local environment: Python 3.14.7, Node 24.15.0, installed Edge through Playwright,
+and disposable PostgreSQL 16 bound only to localhost. Replit Python 3.12 was not
+executed here. Pillow 13's installed metadata requires Python >=3.11, which
+includes the configured Replit interpreter version; actual hosted install still
+needs verification.
+
 Repository review: backend profiles/routing/conversation/generic quotation/version/
 review/delivery services, dynamic AI prompt/Runpod validation, PDF snapshots,
 frontend editor and existing focused tests are implemented. Missing acceptance
@@ -57,6 +63,26 @@ ownership nor proves Replit's private configuration. Do not copy local secrets
 into reports. The hosted V2 build, sanitized Replit provider configuration,
 fresh controlled Telegram intake and correlated Runpod request/usage evidence
 remain required. No extra live call was made merely to spend credit.
+
+The user subsequently confirmed V2 has not been republished. Continue RP2 only
+after the hosted dependency/security work and new publish:
+
+1. Confirm the hosted `/api/business-profiles` returns the V2 profile list and
+   the UI exposes Staff/Manager and the selected profile.
+2. In Replit's private environment, run `python -m scripts.check_live_config` and
+   capture only its booleans/provider label. Confirm published deployment Secrets
+   select Runpod, not merely the development workspace/local `.env`.
+3. From the verified team-controlled Telegram chat, send one new fictional enquiry
+   with a unique marker. Do not substitute a fabricated webhook for live intake.
+4. Match that marker/time with the hosted enquiry and new AI draft/analysis, blank
+   prices and missing facts. Capture sanitized matching Runpod request ID/usage
+   evidence where supplied. Existing/cached drafts do not prove a fresh call.
+5. Keep private tokens/chat IDs and raw logs out of committed screenshots
+   or demo video. Account usage/billing evidence and current submission rules
+   (including whether shared Public Endpoint usage satisfies them) remain unverified.
+
+No live transport, provider/account-management access or clean Replit security
+scan is claimed from local configuration or these mocked acceptance tests.
 
 ## T2 — Cleaning and Repair (passed)
 
@@ -123,3 +149,30 @@ final regression/publication. No remote files were discarded.
 The user's Pillow finding is handled separately from T1-T3 in
 [Pillow security follow-up](PILLOW_SECURITY.md). It requires hosted dependency
 rebuild/import/scan verification before republish; no hosted fix is claimed.
+
+## Final merged verification
+
+After preserving remote `origin/main` and applying the Pillow source/build fix:
+
+- With `TEST_DATABASE_URL` set only to the fresh disposable localhost PostgreSQL
+  16 database, `.venv/Scripts/python.exe -m pytest -q --basetemp=.input/v2-phase4-full -p no:cacheprovider`:
+  **658 passed, 5 skipped, 1 existing Starlette deprecation warning**, **872.69s**.
+  Both isolated SQLite and PostgreSQL parameters ran. Five runtime-PostgreSQL-only
+  cases skip under SQLite; PostgreSQL counterparts ran. The session's named test
+  container was removed after verification; unrelated containers were untouched.
+- `node --test frontend/tests/*.test.mjs`: **31 passed**.
+- `node frontend/tests/integration.mjs`: **10 passed** against actual temporary
+  API with mocked providers.
+- `node frontend/tests/journeys.mjs` with installed Playwright: **3 complete
+  profile journeys plus post-send unclear/Revision/Additional UI flows passed**.
+  Edge desktop 1365x900/mobile 390x844, no page/console errors or page overflow;
+  screenshots visually reviewed under ignored `.input/phase4/`.
+- `node --check frontend/tests/journeys.mjs`, final `git diff --check`: passed.
+- Pillow focused tests: **10 passed**; **32 installed packages compatible**;
+  dependency lists and Replit build TOML validated as recorded above.
+
+No frontend product code, backend business logic or PDF template changed. No
+production identity, live provider call, customer message, hosted write or deploy
+was performed. Complete local acceptance does not complete RP2 or resolve the
+entire Replit scanner finding list. Do not record the final hosted demo until
+the release checks have actual evidence.
