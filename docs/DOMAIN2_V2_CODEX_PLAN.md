@@ -18,7 +18,7 @@ After each section, update this checklist before handing work back.
 - [x] A2 - Requirement extraction and sufficiency - `33f7ecf`; 88 passed; [report](V2_AI_PROGRESS.md).
 - [x] A3 - Clarification suggestions and follow-up analysis - `3ca6165`; 96 passed; [report](V2_AI_PROGRESS.md).
 - [x] A4 - Quotation change suggestions - `c3702bd`; 106 passed; [report](V2_AI_PROGRESS.md).
-- [ ] A5 — Telegram outbound orchestration.
+- [x] A5 - Telegram outbound orchestration - `7f28fe7`; full 640 passed; final focused 67 passed; [report](V2_AI_PROGRESS.md).
 - [ ] F1 — Business Profile Settings.
 - [ ] F2 — Enquiry list & Needs Assignment.
 - [ ] F3 — Conversation Room.
@@ -27,13 +27,13 @@ After each section, update this checklist before handing work back.
 - [ ] T1 — Printing end to end.
 - [ ] T2 — Cleaning and Repair compatibility.
 - [ ] T3 — Post-send changes.
-- [ ] RP1 — Phase 2 end: controlled live Runpod extraction and sanitized evidence (separate from mocked tests).
+- [x] RP1 - One bounded live V2 Runpod check: HTTP 200; 1,362 tokens; [sanitized evidence](V2_RUNPOD_RP1.md).
 - [ ] RP2 — Release/T1: verify the published Replit app actually calls Runpod and capture submission proof.
 
 Current implementation branch: `codex/feat-domain2-v2` (includes B1).
 User authorized completing **one whole phase per chat**, testing and committing
-one section at a time. Phase 1 is complete; Phase 2 A1-A5 is this chat's scope.
-Stop before Phase 3 frontend. V2 remains local and undeployed until publication.
+one section at a time. Phases 1 and 2 (A1-A5) are complete and committed.
+This chat stops before Phase 3 frontend. V2 remains local and undeployed until publication.
 Use [the handoff](V2_PHASE_HANDOFF.md) and [Phase 2 evidence](V2_AI_PROGRESS.md).
 
 ## Goal
@@ -232,6 +232,8 @@ Produce editable suggested questions for Staff, handle customer answers and reas
 Support minimal categories `ADD_ITEM`, `UPDATE_ITEM`, `UPDATE_FIELD` for Staff review. Consolidate related messages, avoid duplicate items, never directly update saved quotation or sent PDF, respect Staff edits. Tests: revision and additional intent, ambiguity escalated to Staff, human apply requirement. Commit: `feat(ai): suggest quotation draft changes`.
 
 ### A5 — Telegram outbound orchestration
+
+**Completed - 24 October 2026.** Implementation `7f28fe7`. Full merged suite: 640 passed, 5 PostgreSQL-only skips under SQLite. Final frozen-preview/review recovery checks: 67 passed, 2 skips; PostgreSQL counterparts passed. Frontend 24 + mocked integration 7 passed. Exact files/commands and limitations: [Phase 2 report](V2_AI_PROGRESS.md).
 Wire Staff explicitly sent messages and Manager-authorized quotation PDF + deterministic short summary. Verify delivery record, retry safeguards, identical PDF/summary dates and totals. No autonomous AI messaging. Commit: `feat(automation): send approved quotation summaries`.
 
 ## Phase 3 — Frontend (after Automation/AI)
@@ -269,3 +271,14 @@ Clear Revision; explicit Additional; ambiguous grouping asks Staff; historical P
 
 ## Required final implementation report (from Codex)
 For each section provide: status (existing / changed / blocked), exact files, tests executed with pass/fail counts, meaningful risks, commit hash if committed. For the full V2 report the demonstrated E2E path, what was not tested, and remaining gaps. Never report hypothetical tests as passed.
+
+
+## Phase 2 completion checkpoint
+
+A1-A5 committed separately after section tests; stop before F1-F5. Full source
+files, commands/counts and risks: [Phase 2 report](V2_AI_PROGRESS.md).
+RP1 used exactly one live synthetic Runpod request at 12:30 Malaysia time on
+24 October 2026, HTTP 200, provider request ID and token usage captured. It
+verified the changed core prompt/schema and pinned Cleaning context, with
+blank prices. This does not verify Telegram, Replit or billing balance. RP2
+remains unchecked. Continue Phase 3 in a new chat with [handoff](V2_PHASE_HANDOFF.md).

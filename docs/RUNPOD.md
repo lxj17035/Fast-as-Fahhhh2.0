@@ -94,3 +94,10 @@ Sources: [Runpod Public Endpoints](https://docs.runpod.io/public-endpoints/overv
 [credentials](https://docs.runpod.io/get-started/credentials), plus the supplied event announcement.
 
 Final combined SQLite/PostgreSQL regression: **423 passed, 2 skipped**, 362.59 seconds, one existing Starlette/httpx deprecation warning. Skips are PostgreSQL-only checks under SQLite; their PostgreSQL cases passed. This automated suite used mocked AI; the one live synthetic probe is recorded separately above.
+
+
+V2 Phase 2: one fresh bounded request verified the changed shared prompt and
+Cleaning context on 24 October 2026. See [RP1 evidence](V2_RUNPOD_RP1.md).
+Newly assigned customer follow-ups can request renewed analysis; duplicate
+updates and unchanged completed snapshots do not spend another call. Manual or
+failed analysis can be retried explicitly by Staff. Hosted RP2 remains pending.

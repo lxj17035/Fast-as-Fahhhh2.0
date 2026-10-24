@@ -6,6 +6,8 @@ is localhost-only on port 55439; no runtime/customer database is used.
 
 ## A1 — Core prompt and dynamic context
 
+Status: changed and tested. Implementation commit: `dc2a39c`.
+
 Changed `backend/drafting.py`, added `tests/test_ai_v2.py`. Shared SME-agnostic
 prompt explicitly forbids pricing/approval/send/recipient/profile authority.
 Both adapters receive pinned validated profile identity, industry, company and
@@ -21,6 +23,8 @@ No live inference. Sufficiency, clarification and change generation remain A2-A4
 
 ## A2 — Requirements and sufficiency
 
+Status: changed and tested. Implementation commit: `33f7ecf`.
+
 Changed `backend/drafting.py`, `tests/test_ai_v2.py`. Shared prompt covers stated
 units, industry notes and critical scope uncertainty. Server independently flags
 empty items, unknown quantities and neutral/unknown units even if the model omits
@@ -34,6 +38,8 @@ Industry scope sufficiency still depends on model flags plus explicit Staff revi
 no new per-industry rules engine. No live provider check in this section.
 
 ## A3 — Clarification and renewed analysis
+
+Status: changed and tested. Implementation commit: `3ca6165`.
 
 Changed `backend/drafting.py`, new `backend/analysis.py`, `app/routing.py`,
 `app/automatic_drafting.py`, `app/telegram.py`, `app/quotation_routes.py`,
@@ -54,6 +60,8 @@ associate a confirmation first; vague evidence stays Needs Assignment. UI is F3.
 
 ## A4 — Quotation change suggestions
 
+Status: changed and tested. Implementation commit: `c3702bd`.
+
 Changed `backend/drafting.py`, `backend/analysis.py`, new `backend/ai_changes.py`,
 `tests/test_ai_v2.py`. Schema adds ADD_ITEM/UPDATE_ITEM/UPDATE_FIELD and advisory
 relationshipIntent. Backend validates allowed fields, de-duplicates additions,
@@ -69,6 +77,8 @@ unclear intent, duplicate suppression, human apply, authority rejection, immutab
 sent content and the existing revision/PDF tests. No inference creates a fork.
 
 ## A5 - Outbound orchestration (changed, tested)
+
+Status: changed and tested. Implementation commit: `7f28fe7`.
 
 Changed production source: `app/activity.py`, `app/database.py`, `app/delivery.py`,
 `app/enquiries.py`, `app/migrations.py`, `app/quotation_contract.py`,
@@ -117,3 +127,21 @@ and `--basetemp=.input/v2-a5-final-edges`. `git diff --check` passed.
 Limitations: live Telegram/hosted V2 are not verified. Crashes or unknown results
 require manual verification, never blind retries. An expired partial delivery
 cannot be retried. Frontend F1-F5 and release T1-T3/RP2 remain for later chats.
+
+## RP1 - Separate live verification
+
+Exactly one request passed on 24 October 2026 at 12:30 Malaysia / 04:30 UTC.
+Runpod glm-5.3 returned HTTP 200, request ID and token counts: 1,180 input,
+182 output, 1,362 total. Configured cap 1,024 output tokens; no retry. Fictional
+Cleaning input and backend-validated profile used isolated disposable PostgreSQL;
+no Telegram or runtime/hosted database. Full sanitized output and endpoint:
+[V2_RUNPOD_RP1.md](V2_RUNPOD_RP1.md). No billing evidence was retrieved.
+
+The model conservatively returned an unknown unit despite stated visits, and
+included unagreed pricing among missing information. Staff must review the unit
+and dismiss/resolve the pricing flag through Manager pricing, not ask AI to price.
+This is validated safe extraction, not proof that all inferred fields are perfect.
+No extra live call was made to improve the result. RP2 and live Telegram remain.
+
+Phase 2 complete. Phase 3 product UI and Phase 4 full V2/hosted journeys are not
+implemented or demonstrated here. No V2 deployment/push or video recording.
