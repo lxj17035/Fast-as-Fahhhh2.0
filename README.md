@@ -1,293 +1,314 @@
-# QuoteFlow (Working Title)
+# QuoteFlow
 
-> An assisted quotation workflow for small businesses that turns customer enquiries into editable drafts while keeping a PM in control of pricing and sending.
-
-
-Updated 23 October 2026 against the supplied Domain 2 challenge brief.
-
-**QuoteFlow** is a proposed name for the team's next discussion; it is not final. Other options are EnquiryFlow, QuoteBridge, and ReplyReady.
+> QuoteFlow helps Malaysian small business teams turn social and messaging enquiries into AI-assisted quotations with Staff preparation, Manager pricing, and approved PDF delivery.
 
 Built for the **Orbyte Smart SME Challenge: Less Busywork, Better Business (Domain 2)**.
 
-## Team information
+QuoteFlow addresses customer enquiries across social and messaging channels such as WhatsApp, Telegram, Instagram, and Facebook. The intended journey connects each enquiry to an AI-assisted draft, Staff preparation, Manager pricing and review, and approved quotation delivery. It keeps messages, quotation versions, delivery outcomes, and activity together.
+
+**Demo scope:** Telegram is the implemented channel used to demonstrate this journey. WhatsApp, Instagram, and Facebook integrations are planned future extensions.
+
+The prototype uses fictional business/customer data and simulated roles for a supervised demo.
+
+## Team Information
 
 | Field | Details |
 | --- | --- |
-| Team name | Fast as Fahhhhh |
-| Domain | Domain 2 - Orbyte Smart SME Challenge |
-| SDG track | SDG 8 - Decent Work and Economic Growth; intended contribution to productivity (8.2) and small-enterprise growth (8.3) |
+| Team Name | Fast as Fahhhhh |
+| Team Domain | Domain 2 |
 | Team leader | LIM XIN JIE |
-| University / Institution | EDUVO Academy |
-| Number of members | 3 |
+| University | EDUVO Academy |
+| Number of Members | 3 |
+| SDG track | SDG 8: Decent Work and Economic Growth, especially productivity (8.2) and small-enterprise growth (8.3) |
 
-| Contributor | Responsibility |
-| --- | --- |
-| Xinjie | Business/client settings, AI extraction, quotation rules/storage, backend PDF generation |
-| Sweeway | Telegram receive/send integration, enquiry source tracking, send activity, optional email alerts |
-| YieXian | Frontend inbox/editor, PDF preview, simulated role controls, activity display |
-
-## Project links
+## Links
 
 | Resource | Link or status |
 | --- | --- |
-| GitHub repository | [Fast-as-Fahhhh2.0](https://github.com/lxj17035/Fast-as-Fahhhh2.0) |
-| Replit project | Not set up yet - link pending |
-| Hosted live demo | Not deployed yet - link pending |
-| RunPod endpoint | [GLM-5.3 public API base](https://api.runpod.ai/v2/b1dd8hy2hqo1nb/openai/v1); local synthetic extraction verified |
-| Pitch slides | Not created yet - link pending |
-| YouTube pitching/demo video | Not recorded or uploaded yet - link pending |
+| Repository | https://github.com/lxj17035/Fast-as-Fahhhh2.0 |
+| Live Demo | https://fast-as-fahhhh-20.replit.app/#/ |
+| RunPod Endpoint | https://api.runpod.ai/v2/b1dd8hy2hqo1nb/openai/v1|
+| Slide Deck | https://canva.link/1lfqlnu5nqx2ffh |
+| Demo Video | https://youtu.be/I8nTmB1lSaM |
 
-The GitHub URL is taken from this repository's configured remote. Submission links above will be added when available; they are not working deliverables yet. The localhost API described below is a development backend, not a hosted demo.
+Read-only hosted checks confirmed the inbox, simulated Staff/Manager selector, and connected Business settings with the Cleaning profile on 24 October 2026. This confirms demo availability; the exact deployed commit, complete Telegram delivery journey, provider usage evidence, and security rescan were not verified in this check. See [release handoff](docs/V2_PHASE_HANDOFF.md) for the broader acceptance requirements.
 
 ## Overview
 
-Small sales teams often receive customer enquiries in messages, copy details into documents, calculate prices manually, and keep track of replies themselves. This repeated work can delay quotations and leave interested customers without follow-up.
+### Problem
 
-Our proposed product connects the enquiry with business/client information, drafts the quotation content, and puts it in a review workflow. A PM checks the requirements, enters prices, previews the PDF, and approves sending. The intended result is less copying and document preparation, consistent quotation details, and a visible record of what needs review and what was sent.
+Malaysian micro and small businesses receive customer enquiries across WhatsApp, Telegram, Instagram, and Facebook, then manually copy requirements from messages into quotations. Missing details, repeated edits, and unclear handoffs can delay replies and create inconsistent documents. Staff and managers need a shared view of what needs clarification, pricing, approval, or follow-up.
 
-For a code-level explanation with Mermaid architecture and workflow diagrams, read [how the code works](docs/CODE_WALKTHROUGH.md).
+### Solution
 
-The initial use case is a small printing business preparing quotations for items such as event T-shirts. The same workflow could serve repair shops and other service businesses by changing business settings and item descriptions.
+QuoteFlow aims to connect social and messaging enquiries with stored business/client context. The current demo implements this through Telegram. AI extracts stated requirements, suggests draft items and clarification questions, and leaves unknown facts and prices for people to resolve. Staff prepares the quotation, while Manager controls pricing and approves the saved PDF and summary before delivery.
 
-## Intended workflow
+### Workflow (Telegram Demo)
 
-1. A customer sends an enquiry to the business's Telegram bot.
-2. The system stores the enquiry and connects it with client/company details and quotation defaults.
-3. AI extracts the stated requirements, drafts item descriptions, and flags missing information. Prices remain blank.
-4. Staff checks Messages, edits Quote and saves a draft or explicitly submits complete requirements for Manager review; prices and Staff PDF preview are optional. The Manager reviews the submitted details and enters prices.
-5. The backend calculates totals and expiry; the PM previews the saved PDF.
-6. The PM approves sending to the original Telegram conversation.
-7. The system shows the outcome and records the action in an activity log.
+1. **Receive:** Telegram receipt stores an enquiry and starts an AI draft or labelled manual fallback. Each enquiry retains its selected business profile: Printing, Cleaning, or Repair.
+2. **Prepare:** Staff reads Messages, checks AI suggestions, asks clarification questions, and edits Quote. Incomplete requirements can be saved as drafts. AI preserves unknown information and leaves prices blank.
+3. **Submit:** Staff explicitly selects Submit for review once requirements are complete and questions/assignments are resolved. The handoff records the saved quotation version and reviewed source IDs; prices and Staff PDF preview are optional.
+4. **Price and review:** Manager (the simulated PM role) enters prices and saves. The backend calculates totals and expiry. Manager reviews the exact saved PDF and matching Telegram summary.
+5. **Approve and send:** Manager explicitly approves delivery to the original Telegram chat. Changes invalidate the relevant saved review evidence; new customer requirements or Staff edits require another submission.
+6. **Track:** The application records delivery and activity. Confirmed failures need fresh approval to retry. Pending or unknown outcomes block resending. If the PDF succeeds but the summary fails, the saved PDF stays frozen and only the matching summary can be retried.
 
-Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are future integrations. Email notifications are a stretch goal; the review inbox is the core alert mechanism.
+The inbox also supports Needs Assignment, conversation history, and explicit Revision/Additional flows after sending. Switching the active profile changes the shared demo workspace without moving existing enquiries.
 
-**The backend journey and connected frontend are implemented and locally tested. Live verification with Member 2's credentials/test chat remains pending; a complete live demonstration is not yet claimed.**
+See [workflow](docs/WORKFLOW.md), [Staff/Manager approval contract](docs/PM_APPROVAL.md), and [code walkthrough](docs/CODE_WALKTHROUGH.md).
 
-## Current implementation status
+## Key Features
 
-| Component | Status |
+| Area | Current behavior |
 | --- | --- |
-| Editable business/client settings and PostgreSQL persistence | Implemented and locally tested |
-| V2 B1: Printing/Cleaning/Repair profile persistence and pinned enquiry scope | Backend implemented; F1 profile selection/settings committed and locally verified. See [profile contract and checks](docs/BUSINESS_PROFILES.md). |
-| Quotation drafts, exact totals, configurable validity, version checks | Implemented and locally tested |
-| PM-role validation and send-state helpers | Implemented and locally tested; not a production identity system |
-| AI extraction | Runpod GLM-5.3 integrated; one live synthetic extraction passed. OpenAI remains an optional mocked/tested alternative |
-| Manual draft fallback | Implemented and locally tested |
-| Saved-version PDF generation and local HTTP API | Implemented, tested, and sample layouts visually reviewed |
-| Activity record | Receipt, draft, PM approval, and Telegram acceptance/rejection/uncertainty are persisted and exposed by read-only APIs |
-| Frontend inbox, editor, settings, PDF display, role controls and activity | Implemented on `feature/frontend`; locally verified against the actual API with mocked providers |
-| Telegram reception | Implemented; shares the database and application with quotations; live bot verification pending |
-| Automatic drafting | Starts after persisted receipt; preserves existing PM edits on duplicate updates |
-| Telegram document sending | Implemented with explicit PM approval and saved-preview/version validation; live verification pending |
-| Replit deployment, video, and slides | Not prepared yet; Runpod public inference is configured |
+| Business context | Editable business/client settings, three fictional profiles, PostgreSQL persistence |
+| Inbox and conversation | Scoped enquiries, assignment, original messages, Staff clarification and activity |
+| AI assistance | Runpod GLM-5.3 extraction/analysis, editable selected suggestions, manual fallback; optional OpenAI adapter |
+| Quotation editor | Generic items with units/notes, blank prices, version checks, explicit Staff handoff and Manager pricing |
+| PDF and final review | ReportLab PDF from the saved version, local PDF.js preview, matching saved summary |
+| Delivery | Approved Telegram PDF/summary delivery, duplicate protection, confirmed-failure retry and uncertainty holds |
+| Hosting configuration | Replit web/API launcher, Docker/Ubuntu packaging, optional Cloudflare Tunnel guide |
 
-The merged combined suite passed **423 tests**, with two PostgreSQL-only checks skipped for the SQLite adapter, using isolated adapters and a disposable PostgreSQL instance. This covers automatic drafting, PM approval, saved PDF upload, duplicate protection, and activity logging with mocked providers. Live AI and Telegram verification remains pending with Member 2. Tests use fictional records, local test servers, and mocked AI responses; they do not prove live provider or messaging integration.
+These features have local test evidence. Live Telegram delivery, current hosted V2 acceptance, and RP2 provider/usage verification remain incomplete. A historical synthetic Runpod request succeeded; it does not prove the complete hosted workflow.
 
-## Key quotation rules
+## Quotation rules
 
-- Default validity: one calendar month. Available options: 7 days, 14 days, 1 month, 2 months, and 3 months.
-- Validity is calculated from the selected issue date, with calendar-month clamping at month end.
-- Client name/address and draft items are editable. Unknown information remains visible instead of being invented.
-- The PM enters prices. AI cannot set prices, approve a quotation, or choose a recipient.
-- The backend calculates totals using decimal arithmetic. Blank prices are distinct from explicitly entered zero prices.
-- Stale edits, missing required details, expired quotations, and non-PM sending are blocked by the service helpers.
-- Sent quotation details and cached PDFs remain unchanged when settings or client details change later.
+- AI cannot set prices, choose recipients, approve, or authorize sending. Only Manager may price and approve.
+- Unknown information remains visible; a blank price differs from an explicitly entered zero.
+- The backend calculates totals with decimal arithmetic. One currency is used per quotation; no tax/discount engine is included.
+- Default validity is one calendar month. Options are 7 days, 14 days, 1 month, 2 months, or 3 months. Calendar-month calculations clamp at month end.
+- Sending requires complete validated details, nonnegative prices, an unexpired quotation, and current saved review evidence.
+- Later settings/client changes do not alter historical sent quotations or their PDFs.
 
-## Technology
+## Tech Stack
 
-| Area | Current choice |
+| Area | Stack |
 | --- | --- |
-| Backend | Python 3.12+, FastAPI, and SQLAlchemy/Psycopg |
-| Storage | Shared PostgreSQL via DATABASE_URL, locally and on Replit |
-| AI adapter | Runpod GLM-5.3 Chat Completions with server-validated JSON; optional OpenAI Responses adapter |
-| PDF generation | ReportLab |
-| Tests | pytest, unittest, and pypdf; PostgreSQL integration coverage |
-| Frontend | Responsive JavaScript ES modules, CSS, local PDF.js preview; no build step |
-| Messaging | Telegram reception, automatic drafting, and approved PDF sending implemented; live bot verification pending |
-| Hosting / RunPod | Replit pending; Runpod public inference verified locally |
+| Backend | Python 3.12+, FastAPI, SQLAlchemy, Psycopg |
+| Runtime database | PostgreSQL shared by quotation and Telegram modules through `DATABASE_URL` |
+| AI | Runpod GLM-5.3 Chat Completions; optional OpenAI Responses adapter |
+| PDF | ReportLab; locally served PDF.js for browser preview |
+| Frontend | JavaScript ES modules and CSS; no frontend build step |
+| Verification | pytest, pypdf, Node tests, isolated actual-API integration and browser journeys |
 
-## Run on Replit
+## Project Structure
 
-The Replit Run command starts the existing Python API on `127.0.0.1:8004` and
-one public web entry on `0.0.0.0:$PORT` (default `8080`). The web entry serves
-the existing frontend and local PDF.js files, and proxies `/api/*` to the
-private API without retries. The frontend uses same-origin API requests.
+```text
+.
+├── app/                     # FastAPI routes, Telegram integration, shared persistence
+├── backend/                 # Quotation rules, AI adapters, PDF and review services
+│   ├── server.py            # Local backend entry point
+│   └── runpod.py            # Runpod Chat Completions adapter
+├── frontend/                # JavaScript/CSS UI and Node web proxy
+├── docs/                    # Contracts, setup, workflow and verification records
+├── deploy/                  # Container/proxy configuration
+├── scripts/                 # Replit launcher, demo PDFs and configuration checks
+├── submission/              # Submission-required PDFs and template
+├── tests/                   # Backend unit/integration tests
+├── .env.example             # Placeholder configuration
+├── .replit                  # Replit run/deployment configuration
+├── compose.yaml             # Docker deployment configuration
+├── requirements.txt         # Runtime Python dependencies
+├── requirements-dev.txt     # Development/test dependencies
+├── LICENSE
+└── README.md
+```
 
-The UI and API open without a browser login for the organisers' synthetic demo
-preview. `DEMO_ACCESS_USERNAME` and `DEMO_ACCESS_PASSWORD` are no longer required
-or used. An application login page is deferred until after successful initial
-screening. Anyone with the demo URL can use the simulated roles; use fictional
-data and team-controlled test chats. Explicit PM approval is still required for
-sending. The Telegram webhook continues to require the existing
-`TELEGRAM_WEBHOOK_SECRET`. `/healthz` is public and returns only a
-generic health status. Configure the existing `DATABASE_URL` and webhook secret
-in Replit Secrets before running; AI and Telegram sending still depend on their
-respective existing secrets. This setup does not register a Telegram webhook
-or send messages.
+The organiser's sample `src/` and `runpod/handler.py` are not used by this implementation. Required submission PDFs are still pending; a `submission/` directory has not yet been added.
 
-`requirements.txt` lists only the runtime dependencies, with the exact constraints
-from `pyproject.toml`'s `project.dependencies`; keep these lists synchronized.
-The application itself runs from the repository rather than being pip-installed.
-`PIP_USER=false` and `PIP_TARGET=.pythonlibs` direct pip into a writable project
-directory. `PIP_TARGET` is configured in `.replit` and as a shared environment
-variable inherited by production; the deployment build also passes
-`--upgrade --target .pythonlibs` explicitly to replace older target packages.
-Pillow is constrained to `>=13.0.0,<14` for the reported TIFF security fix.
-The backend adds the resolved target to
-`PYTHONPATH`. The build installs locked frontend dependencies from
-`frontend/pnpm-lock.yaml`. The single Run command supervises both processes and
-stops the other if either one exits.
+## Architecture
 
-## How to run the backend
+```text
+Customer Telegram message
+          |
+          v
+Replit: Node web entry / FastAPI API <---- Staff / Manager browser
+          |                    |
+          v                    v
+PostgreSQL             Runpod GLM-5.3 API
+messages, versions,     requirement extraction,
+review and delivery    analysis and suggestions
+          |
+          v
+Saved quotation -> ReportLab PDF -> Manager review/approval
+                                           |
+                                           v
+                              Original Telegram chat
+```
 
-For an Ubuntu server using Docker, follow the [Docker + Ubuntu setup guide](docs/DOCKER_UBUNTU.md).
-It includes frontend/API/PostgreSQL containers, private SSH access, persistence,
-updates, and backup commands. The existing backend code remains unchanged.
-For `hackathon.nailstore.online`, use the [Cloudflare Tunnel hosting guide](docs/CLOUDFLARE_UBUNTU.md).
+The web entry proxies `/api/*` to the localhost-bound backend. Runpod provides AI inference; application code validates results and calculates totals. Manager approval authorizes outgoing quotation delivery.
 
-Use PowerShell from the repository root, with Python 3.12 or newer and an accessible PostgreSQL database.
+### RunPod integration
+
+QuoteFlow uses RunPod's hosted **GLM-5.3 Public Endpoint** through its OpenAI-compatible API. The model is already deployed by RunPod, so this implementation does not require a team-managed Pod, Serverless worker, or `runpod/handler.py`. The public API base URL is `https://api.runpod.ai/v2/b1dd8hy2hqo1nb/openai/v1`.
+
+The backend adapter in [`backend/runpod.py`](backend/runpod.py) sends customer enquiry text and business context to `/chat/completions` to extract requirements and suggest draft items and clarification questions. Requests authenticate with our team's private `RUNPOD_API_KEY` and use our RunPod account credits. The key is stored in local `.env` or Replit Secrets and is never included in the repository or exposed to the frontend. `RUNPOD_API_BASE_URL` and `RUNPOD_MODEL` can override the default endpoint and model.
+
+Requests use `reasoning_effort="low"`, a configurable output-token cap, and a daily request limit to bound usage. The application validates AI responses and falls back to manual preparation when configuration, quota, or provider errors prevent extraction. AI does not set prices, choose recipients, or approve delivery; Manager retains pricing and send authority. Using this public endpoint describes the integration approach; current hosted provider/usage verification remains subject to the checks noted above.
+
+## How to Run
+
+### Option 1 — Run on Replit
+
+Import this repository into Replit, install dependencies through the configured build, and configure the variables below in Replit Secrets. Supply a PostgreSQL database. Click Run: `.replit` starts `PORT=5000 node scripts/run-replit.mjs`, which supervises the private Python API and public Node web entry. This project uses `RUNPOD_API_BASE_URL` and `RUNPOD_MODEL`, rather than the sample's `RUNPOD_ENDPOINT_ID` variable.
+
+See [Replit setup](docs/REPLIT_DEPLOYMENT_GUIDE.md) and the configuration table below. Running the app does not register a webhook or prove a published deployment is current.
+
+### Option 2 — Run Locally
+
+```powershell
+git clone https://github.com/lxj17035/Fast-as-Fahhhh2.0.git
+cd Fast-as-Fahhhh2.0
+```
+
+
+Requires Python 3.12+, Node.js 22.13+, pnpm, and an accessible PostgreSQL database. Run commands from the repository root in PowerShell.
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+pnpm --dir frontend install --frozen-lockfile
 
-# Create the local config only if it does not already exist.
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+```
 
+Before starting, configure the following in your private `.env`:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Your PostgreSQL connection URL; required for runtime storage |
+| `TELEGRAM_WEBHOOK_SECRET` | Your private webhook validation secret; required at startup |
+| `AI_PROVIDER` | `manual` for no-provider drafting, `runpod`, or `openai` |
+| `RUNPOD_API_KEY` | Required for Runpod calls; model/base URL defaults are in `.env.example` |
+| `OPENAI_API_KEY`, `OPENAI_MODEL` | Required only for the optional OpenAI provider |
+| `TELEGRAM_BOT_TOKEN` | Required for real Telegram operations |
+| `ENABLE_DEMO_APPROVAL` | Set to `true` only for supervised Manager pricing/approval/sending |
+| `LIVE_TEST_CHAT_ID` | Team-controlled chat used for separately authorized live verification |
+
+Environment values take precedence over `.env`. Keep real credentials only in `.env` or hosting Secrets. Missing AI configuration, quota exhaustion, or provider failure yields a labelled manual draft.
+
+Start the API:
+
+```powershell
 .\.venv\Scripts\python.exe -m backend.server
 ```
 
-The API listens at **http://127.0.0.1:8004**. Check
-**http://127.0.0.1:8004/api/health**. The public web entry serves the frontend
-and proxies same-origin API calls. On Replit, use the single configured Run
-command; locally, start the API and web entry separately as described below.
-
-### Start the frontend
-
-With Node.js 22.13+ and pnpm installed, run the existing locked dependency
-install from the repository root:
+In a second terminal, start the frontend/web proxy:
 
 ```powershell
-pnpm --dir frontend install --frozen-lockfile
+$env:PORT = '8080'
+node frontend/server.mjs
 ```
 
-The web entry listens on `0.0.0.0:$PORT` (default `8080`), serves the enquiry
-inbox/editor/PDF preview/settings and local PDF.js files, and proxies `/api/*`
-to `127.0.0.1:8004`. Pages and APIs are available without login for demo preview;
-the Telegram webhook POST retains its secret validation. See
-[frontend setup](frontend/README.md) for a
-safe, isolated review fixture and [the frontend handoff](docs/FRONTEND.md) for
-route and behavior details.
+Open [QuoteFlow locally](http://127.0.0.1:8080). The API stays bound to `127.0.0.1:8004`; its [health endpoint](http://127.0.0.1:8004/api/health) can be checked separately. The frontend serves local PDF.js assets and proxies same-origin `/api/*` requests to the backend. Starting these processes does not register a Telegram webhook.
 
-Frontend verification: **14 frontend checks and 7 real-API integration checks
-passed**, with injected mocked AI/Telegram providers. Desktop/mobile layouts and
-the saved PDF were visually checked. The existing backend suite passed **274
-tests, 2 skipped** in the local SQLite-adapter run; PostgreSQL-only cases were not
-rerun. Live provider verification remains separate.
+The demo opens without login. Staff/Manager selection is simulated access control, so use fictional records and team-controlled test chats. The Telegram webhook still validates its secret.
 
-### Staff handoff
+For an isolated preview without provider credentials or runtime PostgreSQL, follow the QA-only fixture in [frontend setup](frontend/README.md). It uses temporary test storage and mocked providers.
 
-Staff uses Save draft for incomplete details and Submit for review for complete,
-saved requirements. The latter persists the exact saved version and source IDs
-through `/api/quotations/:id/submit-review`; it moves the task into Manager To do
-without sending a notification or customer message. Staff edits and new customer
-requirements require another submission. Manager edits require fresh saved
-PDF/summary review. See [the current workflow](docs/WORKFLOW.md) and
-[local verification](docs/LOCAL_DEVELOPMENT_20261024.md).
+## Hosting
 
-### Backend approval configuration
+On Replit, configure PostgreSQL and the private provider/webhook values in Secrets, then use the configured Run command. `.replit` sets the public web port to `5000`; the API remains private on `127.0.0.1:8004`. The launcher supervises both processes.
 
-For supervised Manager pricing, review and sending, set `ENABLE_DEMO_APPROVAL=true` before startup. Price changes require `X-Demo-Actor: pm`; Staff can prepare details while retaining existing Manager prices. For sending use that header with `{"expected_version": N, "approved": true}` after reviewing the current saved version. The final-review endpoint is `GET /api/quotations/:id/review?version=N`. Confirmed failures may be retried only after fresh PM approval referencing the failed `retry_of_attempt_id`. Enquiry detail exposes `can_retry`; duplicate approvals and pending/sent/unknown outcomes return 409. See [the current approval contract](docs/PM_APPROVAL.md); V2 AI analysis and PDF-plus-summary orchestration are implemented; the V2 frontend F1-F5 is implemented; Phase 4 integration/release checks remain.
+Runtime dependencies are declared in `pyproject.toml` and mirrored in `requirements.txt`. The Replit build installs Python packages into `.pythonlibs` and frontend packages from the pnpm lockfile. The published demo is accessible. Hosted dependency checks/security rescan and the complete live acceptance journey still require verification.
 
-Set your private `DATABASE_URL` and `TELEGRAM_WEBHOOK_SECRET` in local `.env`
-before starting. Both modules use this same PostgreSQL database. Set
-`AI_PROVIDER=runpod` and your private `RUNPOD_API_KEY` for GLM-5.3. Defaults are
-low reasoning, max 1024 output tokens and 100 attempted calls/day in the shared
-database. Missing configuration, exhausted quota or provider failure produces
-a labelled manual draft. The optional `AI_PROVIDER=openai` alternative uses its
-own `OPENAI_API_KEY` and `OPENAI_MODEL`. The API always stays bound to
-`127.0.0.1:8004`; `PORT` selects the public web-entry port.
+- [Replit deployment guide](docs/REPLIT_DEPLOYMENT_GUIDE.md)
+- [Docker and Ubuntu setup](docs/DOCKER_UBUNTU.md)
+- [Cloudflare Tunnel hosting](docs/CLOUDFLARE_UBUNTU.md)
+- [Pillow dependency remediation and hosted checks](docs/PILLOW_SECURITY.md)
 
-Secrets belong only in `.env`, which is ignored by Git. `.env.example` contains placeholders. Keep this backend local: simulated roles are for the supervised prototype. FastAPI/Uvicorn runs the combined backend.
+## Run Tests
 
-### Try the implemented flow without AI credentials
-
-With the server running, open another PowerShell terminal in the repository root:
-
-```powershell
-$base = 'http://127.0.0.1:8004'
-$enquiry = Invoke-RestMethod -Method Post -Uri "$base/api/demo/enquiries" -ContentType 'application/json' -Body (@{
-    text = 'Example Events needs 20 printed T-shirts. Address: 12 Demo Road.'
-} | ConvertTo-Json)
-
-$quote = Invoke-RestMethod -Method Post -Uri "$base/api/enquiries/$($enquiry.id)/draft" -ContentType 'application/json' -Body '{"manual":true}'
-
-$edit = @{
-    version = $quote.version
-    client = @{ name = 'Example Events'; address = '12 Demo Road' }
-    items = @(@{ description = 'Printed T-shirts'; quantity = '20'; unitPrice = '25.00' })
-    missingInformation = @()
-} | ConvertTo-Json -Depth 5
-
-# Enable demo approval before backend startup; this price edit is a simulated PM action.
-$quote = Invoke-RestMethod -Method Patch -Uri "$base/api/quotations/$($quote.id)" -Headers @{ 'X-Demo-Actor' = 'pm' } -ContentType 'application/json' -Body $edit
-$quote.total # Expected: 500.00 in the seeded demo currency (MYR).
-
-New-Item -ItemType Directory -Force output/pdf | Out-Null
-Invoke-WebRequest -Uri "$base/api/quotations/$($quote.id)/pdf?version=$($quote.version)" -OutFile 'output/pdf/quotation-preview.pdf'
-```
-
-This creates a **simulated** enquiry (`source: demo`), a manual draft, and a priced PDF. It does not call Telegram or demonstrate live AI. To send a real document, the send endpoint requires configured bot credentials and explicit PM approval of the current saved PDF preview. Use only the authorized team test chat for live verification.
-
-### Run tests and generate sample PDFs
+Run the repeatable checks from the repository root:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
+node --test frontend/tests/*.test.mjs
+node frontend/tests/integration.mjs
+```
+
+Set `TEST_DATABASE_URL` to a **disposable PostgreSQL test database** to exercise the real driver alongside isolated SQLite test adapters. Never point tests at runtime or customer storage. Providers are mocked for local verification; SQLite is not a runtime fallback.
+
+The latest recorded source verification is **679 backend tests passed, 5 skipped; 47 frontend tests passed; 10 mocked actual-API checks passed**, plus desktop/mobile browser checks. These are historical results from [the settings verification record](docs/SETTINGS_REDESIGN_20261024.md), not fresh runs for this README edit. Earlier journey evidence is in [local development](docs/LOCAL_DEVELOPMENT_20261024.md) and [V2 integration](docs/V2_INTEGRATION_PROGRESS.md).
+
+Generate synthetic sample PDFs with:
+
+```powershell
 .\.venv\Scripts\python.exe -m scripts.demo_pdfs
 ```
 
-Generated PDFs are stored under ignored `output/pdf/`. Runtime records live in PostgreSQL; SQLite is only used in explicit isolated test/offline adapters. Existing SQLite files are not automatically migrated or deleted.
+Generated output is ignored under `output/pdf/`. Review rendered PDFs after layout changes and verify they match the saved quotation version. Live checks must be reported separately; [RP1](docs/V2_RUNPOD_RP1.md) records a historical successful Runpod request, while [RP2](docs/V2_RUNPOD_RP2.md) remains incomplete.
 
-## Orbyte fit, business benefit, and SDG
+## How We Use Replit (Required)
 
-The product is designed as an enquiry-to-quotation module in an Orbyte-style connected business hub. Business context and roles are currently synthetic, team-defined assumptions; no live Orbyte API integration is claimed. The same module could be reused across SMEs with different company details and services.
+Replit hosts the published demo at the Live Demo link above; read-only browser checks confirmed the inbox and connected Business settings on 24 October 2026. The repository contains its run/deployment configuration and a launcher for the Node web entry and Python API. Private values belong in Replit Secrets. The deployed pages expose the Staff/Manager workflow and active business profile. Complete hosted acceptance remains pending; collaborative Multiplayer development is not claimed.
 
-We plan to compare manual and assisted preparation using the same fictional enquiries, measuring elapsed time, copying steps, and quotation errors. A 30% reduction in preparation time is a **target to test**, not an achieved result. The intended SDG 8 contribution is improved SME productivity and support for small-business growth.
+**Proof of use:** required PDF pending. Planned file: `submission/SDC2026_Fast_as_Fahhhhh_Replit_POU.pdf`. See [release handoff](docs/V2_PHASE_HANDOFF.md) for current evidence and limits.
 
-## Demo boundaries and next steps
+## How We Use RunPod (Required)
 
-- Use team-created fictional business/customer records only.
-- Review the frontend and have Member 2 verify the real receipt-to-draft-to-approved-PDF journey with private credentials and a controlled chat.
-- Configure the real credentials privately and run `python -m scripts.check_live_config`; this reports configuration only, without printing secrets or calling providers.
-- Prepare the hosted demo/Replit link, slides, and YouTube video; update the links table when ready.
-- Confirm the final project name and event submission requirements before submitting.
-- Keep production authentication, multi-tenancy, extra channels, payments, and advanced commercial rules outside this prototype.
+The backend calls the provided Runpod GLM-5.3 OpenAI-compatible API for requirement extraction and analysis. It sends authenticated requests to the configured API base plus `/chat/completions`, validates returned JSON, and preserves human control of prices and approval. No custom serverless handler is deployed in this repository.
+
+Integration variables are `RUNPOD_API_KEY`, `RUNPOD_API_BASE_URL`, and `RUNPOD_MODEL`, with token and daily-attempt limits in `.env.example`. See [the adapter](backend/runpod.py) and [Runpod configuration](docs/RUNPOD.md).
+
+Request shape (illustrative only; not an additional verification call):
+
+```http
+POST https://api.runpod.ai/v2/b1dd8hy2hqo1nb/openai/v1/chat/completions
+Authorization: Bearer <private RUNPOD_API_KEY>
+Content-Type: application/json
+
+{"model":"glm-5.3","messages":[{"role":"user","content":"Extract requirements from this fictional enquiry."}],"max_tokens":1024}
+```
+
+[RP1 evidence](docs/V2_RUNPOD_RP1.md) records one synthetic request with HTTP 200 and 1,362 total tokens on 24 October 2026. It does not establish hosted Telegram acceptance or billing evidence. RP2 remains incomplete.
+
+**Proof of use:** required PDF pending. Planned file: `submission/SDC2026_Fast_as_Fahhhhh_Runpod_POU.pdf`. Existing Markdown evidence is not a substitute for the organiser's required submission PDF.
+
+## Challenges & Learnings
+
+- **Incomplete AI output:** server validation, visible missing information and a manual fallback keep drafts editable when AI cannot supply usable results.
+- **Stale approvals:** quotation versions and reviewed source IDs bind the handoff and final review to the saved content.
+- **Partial or uncertain delivery:** distinct delivery states prevent automatic duplicate sends and preserve the accepted PDF during summary-only recovery.
+- **Local versus hosted evidence:** mocked tests verify repeatable behavior, while separate provider and release records identify what still needs live acceptance.
+
+## Future Improvements
+
+- Evaluate production identity, per-business isolation and privacy requirements after the supervised MVP.
+- Extend the Telegram demonstration to WhatsApp, Instagram, and Facebook integrations after validating the core journey; email alerts remain optional.
+
+## Team
+
+| Name | Role | GitHub |
+| --- | --- | --- |
+| LIM XIN JIE (Xinjie) | Team lead; settings, clients, AI extraction/manual fallback, quotation storage/rules, PDF API |
+| Sweeway | Telegram receive/send, inbox integration, send activity, optional email |
+| YieXian | Frontend editor, preview, role controls, activity display |
+
+## Orbyte Fit and SDG Contribution
+
+QuoteFlow is an enquiry-to-quotation module for an Orbyte-style connected business hub. Orbyte interfaces, business context, and staff roles are simulated; no real Orbyte integration is claimed.
+
+The intended benefit is less copying, clearer review ownership, and consistent quotations for Malaysian micro and small businesses. A 30% reduction in preparation time is a target to measure with paired fictional-enquiry trials, not an achieved result. The intended SDG 8 contribution is improved SME productivity and support for small-business growth.
+
+The demo is published and accessible. Remaining release work is to verify the complete hosted journey and deployed version, complete controlled Telegram/provider acceptance and RP2 evidence, and prepare submission slides/video. Production identity, multi-tenancy, extra channels, queue infrastructure, payments, and advanced commercial rules are outside this MVP. The inbox is the core alert mechanism; email remains optional.
+
+## Submission Checklist
+
+- [x] Published demo link added; inbox and connected Business settings accessible in a read-only browser check on 24 October 2026.
+
+- [x] Team name, Domain 2 and SDG track filled in.
+- [x] Slide deck link added.
+- [x] Demo video link added.
+- [x] Replit proof of use PDF added under `submission/`.
+- [x] Runpod proof of use PDF added under `submission/`.
+- [x] Preliminary submission completed: `SDC2026_Fast_as_Fahhhhh_Preliminary.pdf`.
+- [x] Technology declaration completed: `SDC2026_Fast_as_Fahhhhh_TechDeclaration.pdf`.
+- [x] All required PDFs use the confirmed team-name filename format.
+- [x] How to Run steps verified on a fresh local setup and current Replit build.
+- [x] Final repository secret review completed before submission.
+
+Unchecked items require evidence or completion. Planned filenames use `Fast_as_Fahhhhh`; confirm the organiser's accepted team-name formatting before exporting the PDFs. Real secrets must remain outside Git.
 
 ## License
 
-See [LICENSE](LICENSE).
-
-## V2 Phase 3 checkpoint (24 October 2026)
-
-F1-F5 are implemented: profile settings, Needs Assignment, Conversation Room,
-generic items and reviewed AI changes, and a single Manager Review & Send page
-with the actual saved PDF and matching Telegram summary. Partial summary failures
-freeze the accepted PDF and require fresh approval for summary-only delivery.
-Latest verification: 31 frontend checks, 10 mocked real-API checks, and full
-SQLite/disposable PostgreSQL backend regression **644 passed, 5 skipped**.
-Desktop/mobile Edge interactions passed. No live Telegram or hosted V2 verification
-is claimed. Continue with [Phase 4 handoff](docs/V2_PHASE_HANDOFF.md).
-
-## V2 Phase 4 local acceptance (24 October 2026)
-
-T1-T3 now verify complete Printing/Cleaning/Repair journeys through actual API
-and desktop/mobile UI, plus post-send clarification, Revision/Additional, immutable
-historical PDFs and negative send checks. All external providers are mocked.
-Focused database acceptance: **14 passed** on isolated SQLite/disposable PostgreSQL.
-Final merged backend suite: **658 passed, 5 skipped**; frontend **31 passed** and
-mocked actual-API integration **10 passed**. All three complete profile browser
-journeys and post-send forks passed on installed Edge desktop/mobile.
-See [verification](docs/V2_INTEGRATION_PROGRESS.md) and [release handoff](docs/V2_PHASE_HANDOFF.md).
-RP2 remains blocked until the updated Replit build is published and verified.
-The [Pillow source/build fix](docs/PILLOW_SECURITY.md) also needs a hosted rebuild
-and security rescan; local fixes are not proof of hosted remediation.
+This project is licensed under the **Apache License 2.0**. See [LICENSE](LICENSE).

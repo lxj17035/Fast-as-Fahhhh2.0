@@ -84,3 +84,34 @@ PostgreSQL database, with mocked external providers. The dedicated Docker test
 container was stopped/removed after verification; the pre-existing container was
 untouched. No real Telegram/Runpod checks, pushes or Replit publication. RP2 still
 requires matched Runpod request/usage evidence and remains incomplete.
+
+## README refresh (24 October 2026)
+
+- [x] Reviewed `origin/main` at `90a8491`, README, workflow, startup/configuration and latest verification records.
+- [x] Confirmed QuoteFlow as the project name; consolidated current features, Staff/Manager handoff, setup, hosting and release limits.
+- [x] Verified all 15 README local links resolve, Markdown fences are balanced, and `git diff --check` passes.
+
+Documentation-only change. Application tests and live provider/hosted checks were not rerun; README test counts are explicitly attributed to historical source verification. The existing checkout remains on `codex/feat-domain2-v2`, matching the reviewed remote-tracking main before this edit.
+
+## Organiser README format (24 October 2026)
+
+- [x] Matched the supplied organiser sample sections to QuoteFlow's actual implementation, tree, entry points, Runpod Chat Completions integration and Apache 2.0 license.
+- [x] Added explicit pending submission PDFs, contributor handles, slide/video links and evidence checklist without claiming completion.
+- [x] Verified required section headings, local link targets, balanced Markdown fences and git diff whitespace checks.
+
+Documentation only; application suites, fresh setup and live hosted/provider checks were not rerun. Reviewed current template options for a separate slide-style recommendation; no presentation was created.
+
+## Social enquiry positioning (24 October 2026)
+
+- [x] Broadened README problem/product positioning to WhatsApp, Telegram, Instagram and Facebook enquiries at the owner's request.
+- [x] Explicitly retained Telegram as the implemented demo channel and the other integrations as future extensions; no application behavior or contracts changed.
+- [x] Checked channel-scope wording, all 20 local links, Markdown fences and git diff whitespace. Documentation only; application/live tests not rerun.
+
+## Published demo availability (24 October 2026)
+
+- [x] Opened https://fast-as-fahhhh-20.replit.app/#/ in a browser. Inbox loaded without login, displayed Telegram enquiry rows, Staff/Manager role selector and current task controls.
+- [x] Opened Settings using its navigation link. Page showed Connected, active Cleaning profile and fictional business settings; Staff fields were disabled as expected.
+- [x] Updated README to mark the demo published/browser-accessible while retaining separate complete-journey, deployed-commit, provider evidence and security-rescan limits.
+- [x] All 20 README local links resolve, Markdown fences balance and git diff whitespace checks pass.
+
+Read-only navigation only. No settings/profile changes, AI calls, quotation edits, approvals or customer messages were performed. Application suites and full hosted acceptance were not run. This availability check supersedes older README publication-pending wording, not the remaining release acceptance requirements.
