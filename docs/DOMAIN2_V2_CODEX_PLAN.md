@@ -27,6 +27,8 @@ After each section, update this checklist before handing work back.
 - [ ] T1 — Printing end to end.
 - [ ] T2 — Cleaning and Repair compatibility.
 - [ ] T3 — Post-send changes.
+- [ ] RP1 — Phase 2 end: controlled live Runpod extraction and sanitized evidence (separate from mocked tests).
+- [ ] RP2 — Release/T1: verify the published Replit app actually calls Runpod and capture submission proof.
 
 Current implementation branch: `codex/feat-domain2-v2` (includes B1).
 User authorized completing **one whole phase at a time**: finish Backend B2–B5,
@@ -167,6 +169,48 @@ Actual PDF-plus-summary transport is A5; product UI is F1–F5. No live-provider
 check, V2 push or deployment was performed. Stop here for a new Phase 2 chat.
 
 ## Phase 2 — Automation / AI (after Backend)
+
+### Runpod usage and verification checkpoints
+
+Runpod is the selected AI provider. The call path is
+`backend/drafting.py` provider selection → `backend/runpod.py` → configured
+Runpod GLM-5.3 Public Endpoint. Local configuration is not proof that Replit
+Secrets or the published deployment use the same provider.
+
+- **A1:** adapt the shared prompt/schema and pass backend-validated business
+  context through the Runpod adapter.
+- **A2:** Runpod extracts enquiry requirements/items and missing information.
+- **A3:** use Runpod for clarification suggestions and renewed analysis of
+  customer replies, subject to backend evidence/assignment validation.
+- **A4:** use Runpod for proposed quotation changes; Staff applies selections.
+- **A5:** outbound Telegram orchestration is not a Runpod inference step.
+  Build the approved short summary deterministically from saved quotation data;
+  no extra model call is needed to price, approve, render a PDF or send it.
+
+**RP1, before the Phase 2 handoff:** after mocked tests pass, perform a separately
+identified, bounded live Runpod check with fictional input and isolated test
+storage. Start with one request and the configured token cap; no automatic retry
+or repeated calls merely to make the balance decrease. Record UTC/Malaysia time,
+provider/model, safe endpoint identity, HTTP result, provider request ID and token
+usage if supplied, plus validated extraction output. Clearly distinguish absent
+metadata from captured evidence. Save a sanitized verification report in `docs/`;
+keep disposable/raw intermediates ignored. If credentials/network/access are
+unavailable, leave RP1 unchecked and report the blocker. Mocked tests, a local
+request counter, key "Used" date and configuration readiness do not prove a
+successful live inference. Existing 23 October success is historical only; it
+does not verify the changed V2 prompt or published application.
+
+**RP2, release/T1 after the frontend is ready:** verify Replit's selected provider
+without exposing secrets, then use a fresh fictional enquiry in a team-controlled
+Telegram chat to demonstrate the published app's Runpod extraction. Existing
+saved drafts may be reused without a new model request. Capture matching app
+output and sanitized provider evidence; include account usage/billing evidence
+where available. Check the actual event submission requirements: shared Public
+Endpoint code alone does not establish a team-owned Serverless deployment.
+Do not promise that a tiny call will visibly change a rounded credit balance.
+Mark RP2 complete only after actual hosted verification, before recording the
+final demo. Never put API keys, Authorization headers or private chat data into
+the report, screenshots or video. No live call is performed by this plan update.
 
 ### A1 — **Review AND edit the Core AI System Prompt** + dynamic context
 **Mandatory implementation, not optional.** Locate the existing prompt(s), remove any **hard-coded Printing Shop identity or assumptions**, preserve general instruction and safety constraints, inject the selected backend-validated profile's business details at runtime, and maintain a single SME-agnostic Core Prompt. Demo with Printing, Cleaning and Repair. Never let model output override `business_profile_id`. State in the prompt: AI may classify/extract/suggest but cannot set/approve price, send Telegram customer messages, approve quotations or invent missing information. Adapt the existing structured output minimally to represent extracted item fields/notes, missing information, clarification suggestions and proposed changes. Tests: each profile yields contextual extraction without cross-profile leakage; forbidden actions blocked by backend regardless of prompt. Commit: `feat(ai): use dynamic SME context in core prompt`.

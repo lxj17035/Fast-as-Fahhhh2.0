@@ -45,6 +45,15 @@ screening succeeds. Do not add production identity/tenancy/queues/channels.
 
 ## Next chat: Phase 2 A1–A5 only
 
+Runpod verification is explicitly required: see the plan's "Runpod usage and
+verification checkpoints". A1 connects dynamic context to its adapter; A2–A4
+use it for extraction, clarification and change suggestions. A5 sends approved
+data with a deterministic summary and needs no extra inference. At Phase 2 end,
+RP1 performs a bounded synthetic live check with a sanitized evidence report,
+separate from mocked tests. RP2 verifies the actual published Replit → Runpod
+path during release/T1 and captures submission proof. Both remain unchecked.
+The 23 October live success is historical, not proof of V2 or hosted usage.
+
 - Core prompt/schema live in `backend/drafting.py`; Runpod reuses them through
   `backend/runpod.py`. A1 must actually edit the core prompt/schema, inject the
   pinned backend-validated profile, and cover Printing/Cleaning/Repair.
