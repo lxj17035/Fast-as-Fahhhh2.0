@@ -33,7 +33,8 @@ After each section, update this checklist before handing work back.
 Current implementation branch: `codex/feat-domain2-v2` (includes B1).
 User authorized completing **one whole phase per chat**, testing and committing
 one section at a time. Phases 1 and 2 (A1-A5) are complete and committed.
-This chat stops before Phase 3 frontend. V2 remains local and undeployed until publication.
+This chat stops before Phase 3 frontend. Completed phases must be pushed to origin
+and origin/main under the phase-end rule below; deployment is verified separately.
 Use [the handoff](V2_PHASE_HANDOFF.md) and [Phase 2 evidence](V2_AI_PROGRESS.md).
 
 ## Goal
@@ -48,6 +49,9 @@ Implement an approachable Malaysian SME enquiry-to-quotation workflow, adaptable
 4. Never commit `.env`, tokens, private data, `.input/`, `.output/`, or generated scratch files. Check `.gitignore` and staged diffs. Do not change the Codex model configuration as part of V2 work.
 5. Preserve immutable sent PDFs and their historical metadata, human approval for pricing and sending, and a traceable customer conversation. No AI-initiated customer messages.
 6. After each completed section, update this document's implementation checklist and the section's verification record with changed files, exact test commands/results, implementation commit hash and remaining gaps. Report the result after committing. The user authorized one whole phase per chat: continue its sections in order, then stop at the phase boundary and provide a written handoff for a new chat.
+
+
+7. **At the end of every completed phase, push the tested section commits and updated plan/handoff to `origin` on the working branch, and integrate/push the completed phase to `origin/main` before stopping.** This is standing user authorization; do not ask again for routine phase-end pushes. Fetch first, preserve remote changes, use a fast-forward when possible or a normal merge when needed, and never force-push or overwrite unrelated work. Resolve and verify any integration changes before pushing. Verify both remote refs contain the completed phase and report their commit IDs. If branch protection, authentication or another actual blocker prevents publication, report it explicitly rather than calling the push complete. A Git push is not evidence of successful deployment; verify the hosted app separately.
 
 ## Confirmed V2 business rules
 
