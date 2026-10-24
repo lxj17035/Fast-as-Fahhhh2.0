@@ -36,8 +36,13 @@ class SyntheticExtractor:
 class SyntheticSender:
     def __init__(self):
         self.calls = 0
+        self.summary_calls = 0
 
     def send_text(self, chat_id, content):
+        if content.startswith("Quotation ") and os.environ.get("FRONTEND_QA_SUMMARY_FAIL") == "true":
+            self.summary_calls += 1
+            if self.summary_calls == 1:
+                return DeliveryResult("failed", error_code="telegram_403")
         return DeliveryResult("sent", message_id="52000")
 
     def send_pdf(self, chat_id, pdf):

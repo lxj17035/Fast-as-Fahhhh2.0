@@ -78,3 +78,12 @@ unsaved-edit dialog; errors preserve edits. See docs/FRONTEND.md for behavior.
 - Keep active business context visible; AI never selects a profile.
 - Keep blank prices distinct from zero; show backend totals and expiry.
 - Never imply a mocked delivery proves live Telegram or hosted integration.
+
+## V2 review surfaces
+
+Reuse panel/field/button/table-scroll across assignments, Conversation Room,
+suggested changes and the final review. v2-panel is their shared content padding
+adapter. Staff/Manager labels map to existing simulated sales/pm roles. Prices
+are readonly for Staff. A final review uses the saved version, actual PDF and
+server summary together. Frozen partial delivery explains the protected edit
+state. Horizontal scrolling belongs to the item table; the page scrolls naturally.

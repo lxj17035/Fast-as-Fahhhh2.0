@@ -75,6 +75,14 @@ try {
     assert.equal(new TextDecoder().decode(originalPDF.slice(0, 5)), '%PDF-');
     await assert.rejects(api.request(`/api/quotations/${quote.id}/send`, { method: 'POST', role: 'sales', body: { approved: true, expected_version: quote.version } }), error => error.status === 403);
   });
+  await test('actual API: Manager review matches the saved PDF and deterministic summary', async () => {
+    const review = await api.review(quote.id, quote.version);
+    assert.equal(review.quotation.version, quote.version); assert.equal(review.delivery_mode, 'pdf_and_summary');
+    assert.equal(review.pdf.version, quote.version); assert.match(review.pdf.sha256, /^[a-f0-9]{64}$/);
+    assert.ok(review.telegram_summary.includes('RM 500.00')); assert.ok(review.telegram_summary.includes(quote.expiryDate));
+    assert.deepEqual(review.source_message_ids, enquiry.messages.map(m => m.update_id));
+    await assert.rejects(api.request(`/api/quotations/${quote.id}/review?version=${quote.version}`, {role:'sales'}), error=>error.status===403);
+  });
   await test('actual API: confirmed rejection needs the exact failed-attempt approval', async () => {
     const result = await api.send(quote.id, quote.version);
     assert.equal(result.status, 'failed'); failedAttempt = result.attempt_id;

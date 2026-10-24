@@ -23,7 +23,7 @@ After each section, update this checklist before handing work back.
 - [x] F2 — Enquiry list & Needs Assignment.
 - [x] F3 — Conversation Room.
 - [x] F4 — Generic Quotation Editor.
-- [ ] F5 — Manager Review & Send.
+- [x] F5 — Manager Review & Send.
 - [ ] T1 — Printing end to end.
 - [ ] T2 — Cleaning and Repair compatibility.
 - [ ] T3 — Post-send changes.
@@ -33,7 +33,7 @@ After each section, update this checklist before handing work back.
 Current implementation branch: `codex/feat-domain2-v2` (includes B1).
 User authorized completing **one whole phase per chat**, testing and committing
 one section at a time. Phases 1 and 2 (A1-A5) are complete and committed.
-This chat stops before Phase 3 frontend. Completed phases must be pushed to origin
+Phase 3 F1-F5 is complete; next chat is Phase 4 T1-T3/RP2. Completed phases must be pushed to origin
 and origin/main under the phase-end rule below; deployment is verified separately.
 Use [the handoff](V2_PHASE_HANDOFF.md) and [Phase 2 evidence](V2_AI_PROGRESS.md).
 
@@ -244,19 +244,28 @@ Wire Staff explicitly sent messages and Manager-authorized quotation PDF + deter
 
 ### F1 — Business Profile Settings
 
-**Implemented and verified; commit blocked (24 October 2026).** Shared profile selection and pinned settings saves; 25 frontend tests and 8 isolated actual-API checks passed. Desktop/mobile browser QA passed. Git index is read-only in this session. Exact files, checks and limitations: [Phase 3 report](V2_FRONTEND_PROGRESS.md).
+**Completed - 24 October 2026.** Commit `00d6565`; 25 frontend and 8 isolated API checks. [Frontend verification](V2_FRONTEND_PROGRESS.md).
+
 Reuse existing Settings UI patterns; choose active demo profile and show business context. Do not let AI choose profile. Test UX and switching. Commit: `feat(ui): configure demo SME profiles`.
 
 ### F2 — Enquiry list & Needs Assignment
+
+**Completed - 24 October 2026.** Section tests and browser checks passed. Exact files, counts and commits: [frontend verification](V2_FRONTEND_PROGRESS.md).
 Show association status, Staff resolve options, related message history. Reuse existing components. Commit: `feat(ui): review enquiry assignments`.
 
 ### F3 — Conversation Room
+
+**Completed - 24 October 2026.** Section tests and browser checks passed. Exact files, counts and commits: [frontend verification](V2_FRONTEND_PROGRESS.md).
 Show incoming/outgoing messages, editable AI clarification suggestions and explicit Staff Send. Keep the current enquiry context clear. Commit: `feat(ui): add enquiry conversation room`.
 
 ### F4 — Generic Quotation Editor
+
+**Completed - 24 October 2026.** Section tests and browser checks passed. Exact files, counts and commits: [frontend verification](V2_FRONTEND_PROGRESS.md).
 Item name, quantity, unit, Manager-controlled unit price, amount, notes; Staff reviews AI suggested changes within existing quotation UI. Use existing Dates & Notes / Valid For. No complex separate proposal manager, lock/presence/multiuser editing engine or offline auto-save engine. Commit: `feat(ui): support shared SME quotation items`.
 
 ### F5 — Manager Review & Send
+
+**Completed - 24 October 2026.** Section tests and browser checks passed. Exact files, counts and commits: [frontend verification](V2_FRONTEND_PROGRESS.md).
 Single final page with all confirmed fields, PDF preview, Telegram short summary preview, `Back to Edit` and Manager-only `Approve & Send`; display clear send errors. Commit: `feat(ui): add manager review and send`.
 
 ## Phase 4 — Integration tests (after per-section tests)

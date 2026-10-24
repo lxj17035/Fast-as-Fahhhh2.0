@@ -179,3 +179,12 @@ saved amount and notes. AI Suggested Changes uses native labelled selection
 checkboxes and existing fields, explicit apply and stale version rejection.
 An explicit message-review checkbox acknowledges exactly the loaded incoming IDs.
 Sent quotation forks require a confirmed revision/additional choice.
+
+V2 F5: Manager Review & Send is one final view within the enquiry route.
+It uses GET /review?version=N, verifies the actual PDF bytes against its saved
+fingerprint, and shows saved data plus the server summary together. Back to Edit
+returns to the same enquiry. Frozen summary-only retries keep the editor locked.
+Approval always references the saved version and exact eligible failed attempt.
+Delivery history distinguishes PDF/summary acceptance and historical null data.
+The existing helpers own navigation, forms, notices and busy states; v2-panel
+adds shared padding and wrapping. Mobile tables scroll and PDF canvases scale.

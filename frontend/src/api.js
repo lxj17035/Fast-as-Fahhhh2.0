@@ -83,6 +83,7 @@ export class Api {
     if (retryId) body.retry_of_attempt_id = retryId;
     return this.request(`/api/quotations/${encodeURIComponent(id)}/send`, { method: 'POST', body, role: 'pm', delivery: true });
   }
+  review(id, version) { return this.request(`/api/quotations/${encodeURIComponent(id)}/review?version=${version}`, { role: 'pm' }); }
   suggestions(id) { return this.request(`/api/quotations/${encodeURIComponent(id)}/suggestions`); }
   applyChanges(id, body, role) { return this.request(`/api/quotations/${encodeURIComponent(id)}/apply-changes`, { method: 'POST', body, role }); }
   fork(id, body, role) { return this.request(`/api/quotations/${encodeURIComponent(id)}/fork`, { method: 'POST', body, role }); }

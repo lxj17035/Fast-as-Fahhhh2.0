@@ -82,3 +82,8 @@ test('analysis absence is allowed only on the nullable analysis contract', async
   const api = new Api('', async () => Response.json(null));
   assert.equal(await api.analysis('enquiry'), null); await assert.rejects(api.settings());
 });
+
+test('final review uses an explicit Manager role and exact saved version', async () => {
+  let call; const api = new Api('', async (url, options) => {call={url,...options};return Response.json({send_ready:true});});
+  await api.review('abc', 7); assert.equal(call.url, '/api/quotations/abc/review?version=7'); assert.equal(call.headers['X-Demo-Actor'], 'pm'); assert.equal(call.method, 'GET');
+});

@@ -14,7 +14,7 @@ const state = {
   error: null, notice: '', noticeKind: 'info', offset: 0, limit: 25, items: [], filter: 'all', search: '',
   detail: null, quote: null, form: null, dirty: false, previewVersion: null, pdfURL: null,
   settings: null, client: null, settingsDirty: false, clientDirty: false, hold: false, holdBaseline: [],
-  suggestions: [], reviewed: false, conversation: [], analysis: null, composer: '', messageRequest: null, messageHold: false, assignments: [], profiles: [], activeProfile: '', selectedProfile: '', profileLabel: '',
+  assignmentTargets: {}, suggestionValues: {}, selectedChanges: [], suggestionDirty: false, finalReview: null, suggestions: [], reviewed: false, conversation: [], analysis: null, composer: '', messageRequest: null, messageHold: false, assignments: [], profiles: [], activeProfile: '', selectedProfile: '', profileLabel: '',
   pdfReady: false, pdfPage: 1, pdfPages: 0, companyName: 'Demo business workspace', focusPreview: false, expanded: {},
 };
 let loadId = 0;
@@ -48,7 +48,7 @@ function errorBox() {
   return `<div class="message error" role="alert">${icon('alert')}<div><strong>${e(state.error.message)}</strong>${Object.keys(state.error.fields).length ? `<ul>${Object.entries(state.error.fields).map(([key, value]) => `<li>${e(key)}: ${e(value)}</li>`).join('')}</ul>` : ''}${state.error.status === 409 && state.quote ? '<p>Your edits are still here. Someone may have updated the quote. Refresh it to review the latest saved version.</p>' : ''}</div></div>`;
 }
 function connection() { return `<span class="connection ${state.connected === false ? 'offline' : ''}"><i></i>${state.connected === null ? 'Connecting…' : state.connected ? 'Connected' : 'Connection lost'}</span>`; }
-function hasEdits() { return state.dirty || state.settingsDirty || state.clientDirty || !!state.composer; }
+function hasEdits() { return state.dirty || state.settingsDirty || state.clientDirty || !!state.composer || state.suggestionDirty; }
 function revokePDF() { if (state.pdfURL) URL.revokeObjectURL(state.pdfURL); state.pdfURL = null; state.previewVersion = null; state.pdfReady = false; state.pdfPage = 1; state.pdfPages = 0; state.focusPreview = false; releasePDF().catch(() => {}); }
 
 function render() {
@@ -60,7 +60,7 @@ function render() {
     <div class="workspace"><span class="workspace-avatar">QF</span><div><strong id="company-name">${e(state.companyName)}</strong><span id="profile-label">${e(state.profileLabel || 'Fictional business workspace')}</span></div></div>
     <p class="nav-label">WORKSPACE</p><nav aria-label="Main navigation"><a href="#/" data-nav="/" aria-label="Enquiry inbox" class="nav-item ${!settings ? 'active' : ''}" ${!settings ? 'aria-current="page"' : ''}>${icon('inbox')}<span>Enquiry inbox</span>${state.items.length ? `<span class="nav-count">${state.items.length}</span>` : ''}</a><a href="#/settings" data-nav="/settings" aria-label="Settings" class="nav-item ${settings ? 'active' : ''}" ${settings ? 'aria-current="page"' : ''}>${icon('settings')}<span>Settings</span></a></nav>
     <div class="sidebar-bottom"><div class="human-note">${icon('shield')}<strong>Assisted by AI.<br>Approved by you.</strong><p>You stay in control of pricing and every outgoing quotation.</p></div><div class="demo-label"><i></i>SYNTHETIC DATA DEMO</div><small>Orbyte Smart SME Challenge</small></div>
-    </aside><div class="app-body"><header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong>${settings ? 'Settings' : review ? 'Quotation review' : 'Enquiry inbox'}</strong></div><div class="topbar-right"><div id="connection">${connection()}</div><div class="role-control"><span class="avatar">${state.role === 'pm' ? 'PM' : 'S'}</span><label>Demo role<select id="role" aria-label="Simulated role"><option value="sales" ${state.role === 'sales' ? 'selected' : ''}>Sales</option><option value="pm" ${state.role === 'pm' ? 'selected' : ''}>PM</option></select></label></div></div></header>
+    </aside><div class="app-body"><header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong>${settings ? 'Settings' : review ? 'Quotation review' : 'Enquiry inbox'}</strong></div><div class="topbar-right"><div id="connection">${connection()}</div><div class="role-control"><span class="avatar">${state.role === 'pm' ? 'PM' : 'S'}</span><label>Demo role<select id="role" aria-label="Simulated role"><option value="sales" ${state.role === 'sales' ? 'selected' : ''}>Staff</option><option value="pm" ${state.role === 'pm' ? 'selected' : ''}>Manager</option></select></label></div></div></header>
     <main id="main" tabindex="-1" ${state.loading ? 'aria-busy="true"' : ''}>${state.loading ? '<div class="loading"><span class="spinner"></span><h2>Loading your workspace</h2><p>Getting your saved details…</p></div>' : settings ? settingsPage() : review ? reviewPage() : inboxPage()}</main>
     <footer class="app-footer"><span>QuoteFlow <span>/</span> Enquiry to quotation, connected.</span><span>Supervised demo · Times in Kuala Lumpur</span></footer></div>`;
   root.querySelectorAll('textarea').forEach(growTextarea);
@@ -96,7 +96,7 @@ function inboxPage() {
     <p class="inbox-help">${icon('shield')} You review the details and prices. A project manager approves every send.</p>`;
 }
 function assignmentPanel() {
-  return `<section class="panel settings-panel"><h2>Needs Assignment <span class="count-pill">${state.assignments.length}</span></h2><p>Review the original message and choose its enquiry. Decisions are retained in history.</p>${state.assignments.map(message => `<form class="assignment-form" data-update="${e(message.update_id)}" novalidate><blockquote>${e(message.text)}</blockquote><p class="field-note">Original chat: ${e(message.chat_id)}</p><details><summary>Association history</summary>${message.history.map(h => `<p>${e(h.actor)} � ${e(h.action)} � ${e(dateTime(h.timestamp))}</p>`).join('')}</details><label class="field"><span>Existing enquiry reference (same chat)</span><input name="enquiry_id" placeholder="Paste the enquiry reference from More details" /></label><div class="editor-buttons"><button class="btn primary" name="action" value="assign" ${state.busy ? 'disabled' : ''}>Assign to enquiry</button><button class="btn secondary" name="action" value="new" ${state.busy ? 'disabled' : ''}>Create new enquiry</button><button class="btn secondary" name="action" value="unrelated" ${state.busy ? 'disabled' : ''}>Mark unrelated</button></div></form>`).join('') || '<p class="field-note">No messages need assignment.</p>'}</section>`;
+  return `<section class="panel settings-panel v2-panel"><h2>Needs Assignment <span class="count-pill">${state.assignments.length}</span></h2><p>Review the original message and choose its enquiry. Decisions are retained in history.</p>${state.assignments.map(message => `<form class="assignment-form" data-update="${e(message.update_id)}" novalidate><blockquote>${e(message.text)}</blockquote><p class="field-note">Original chat: ${e(message.chat_id)}</p><details><summary>Association history</summary>${message.history.map(h => `<p>${e(h.actor)} · ${e(h.action)} · ${e(dateTime(h.timestamp))}</p>`).join('')}</details><label class="field"><span>Existing enquiry reference (same chat)</span><input name="enquiry_id" value="${e(state.assignmentTargets[message.update_id] || '')}" placeholder="Paste the enquiry reference from More details" /></label><div class="editor-buttons"><button class="btn primary" name="action" value="assign" ${state.busy ? 'disabled' : ''}>Assign to enquiry</button><button class="btn secondary" name="action" value="new" ${state.busy ? 'disabled' : ''}>Create new enquiry</button><button class="btn secondary" name="action" value="unrelated" ${state.busy ? 'disabled' : ''}>Mark unrelated</button></div></form>`).join('') || '<p class="field-note">No messages need assignment.</p>'}</section>`;
 }
 function inboxResults() {
   const list = state.items.filter(item => matchesInboxFilter(item, state.filter) && `${item.original_text} ${item.id} ${item.telegram_chat_id}`.toLowerCase().includes(state.search.toLowerCase()));
@@ -120,6 +120,7 @@ function nextStepMarkup() {
 }
 function reviewPage() {
   if (!state.detail) return `${button('Back to enquiries', 'inbox', { symbol: 'back' })}${errorBox()}<div class="empty-state"><h2>We couldn’t open this enquiry</h2>${button('Try again', 'refresh')}</div>`;
+  if (state.finalReview) return finalReviewPage();
   const d = state.detail, q = state.quote;
   const customer = q?.client.name.trim();
   return `<div class="review-top"><a href="#/" data-nav="/" class="back-link">${icon('back')} All enquiries</a>${button('Refresh', 'refresh', { symbol: 'refresh', disabled: state.busy })}</div>
@@ -133,32 +134,43 @@ ${conversationPanel()}${suggestionsPanel()}${relationshipPanel()}
       <section class="panel editor-panel"><div class="panel-heading"><div><h2>Quote details</h2><p>Check the customer and add your prices.</p></div><span id="save-state" class="save-state"></span></div>${q ? editor() : '<div class="empty-state"><span class="empty-icon">' + icon('file') + '</span><h3>Start with a draft</h3><p>Choose Prepare draft or Write it myself above.</p></div>'}</section>
       <details class="quiet-details references" ${disclosure('references')}><summary>More details</summary><dl><dt>Enquiry reference</dt><dd><code>${e(d.id)}</code></dd>${q ? `<dt>Client reference</dt><dd><code>${e(q.client.id)}</code></dd><dt>Saved version</dt><dd>${q.version}</dd>` : ''}<dt>Original Telegram chat</dt><dd><code>${e(d.telegram_chat_id)}</code></dd></dl><p>Delivery always goes to this original conversation.</p></details>
     </div><aside class="preview-column">
-        <section class="panel preview-panel" id="preview-panel"><div class="panel-heading"><div><h2>Quote preview</h2><p id="preview-status">The document your customer will receive.</p></div>${icon('file')}</div>${pdfContent()}<div class="preview-actions">${button(state.pdfURL ? 'Refresh preview' : 'Preview quote', 'preview', { symbol: 'file', disabled: !q || state.dirty || state.busy })}${state.pdfURL ? `<a class="text-link" href="${e(state.pdfURL)}" target="_blank" rel="noopener">Open full PDF ↗</a>` : ''}</div></section>
+        <section class="panel preview-panel" id="preview-panel"><div class="panel-heading"><div><h2>Quote preview</h2><p id="preview-status">The document your customer will receive.</p></div>${icon('file')}</div>${pdfContent()}<div class="preview-actions">${button(state.pdfURL ? 'Refresh preview' : 'Preview quote', 'preview', { symbol: 'file', disabled: !q || state.dirty || state.busy })}${state.role === 'pm' ? button('Manager Review & Send', 'approve', {disabled: !q || state.dirty || state.busy || state.hold}) : ''}${state.pdfURL ? `<a class="text-link" href="${e(state.pdfURL)}" target="_blank" rel="noopener">Open full PDF ↗</a>` : ''}</div></section>
     </aside></div>${deliveryHistory()}${activityHistory()}`;
+}
+function frozenDelivery() { return (state.detail?.delivery_attempts || []).some(a => sameId(a.quotation_id, state.quote?.id) && a.pdf_status === 'sent' && a.status !== 'sent'); }
+function finalSendReady() { return state.finalReview?.send_ready && state.role === 'pm' && !state.busy && !state.hold && !state.dirty && state.pdfReady && state.previewVersion === state.finalReview.quotation.version; }
+function finalReviewPage() {
+  const review = state.finalReview, q = review.quotation;
+  return `<section class="page-heading"><div><h1>Manager Review & Send</h1><p>${e(q.number)} · saved version ${q.version}</p></div>${badge(q.status)}</section>${errorBox()}${noticeBox()}<div class="review-grid simple-review"><section class="panel settings-panel v2-panel"><h2>Confirmed quotation</h2><dl><dt>Customer</dt><dd>${e(q.client.name)}<br>${e(q.client.address)}</dd><dt>Business profile</dt><dd>${e(review.business_profile.industry)} · ${e(review.business_profile.companyName)}</dd><dt>Issue date</dt><dd>${e(dateOnly(q.issueDate))}</dd><dt>Valid for</dt><dd>${e(VALIDITIES[q.validity])}</dd><dt>Valid until</dt><dd>${e(dateOnly(q.expiryDate))}</dd></dl><div class="table-scroll"><table><thead><tr><th>Item</th><th>Qty / unit</th><th>Unit price</th><th>Amount</th><th>Notes</th></tr></thead><tbody>${q.items.map(item => `<tr><td>${e(item.item_name || item.description)}</td><td>${e(item.quantity)} ${e(item.unit)}</td><td>${e(item.unitPrice)}</td><td>${e(item.amount ?? item.lineTotal)}</td><td>${e(item.notes)}</td></tr>`).join('')}</tbody></table></div><p>Quotation notes: ${e(q.notes || 'None')}</p><h3>Total: ${e(q.currency)} ${e(q.total)}</h3><h2>Telegram summary preview</h2><blockquote class="summary-preview">${e(review.telegram_summary)}</blockquote><p>Recipient: original Telegram chat ${e(state.detail.telegram_chat_id)}</p>${review.delivery_mode === 'summary_only' ? '<p class="message warning">The PDF was already accepted. Its content is frozen. This approval retries only the identical saved summary. New customer requirements still need separate review.</p>' : '<p>Approval sends this saved PDF and its matching summary.</p>'}<div class="editor-buttons">${button('Back to Edit', 'back-edit', {disabled: state.busy})}${button(review.delivery_mode === 'summary_only' ? 'Approve & Send summary' : 'Approve & Send', 'final-send', {kind:'primary',disabled:!finalSendReady()})}</div></section><section class="panel preview-panel" id="preview-panel"><div class="panel-heading"><h2>Saved PDF · version ${q.version}</h2></div>${pdfContent()}<p class="field-note">Saved PDF fingerprint: ${e(review.pdf.sha256)}</p></section></div>`;
 }
 function suggestionsPanel() {
   const available = state.suggestions.filter(s => !s.applied && s.baseVersion === state.quote?.version && JSON.stringify(s.conversationMessageIds) === JSON.stringify(state.detail.messages.map(m => m.update_id)));
-  return `<section class="panel settings-panel"><h2>AI Suggested Changes</h2><p class="field-note">Review, edit and select changes before applying. Saved edits are never overwritten automatically.</p>${(state.analysis?.changeWarnings || []).map(w => `<p>${e(w)}</p>`).join('')}${available.map(set => `<form class="suggestion-form" data-set="${e(set.id)}" novalidate><fieldset ${state.busy || state.dirty || !editable(state.quote) ? 'disabled' : ''}>${set.changes.map(c => `<div class="suggestion-change"><label class="checkbox-label"><input type="checkbox" name="selected" value="${e(c.id)}" /> ${e(c.type.replaceAll('_', ' '))}${c.type === 'UPDATE_ITEM' ? ` - item ${c.index + 1}` : ''}</label>${c.type === 'UPDATE_FIELD' ? input(e(c.field), c.id + ':value', c.value) : Object.entries(c.data).map(([key,value]) => input(e(key), c.id + ':' + key, value ?? '')).join('')}</div>`).join('')}<button class="btn primary">Apply selected changes</button></fieldset></form>`).join('') || '<p>No current changes to apply. Analyze current messages for suggestions; save your own edits first.</p>'}</section>`;
+  return `<section class="panel settings-panel v2-panel"><h2>AI Suggested Changes</h2><p class="field-note">Review, edit and select changes before applying. Saved edits are never overwritten automatically.</p>${(state.analysis?.changeWarnings || []).map(w => `<p>${e(w)}</p>`).join('')}${available.map(set => `<form class="suggestion-form" data-set="${e(set.id)}" novalidate><fieldset ${state.busy || state.dirty || !editable(state.quote) ? 'disabled' : ''}>${set.changes.map(c => `<div class="suggestion-change"><label class="checkbox-label"><input type="checkbox" name="selected" value="${e(c.id)}" ${state.selectedChanges.includes(c.id) ? 'checked' : ''} /> ${e(c.type.replaceAll('_', ' '))}${c.type === 'UPDATE_ITEM' ? ` - item ${c.index + 1}` : ''}</label>${c.type === 'UPDATE_FIELD' ? input(e(c.field), c.id + ':value', state.suggestionValues[c.id + ':value'] ?? c.value) : Object.entries(c.data).map(([key,value]) => input(e(key), c.id + ':' + key, state.suggestionValues[c.id + ':' + key] ?? value ?? '')).join('')}</div>`).join('')}<button class="btn primary">Apply selected changes</button></fieldset></form>`).join('') || '<p>No current changes to apply. Analyze current messages for suggestions; save your own edits first.</p>'}</section>`;
 }
 function relationshipPanel() {
   if (state.quote?.status !== 'sent') return '';
-  return `<section class="panel settings-panel"><h2>Post-send request</h2><p>Confirm grouping with the customer. A revision keeps the original PDF; an additional quote needs a separate enquiry in the same chat.</p><p>AI advice: ${e(state.analysis?.relationshipIntent || 'Ask the customer if grouping is unclear.')}</p><form id="fork-form" novalidate><label class="field"><span>Relationship</span><select name="relationship"><option value="revision">Revision</option><option value="additional">Additional quotation</option></select></label>${input('Additional enquiry reference', 'enquiry_id', '')}<button class="btn secondary" ${state.busy ? 'disabled' : ''}>Create quotation from confirmed request</button></form></section>`;
+  return `<section class="panel settings-panel v2-panel"><h2>Post-send request</h2><p>Confirm grouping with the customer. A revision keeps the original PDF; an additional quote needs a separate enquiry in the same chat.</p><p>AI advice: ${e(state.analysis?.relationshipIntent || 'Ask the customer if grouping is unclear.')}</p><form id="fork-form" novalidate><label class="field"><span>Relationship</span><select name="relationship"><option value="revision">Revision</option><option value="additional">Additional quotation</option></select></label>${input('Additional enquiry reference', 'enquiry_id', '')}<button class="btn secondary" ${state.busy ? 'disabled' : ''}>Create quotation from confirmed request</button></form></section>`;
 }
 function conversationPanel() {
   const a = state.analysis;
   const current = analysisCurrent(a, state.quote, state.detail, state.conversation, state.assignments);
-  return `<section class="panel settings-panel"><div class="panel-heading"><div><h2>Conversation Room</h2><p>Enquiry ${e(state.detail.id)} � ${e(state.detail.business_profile_id)} � original Telegram chat</p></div></div><ol class="conversation-list">${state.conversation.map(m => `<li><strong>${e(m.direction === 'incoming' ? 'Customer' : m.actor === 'pm' ? 'Manager' : 'Staff')} � ${e(m.kind || 'message')}</strong><time>${e(dateTime(m.created_at))}</time><blockquote>${e(m.text)}</blockquote><span>${e(m.status)}</span></li>`).join('') || '<li>No conversation messages yet.</li>'}</ol><h3>AI clarification suggestions</h3><p class="field-note">${!a ? 'No analysis yet. You can write a message manually.' : !current ? 'Analysis is stale or unavailable. Review current messages and request fresh analysis.' : 'Suggestions are advisory. Edit the message and explicitly send it.'}</p>${current ? (a.extraction?.clarificationSuggestions || []).map((text, i) => `<p>${e(text)} ${button('Use suggestion', 'use-question', {disabled: state.busy}) .replace('data-action="use-question"', `data-action="use-question" data-index="${i}"`)}</p>`).join('') : ''}${button('Analyze current messages', 'analyze', {disabled: state.busy || state.dirty})}<form id="message-form" novalidate><label class="field"><span>Message to customer</span><textarea name="message" style="resize: none" rows="3" maxlength="4000" ${state.busy || state.messageHold ? 'disabled' : ''}>${e(state.composer)}</textarea></label><p class="field-note">${state.messageHold ? 'Delivery unconfirmed. Refresh and check the original chat. This message will not be sent again automatically.' : 'Only your explicit Send delivers this text to the original chat.'}</p><button class="btn primary" ${state.busy || state.messageHold ? 'disabled' : ''}>Send message</button></form></section>`;
+  return `<section class="panel settings-panel v2-panel"><div class="panel-heading"><div><h2>Conversation Room</h2><p>Enquiry ${e(state.detail.id)} · ${e(state.detail.business_profile_id)} · original Telegram chat</p></div></div><ol class="conversation-list">${state.conversation.map(m => `<li><strong>${e(m.direction === 'incoming' ? 'Customer' : m.actor === 'pm' ? 'Manager' : 'Staff')} · ${e(m.kind || 'message')}</strong><time>${e(dateTime(m.created_at))}</time><blockquote>${e(m.text)}</blockquote><span>${e(m.status)}</span></li>`).join('') || '<li>No conversation messages yet.</li>'}</ol><h3>AI clarification suggestions</h3><p class="field-note">${!a ? 'No analysis yet. You can write a message manually.' : !current ? 'Analysis is stale or unavailable. Review current messages and request fresh analysis.' : 'Suggestions are advisory. Edit the message and explicitly send it.'}</p>${current ? (a.extraction?.clarificationSuggestions || []).map((text, i) => `<p>${e(text)} ${button('Use suggestion', 'use-question', {disabled: state.busy}) .replace('data-action="use-question"', `data-action="use-question" data-index="${i}"`)}</p>`).join('') : ''}${button('Analyze current messages', 'analyze', {disabled: state.busy || state.dirty})}<form id="message-form" novalidate><label class="field"><span>Message to customer</span><textarea name="message" style="resize: none" rows="3" maxlength="4000" ${state.busy || state.messageHold ? 'disabled' : ''}>${e(state.composer)}</textarea></label><p class="field-note">${state.messageHold ? 'Delivery unconfirmed. Refresh and check the original chat. This message will not be sent again automatically.' : 'Only your explicit Send delivers this text to the original chat.'}</p><button class="btn primary" ${state.busy || state.messageHold ? 'disabled' : ''}>Send message</button></form></section>`;
 }
 async function loadConversation(id) {
+  const token = loadId;
   const [conversation, analysis, assignments] = await Promise.all([api.conversation(id), api.analysis(id), api.assignments()]);
+  if (token !== loadId || state.detail?.id !== id) return;
   state.conversation = conversation.items; state.analysis = analysis; state.assignments = assignments.items;
   if (state.quote) state.suggestions = (await api.suggestions(state.quote.id)).items;
-  state.messageHold = state.conversation.some(m => m.direction === 'outgoing' && !m.kind && ['unknown', 'pending'].includes(m.status));
+  const heldRequest = readSession('qf-message-hold-' + id);
+  const resolved = state.conversation.find(m => m.request_id === heldRequest && ['sent', 'failed'].includes(m.status));
+  if (resolved) writeSession('qf-message-hold-' + id, '');
+  state.messageHold = (!!heldRequest && !resolved) || state.conversation.some(m => m.direction === 'outgoing' && !m.kind && ['unknown', 'pending'].includes(m.status));
 }
 function input(label, name, value, { type = 'text', max = 500, placeholder = '', extra = '' } = {}) { return `<label class="field"><span>${label}</span><input name="${name}" type="${type}" value="${e(value)}" maxlength="${max}" placeholder="${e(placeholder)}" ${extra} /></label>`; }
 function validitySelect(value, name = 'validity') { return `<label class="field"><span>Valid for</span><select name="${name}">${Object.entries(VALIDITIES).map(([code, label]) => `<option value="${code}" ${code === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>`; }
 function editor() {
-  const q = state.quote, f = state.form, locked = !editable(q) || state.busy;
+  const q = state.quote, f = state.form, locked = !editable(q) || frozenDelivery() || state.busy;
   return `<form id="quote-form" novalidate><fieldset ${locked ? 'disabled' : ''}>
     <div class="editor-section"><h3 class="form-section-title">Customer</h3><div class="field-grid">${input('Customer name', 'clientName', f.client.name, { placeholder: 'Name on the quotation' })}<label class="field"><span>Address <small>Optional</small></span><textarea style="resize: none" name="clientAddress" rows="2" maxlength="500" placeholder="Leave blank if unknown">${e(f.client.address)}</textarea></label></div></div>
     <div class="editor-section"><h3 class="form-section-title">Items & prices</h3><p class="field-note pricing-note">Prices in ${e(q.currency)}. Leave a price blank if you’re still checking it.</p>
@@ -178,12 +190,13 @@ function pdfContent() {
 function reasons() { return sendBlockers({ ...state, previewVersion: state.pdfReady ? state.previewVersion : null }); }
 function retryAttempt() { return state.detail?.delivery_attempts.find(attempt => sameId(attempt.quotation_id, state.quote?.id) && attempt.can_retry); }
 function updateEditorIndicators() {
+  if (state.finalReview) { const send = document.querySelector('[data-action="final-send"]'); if (send) send.disabled = !finalSendReady(); return; }
   const el = document.querySelector('#save-state'); if (!el || !state.quote) return;
   el.textContent = state.busy ? 'Working…' : state.dirty ? 'Not saved yet' : 'All changes saved';
   el.classList.toggle('unsaved', state.dirty);
-  document.querySelector('#save-quote').disabled = state.busy || !state.dirty || !editable(state.quote);
+  document.querySelector('#save-quote').disabled = state.busy || !state.dirty || !editable(state.quote) || frozenDelivery();
   const savePreview = document.querySelector('#save-preview');
-  savePreview.disabled = state.busy || !editable(state.quote);
+  savePreview.disabled = state.busy || !editable(state.quote) || frozenDelivery();
   savePreview.innerHTML = icon('file') + ' ' + (state.dirty ? 'Save & preview' : 'Preview quote');
   document.querySelectorAll('[data-action="preview"]').forEach(button => { button.disabled = state.busy || state.dirty; });
   document.querySelector('#total-label').textContent = state.dirty ? 'Last saved total' : 'Saved total';
@@ -198,7 +211,7 @@ function deliveryHistory() {
   if (!attempts.length && !state.hold) return '';
   return `<details class="panel history-panel simple-history" ${disclosure('delivery', true)}><summary>Delivery history <span>${attempts.length} ${attempts.length === 1 ? 'attempt' : 'attempts'}</span></summary>
     ${state.hold ? `<div class="message warning">${icon('alert')}<p>Check the original Telegram chat. We’re still waiting for a confirmed result, so sending again is blocked.</p></div>` : ''}
-    <div class="attempts">${attempts.map(a => `<div class="attempt"><div>${badge(a.status)}<span>${e(dateTime(a.approved_at))}</span></div><p>${a.status === 'sent' ? 'Telegram accepted the quote. This does not confirm it has been read.' : a.status === 'failed' ? 'Telegram rejected this attempt. A PM can review and approve a new attempt when available.' : 'Check the original conversation before taking any further action.'}</p><details class="quiet-details"><summary>Technical reference</summary><p>Attempt <code>${e(a.attempt_id)}</code>${a.retry_of_attempt_id ? ` · Previous attempt <code>${e(a.retry_of_attempt_id)}</code>` : ''}</p><p>Saved version: ${a.version}${a.provider_message_id ? ` · Telegram reference: ${e(a.provider_message_id)}` : ''}</p>${a.safe_error_code ? `<p>Diagnostic: ${e(a.safe_error_code)}</p>` : ''}</details></div>`).join('')}</div></details>`;
+    <div class="attempts">${attempts.map(a => `<div class="attempt"><div>${badge(a.status)}<span>${e(dateTime(a.approved_at))}</span></div><p>${a.status === 'sent' ? (a.pdf_status === 'sent' && a.summary_status === 'sent' ? 'Telegram accepted the PDF and summary. This does not confirm it has been read.' : 'Telegram accepted the quotation. Component delivery details were not recorded for this historical attempt.') : a.status === 'failed' ? 'Telegram rejected this attempt. A PM can review and approve a new attempt when available.' : 'Check the original conversation before taking any further action.'}</p><p>PDF: ${e(a.pdf_status || 'Not recorded')} · Summary: ${e(a.summary_status || 'Not recorded')}</p><details class="quiet-details"><summary>Technical reference</summary><p>Attempt <code>${e(a.attempt_id)}</code>${a.retry_of_attempt_id ? ` · Previous attempt <code>${e(a.retry_of_attempt_id)}</code>` : ''}</p><p>Saved version: ${a.version}${a.provider_message_id ? ` · Telegram reference: ${e(a.provider_message_id)}` : ''}</p>${a.safe_error_code ? `<p>Diagnostic: ${e(a.safe_error_code)}</p>` : ''}</details></div>`).join('')}</div></details>`;
 }
 const actionLabels = { telegram_received: 'Telegram enquiry received', enquiry_created: 'Added to the inbox', quotation_draft_created: 'Quotation draft created', quotation_updated: 'Quotation changes saved', pm_approved: 'PM approved delivery', pdf_send_attempted: 'PDF delivery started', pdf_send_succeeded: 'Telegram accepted the PDF', pdf_send_failed: 'Telegram rejected delivery', delivery_unknown: 'Delivery requires verification' };
 function activityHistory() {
@@ -210,7 +223,7 @@ function settingsPage() {
       <section class="panel settings-panel profile-panel"><div class="panel-heading"><div><h2>Demo business profile</h2><p>Choose the business for this workspace and new enquiries.</p></div>${icon('settings')}</div>
         <form id="profile-form" novalidate><fieldset ${state.busy || !state.profiles.length ? 'disabled' : ''}><label class="field"><span>Business profile</span><select name="business_profile_id" id="business-profile" aria-label="Business profile" aria-describedby="profile-help">${state.profiles.map(profile => `<option value="${e(profile.id)}" ${profile.id === state.selectedProfile ? 'selected' : ''}>${e(profile.industry)} — ${e(profile.companyName)}</option>`).join('')}</select></label><p id="profile-help" class="field-note">Active: <strong>${e(state.profileLabel || 'Unavailable')}</strong>. Switching changes the workspace for everyone using this demo. Existing enquiries stay with their original business. AI cannot choose this profile.</p></fieldset><div class="form-bottom"><p>Save your edits before switching, or discard them when asked.</p><button class="btn primary" ${state.busy || !state.profiles.length || state.selectedProfile === state.activeProfile ? 'disabled' : ''}>Switch business profile</button></div></form>
       </section>
-      <section class="panel settings-panel"><div class="panel-heading"><div><h2>Your business</h2><p>These details appear on new quotations.</p></div>${icon('settings')}</div>
+      <section class="panel settings-panel v2-panel"><div class="panel-heading"><div><h2>Your business</h2><p>These details appear on new quotations.</p></div>${icon('settings')}</div>
         ${state.settings ? `<form id="settings-form" novalidate><fieldset ${state.busy ? 'disabled' : ''}>
           ${input('Company name', 'companyName', state.settings.companyName, { extra: 'required' })}
           <label class="field"><span>Company address</span><textarea style="resize: none" name="companyAddress" rows="3" maxlength="500">${e(state.settings.companyAddress)}</textarea></label>
@@ -242,7 +255,7 @@ async function loadRoute(route) {
   const token = ++loadId;
     state.route = route; state.loading = true; state.error = null; state.notice = ''; state.noticeKind = 'info'; state.dirty = false;
   state.settingsDirty = false; state.clientDirty = false; revokePDF();
-  state.suggestions = []; state.reviewed = false; state.conversation = []; state.analysis = null; state.composer = ''; state.messageRequest = null; state.messageHold = false; state.profiles = []; state.detail = null; state.quote = null; state.form = null; state.client = null; state.settings = null; state.hold = false; state.holdBaseline = []; state.expanded = {};
+  state.assignmentTargets = {}; state.suggestionValues = {}; state.selectedChanges = []; state.suggestionDirty = false; state.finalReview = null; state.suggestions = []; state.reviewed = false; state.conversation = []; state.analysis = null; state.composer = ''; state.messageRequest = null; state.messageHold = false; state.profiles = []; state.detail = null; state.quote = null; state.form = null; state.client = null; state.settings = null; state.hold = false; state.holdBaseline = []; state.expanded = {};
   render(); health();
   try {
     if (route === '/settings') {
@@ -320,9 +333,10 @@ async function refreshDetail() {
   const [detail, quote] = await Promise.all([api.enquiry(state.detail.id), api.quotation(state.detail.id)]);
   state.detail = detail; setQuote(quote); syncHold();
 }
-async function loadSavedPreview() {
+async function loadSavedPreview(expectedHash) {
   const result = await api.pdf(state.quote.id, state.quote.version);
   if (result.version !== state.quote.version) throw Error('The quote changed. Refresh it before previewing again.');
+  if (expectedHash) { const bytes = await crypto.subtle.digest('SHA-256', await result.blob.arrayBuffer()); const hash = Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join(''); if (hash !== expectedHash) throw Error('The saved PDF no longer matches this review. Refresh before sending.'); }
   revokePDF(); state.pdfPages = await loadPDF(result.blob);
   state.pdfURL = URL.createObjectURL(result.blob); state.previewVersion = result.version;
   state.focusPreview = true;
@@ -381,10 +395,14 @@ const actions = {
     if (!state.quote || state.dirty) return;
     await loadSavedPreview();
   }),
-  approve: async () => {
-    if (reasons().length) return; const retry = retryAttempt();
-    const approved = await ask({ title: retry ? 'Approve sending this quote again?' : 'Send this quotation?', content: `<p>You’re approving <strong>${e(state.quote.number)}, version ${state.quote.version}</strong>.</p><div class="approval-summary"><span>Customer<strong>${e(state.quote.client.name)}</strong></span><span>Total<strong>${e(state.quote.currency)} ${e(state.quote.total)}</strong></span><span>Original Telegram chat<strong>${e(state.detail.telegram_chat_id)}</strong></span></div>${retry ? `<p>The last attempt was rejected. This starts a new attempt after your approval.</p><details class="quiet-details"><summary>Previous attempt reference</summary><code>${e(retry.attempt_id)}</code></details>` : ''}`, confirm: retry ? 'Approve & send again' : 'Approve & send', approval: true });
-    if (!approved || reasons().length) return;
+  'back-edit': () => { if (state.busy) return; const frozen = state.finalReview.delivery_mode === 'summary_only'; state.finalReview = null; if (frozen) state.notice = 'The accepted PDF is frozen. Finish summary delivery; new requirements need a revision after delivery.'; render(); },
+  approve: () => task(async () => {
+    if (state.role !== 'pm' || state.dirty || state.hold || !state.quote) return;
+    const review = await api.review(state.quote.id, state.quote.version);
+    await loadSavedPreview(review.pdf.sha256); state.finalReview = review; state.focusPreview = false;
+  }),
+  'final-send': async () => {
+    if (!finalSendReady()) return; const retry = retryAttempt();
     await task(async () => {
       setHold(true);
       try {
@@ -392,11 +410,12 @@ const actions = {
         if (['sent', 'failed'].includes(result.status)) setHold(false);
         state.noticeKind = result.status === 'sent' ? 'info' : 'warning';
         state.notice = { sent: 'Your quote was accepted by Telegram. This doesn’t confirm it has been read.', failed: 'The quote wasn’t sent: Telegram rejected this attempt. Check the cause before approving another try.', unknown: 'We can’t confirm delivery. Check the original Telegram chat. Sending again is blocked.' }[result.status];
-        await refreshDetail();
+        state.finalReview = null; await refreshDetail(); await loadConversation(state.detail.id);
       } catch (error) {
         // All 4xx responses from this handler reject before upload; persisted
         // attempts still independently block duplicate/pending/unknown sends.
         if (error.status >= 400 && error.status < 500) setHold(false);
+        state.finalReview = null;
         try { await refreshDetail(); } catch { /* Unavailable reconciliation keeps the hold. */ }
         throw error;
       }
@@ -413,6 +432,8 @@ root.addEventListener('click', async event => {
 });
 root.addEventListener('input', event => {
   if (event.target.tagName === 'TEXTAREA') growTextarea(event.target);
+  if (event.target.closest('.assignment-form')) state.assignmentTargets[event.target.closest('.assignment-form').dataset.update] = event.target.value;
+  if (event.target.closest('.suggestion-form')) { state.suggestionDirty = true; if (event.target.name === 'selected') state.selectedChanges = [...root.querySelectorAll('.suggestion-form [name="selected"]:checked')].map(el => el.value); else state.suggestionValues[event.target.name] = event.target.value; }
   if (event.target.closest('#message-form')) { state.composer = event.target.value; state.messageRequest = null; }
   if (event.target.closest('#quote-form') && !state.busy) { captureQuote(event.target.form); state.dirty = true; state.notice = ''; root.querySelector('[data-page-notice]')?.remove(); updateEditorIndicators(); }
   if (event.target.id === 'search') { state.search = event.target.value; document.querySelector('#enquiry-results').innerHTML = inboxResults(); }
@@ -425,7 +446,7 @@ root.addEventListener('toggle', event => {
 root.addEventListener('change', event => {
   if (event.target.id === 'review-messages') { state.reviewed = event.target.checked; state.dirty = true; updateEditorIndicators(); }
   if (event.target.id === 'business-profile') { state.selectedProfile = event.target.value; render(); }
-  if (event.target.id === 'role') { if (state.busy) { event.target.value = state.role; return; } state.role = event.target.value; writeSession('qf-role', state.role); render(); }
+  if (event.target.id === 'role') { if (state.busy) { event.target.value = state.role; return; } state.finalReview = null; state.role = event.target.value; writeSession('qf-role', state.role); render(); }
   if (event.target.id === 'record-actor') { state.recordActor = event.target.checked; writeSession('qf-actor', String(state.recordActor)); }
 });
 root.addEventListener('submit', async event => {
@@ -434,7 +455,7 @@ root.addEventListener('submit', async event => {
     const data = new FormData(form), set = state.suggestions.find(s => s.id === form.dataset.set);
     const selected = data.getAll('selected'); if (!selected.length) { showError(Error('Select at least one change.')); render(); return; }
     const edits = Object.fromEntries(selected.map(id => { const c = structuredClone(set.changes.find(c => c.id === id)); delete c.id; if (c.type === 'UPDATE_FIELD') c.value = data.get(id + ':value'); else for (const key of Object.keys(c.data)) c.data[key] = data.get(id + ':' + key); return [id,c]; }));
-    await task(async () => { setQuote(await api.applyChanges(state.quote.id, {version: state.quote.version, suggestion_set_id: set.id, selected, edits}, state.role)); revokePDF(); await loadConversation(state.detail.id); state.notice = 'Selected changes applied. Review the updated draft.'; });
+    await task(async () => { setQuote(await api.applyChanges(state.quote.id, {version: state.quote.version, suggestion_set_id: set.id, selected, edits}, state.role)); revokePDF(); await loadConversation(state.detail.id); state.suggestionDirty = false; state.selectedChanges = []; state.suggestionValues = {}; state.notice = 'Selected changes applied. Review the updated draft.'; });
   } else if (form.id === 'fork-form') {
     const data = new FormData(form), body = {version: state.quote.version, relationship: data.get('relationship')};
     if (body.relationship === 'additional') body.enquiry_id = data.get('enquiry_id').trim();
@@ -444,9 +465,9 @@ root.addEventListener('submit', async event => {
     const body = { text: state.composer.trim(), request_id: state.messageRequest || crypto.randomUUID() };
     state.messageRequest = body.request_id;
     await task(async () => {
-      state.messageHold = true;
+      state.messageHold = true; writeSession('qf-message-hold-' + state.detail.id, body.request_id);
       const result = await api.message(state.detail.id, body, state.role);
-      if (['sent', 'failed'].includes(result.status)) { state.messageHold = false; state.messageRequest = null; }
+      if (['sent', 'failed'].includes(result.status)) { state.messageHold = false; state.messageRequest = null; writeSession('qf-message-hold-' + state.detail.id, ''); }
       if (result.status === 'sent') state.composer = '';
       state.notice = result.status === 'sent' ? 'Telegram accepted your message.' : result.status === 'failed' ? 'Telegram rejected your message. Review the cause before a new send.' : 'Message delivery is unconfirmed. Check the original chat.';
       state.noticeKind = result.status === 'sent' ? 'info' : 'warning';

@@ -2548,3 +2548,24 @@ small metadata remains visually secondary. */
 .item-notes { grid-column: 1 / -1; }
 .suggestion-change { padding: 16px 0; border-bottom: 1px solid var(--border); }
 input[readonly] { background: var(--background); }
+
+.summary-preview { white-space: pre-wrap; overflow-wrap: anywhere; margin: 16px 0; line-height: 1.7; }
+
+.v2-panel { padding: 24px; min-width: 0; overflow-wrap: anywhere; }
+.v2-panel.settings-panel > form { padding: 0; }
+.v2-panel dl { display: grid; gap: 6px 16px; grid-template-columns: 120px minmax(0, 1fr); margin: 20px 0; }
+.v2-panel dd { margin: 0; }
+.v2-panel table { width: 100%; border-collapse: collapse; text-align: left; }
+.v2-panel th, .v2-panel td { padding: 12px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.preview-panel > .field-note { padding: 16px; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .v2-panel { padding: 18px; } .v2-panel dl { grid-template-columns: 1fr; } .v2-panel dd { margin-bottom: 8px; } }
+
+.v2-panel .btn { max-width: 100%; white-space: normal; }
+
+.pdf-renderer canvas { max-width: 100%; height: auto !important; }
+.v2-panel table { min-width: 540px; overflow-wrap: normal; }
+.v2-panel th { white-space: nowrap; }
+.panel, fieldset { min-width: 0; }
+
+.preview-actions { flex-wrap: wrap; }
+.preview-actions > * { max-width: 100%; }
