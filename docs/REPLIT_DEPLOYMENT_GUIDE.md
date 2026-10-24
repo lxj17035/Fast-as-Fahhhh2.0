@@ -2,6 +2,11 @@
 
 Recorded: 24 October 2026 (Asia/Kuala_Lumpur).
 
+**Pillow follow-up:** the current build adds `--upgrade` and both dependency files
+require Pillow 13.x. Rebuild and verify Replit's actual import/version and rerun
+Security before republishing. See [the finding and verification steps](PILLOW_SECURITY.md).
+This is a local source fix; hosted remediation has not been verified.
+
 **Current preview update:** Basic Auth has been removed in
 `codex/fix-demo-preview-access` for organisers' anonymous synthetic demo preview.
 Pull that fix into Replit and Republish to apply it to the hosted app. The two
@@ -133,7 +138,7 @@ constraints were changed. Keep these two dependency declarations aligned.
 Final reported build command:
 
 ```bash
-bash -c "PIP_USER=false python -m pip install --target .pythonlibs -r requirements.txt && pnpm --dir frontend install --frozen-lockfile"
+bash -c "PIP_USER=false python -m pip install --upgrade --target .pythonlibs -r requirements.txt && pnpm --dir frontend install --frozen-lockfile"
 ```
 
 Final reported deployment start command:

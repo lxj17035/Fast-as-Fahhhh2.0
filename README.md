@@ -131,7 +131,9 @@ The application itself runs from the repository rather than being pip-installed.
 `PIP_USER=false` and `PIP_TARGET=.pythonlibs` direct pip into a writable project
 directory. `PIP_TARGET` is configured in `.replit` and as a shared environment
 variable inherited by production; the deployment build also passes
-`--target .pythonlibs` explicitly. The backend adds the resolved target to
+`--upgrade --target .pythonlibs` explicitly to replace older target packages.
+Pillow is constrained to `>=13.0.0,<14` for the reported TIFF security fix.
+The backend adds the resolved target to
 `PYTHONPATH`. The build installs locked frontend dependencies from
 `frontend/pnpm-lock.yaml`. The single Run command supervises both processes and
 stops the other if either one exits.

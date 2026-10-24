@@ -115,3 +115,11 @@ Run browser acceptance with existing Playwright installed/resolvable, or set
 `QF_TEST_PYTHON` can override the repository virtualenv. Both local servers use
 reserved ephemeral localhost ports, mock external transports and clean up temporary
 SQLite on exit. These are test adapters, never runtime storage.
+
+T3 implementation commit: `de48358`. Remote `origin/main` had an additional empty
+Replit publication commit `1f6eca4`; normal merge `c2f2c48` preserves it before
+final regression/publication. No remote files were discarded.
+
+The user's Pillow finding is handled separately from T1-T3 in
+[Pillow security follow-up](PILLOW_SECURITY.md). It requires hosted dependency
+rebuild/import/scan verification before republish; no hosted fix is claimed.
