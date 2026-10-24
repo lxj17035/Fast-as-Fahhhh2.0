@@ -51,3 +51,19 @@ quotation fields. Identical changes are collapsed; duplicate additions or
 conflicting updates are flagged. Sent quotes only yield an advisory relationship
 and warning; Staff explicitly forks first. Initial extraction already supplies
 new-draft items, so its proposed changes are not reapplied as duplicate additions.
+## AI suggestions in Messages (24 October 2026)
+
+Quote has no AI assistance disclosure. Messages places usable, editable/selectable
+AI Suggested Changes after the conversation/questions and before the composer.
+Empty or stale sets are hidden. Explicit apply keeps backend source/version and
+price guards, invalidates an earlier Staff submission and saved PDF review, and
+shows Changes applied to Quote with Go to Quote. Unsaved composer text survives.
+Analyze/Retry appears only for missing/failed/stale analysis with no active job;
+manual Quote editing and Save draft remain available during AI failure.
+
+Analysis snapshots now expose running while renewed analysis is in progress.
+The existing transaction reserves a signature before inference; duplicate requests
+reuse an active signature. The same row is replaced by completion/failure. After
+180 seconds an abandoned running snapshot is reported as retryable failure. No
+worker queue or external notification was added. Read-only detail polling also
+refreshes unfinished/stale analysis without overwriting quote/composer edits.

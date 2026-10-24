@@ -14,3 +14,6 @@ Added transactional submit-review, saved version/source evidence and activity. S
 
 ## Synthetic-channel switch placement
 Owner follow-up: place Show synthetic channel examples below Refresh inbox. CSS-only layout change; existing toggle stays local-only. Verified on existing 8091 without restarting it at 1365/390/360: below-button geometry, toggle interaction, no overflow/page errors; 5 inbox checks passed. Screenshots under ignored .input/local-preview/refresh-switch-*.png.
+
+## AI changes in Messages
+45 frontend checks passed. tests/test_analysis_progress.py + tests/test_ai_v2.py: 39 passed with SQLite + disposable PostgreSQL. Browser journeys passed all three industries, editing/selecting/applying Messages suggestions, composer retention, Go to Quote, hidden stale/empty sets, manual save of incomplete data, Staff resubmission and both-role inbox routing, plus saved PDF/summary/confirmed send/Revision/Additional. Screenshots in ignored .input/phase4/*-suggestions-mobile.png. A newly added browser step initially targeted collapsed optional notes; updated the test to open Dates & notes. No provider calls or deployment.

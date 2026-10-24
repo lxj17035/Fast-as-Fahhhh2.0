@@ -31,6 +31,14 @@ def evidence(store, enquiry):
             'provider_message_id': r['provider_message_id'], 'created_at': r['created_at'].isoformat()} for r in outgoing]}
 
 
+ANALYSIS_LEASE_SECONDS = 180
+
+
+def analysis_running(row):
+    return row.get('status') == 'running' and (datetime.now(timezone.utc) -
+        datetime.fromisoformat(row['createdAt'])).total_seconds() < ANALYSIS_LEASE_SECONDS
+
+
 class AnalysisService:
     def __init__(self, drafts):
         self.drafts = drafts
@@ -54,7 +62,10 @@ class AnalysisService:
     def latest(self, enquiry_id):
         enquiry = require_profile(self.store.get('enquiries', enquiry_id), self.settings.active_profile_id())
         rows = [a for a in self.store.list('enquiry_analyses') if a['enquiryId'] == enquiry['id']]
-        return rows[-1] if rows else None
+        result = rows[-1] if rows else None
+        if result and result['status'] == 'running' and not analysis_running(result):
+            return {**result, 'status': 'failed', 'stale': True, 'error': 'Analysis did not finish. Retry analysis.'}
+        return result
 
     def run(self, enquiry_id):
         with self.store.transaction():
@@ -69,14 +80,18 @@ class AnalysisService:
                          'conversation': conversation, 'baseVersion': quote['version'] if quote else None,
                          'quotationId': quote['id'] if quote else None, 'businessContext': business_context(self.settings, enquiry)}
             for row in reversed(self.store.list('enquiry_analyses')):
-                if row['enquiryId'] == enquiry_id and row['signature'] == signature and row['status'] == 'completed' and not row.get('stale'):
+                if row['enquiryId'] == enquiry_id and row['signature'] == signature and (analysis_running(row) or row['status'] == 'completed' and not row.get('stale')):
                     return row
+            job = {'id': uuid4().hex, 'enquiryId': enquiry_id, 'business_profile_id': enquiry['business_profile_id'],
+                   'signature': signature, 'status': 'running', 'extraction': None, 'stale': False,
+                   'createdAt': datetime.now(timezone.utc).isoformat()}
+            self.store.put('enquiry_analyses', job['id'], job)
         try:
             extracted = self.drafts.extractor.extract(enquiry['text'], context)
             failure = None
         except ProviderError as error:
             extracted, failure = None, str(error)
-        result = {'id': uuid4().hex, 'enquiryId': enquiry_id, 'business_profile_id': enquiry['business_profile_id'],
+        result = {'id': job['id'], 'enquiryId': enquiry_id, 'business_profile_id': enquiry['business_profile_id'],
                   'signature': signature, 'status': 'failed' if failure else 'completed',
                   'error': failure, 'extraction': extracted,
                   'createdAt': datetime.now(timezone.utc).isoformat()}

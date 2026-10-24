@@ -341,3 +341,10 @@ edits retain Manager routing while the source IDs remain current, but invalidate
 the submitted version and require fresh saved PDF/summary review. New or unsorted
 customer requirements return preparation to Staff. Delivery holds stay Manager
 Needs checking. This does not implement Manager notification.
+
+### Current AI placement
+Messages owns editable AI Suggested Changes between conversation and composer.
+No usable changes means no region. Explicit apply reports Changes applied to
+Quote and offers Go to Quote. Recovery-only Analyze messages / Retry analysis
+uses running/completed/failed state and existing source/version checks. Quote
+always keeps manual editing and draft saving. No AI automatic overwrite or send.
