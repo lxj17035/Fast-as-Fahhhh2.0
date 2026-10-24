@@ -134,7 +134,8 @@ class PDFService:
             quote = self.quotations.get(quotation_id)
             if version is not None:
                 expected_version(quote, version)
-            if quote["status"] in {"draft", "send_failed"} and not self.quotations.source_is_current(quote):
+            delivered = quote["status"] == "send_failed" and self.quotations.delivered_pdf(quotation_id)
+            if quote["status"] in {"draft", "send_failed"} and not delivered and not self.quotations.source_is_current(quote):
                 raise AppError("Review the latest customer messages before refreshing a quotation PDF", 409)
             key = f'{quotation_id}:{quote["version"]}'
             try:

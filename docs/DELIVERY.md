@@ -159,3 +159,9 @@ final QA work.
 - One existing Starlette/HTTPX test-client deprecation warning remains.
 - The isolated PostgreSQL server was stopped after testing. No live Telegram or
   AI verification is claimed. Frontend and complete live workflow remain final QA.
+
+
+V2 now delivers the saved PDF plus its saved deterministic short summary, with
+component outcomes and summary-only recovery after confirmed failure. See the
+[current approval contract](PM_APPROVAL.md#v2-a5-pdf-plus-summary-delivery).
+Legacy rows retain unknown component metadata rather than invented history.

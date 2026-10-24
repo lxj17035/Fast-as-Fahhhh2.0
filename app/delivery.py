@@ -61,6 +61,8 @@ def validate_quotation(
         and quotation.issue_date <= quotation.expiry_date
         and quotation.pdf_bytes.startswith(b"%PDF-")
         and len(quotation.pdf_bytes) <= MAX_PDF_BYTES
+        and isinstance(quotation.telegram_summary, str)
+        and 0 < len(quotation.telegram_summary.strip()) <= 4000
     )
     for item in quotation.items:
         valid = valid and (
@@ -116,8 +118,7 @@ def send_quotation(
         with integration_transaction(engine) as connection:
             identity = Store(engine, connection).get("settings", "active_profile")["business_profile_id"]
             previous = connection.execute(
-                select(send_attempts.c.id, send_attempts.c.status,
-                       send_attempts.c.retry_of_attempt_id, enquiries.c.business_profile_id)
+                select(send_attempts, enquiries.c.business_profile_id)
                 .join(enquiries, send_attempts.c.enquiry_id == enquiries.c.id)
                 .where(send_attempts.c.quotation_id == saved_id)
             ).mappings().all()
@@ -136,9 +137,16 @@ def send_quotation(
                         detail="Explicit approval of the current failed attempt is required; pending, sent or unknown delivery cannot be retried")
             elif retry_of is not None:
                 raise HTTPException(status_code=409, detail="Failed attempt not found for this quotation")
-            quotation = provider.reserve_for_send(
-                connection, saved_id, approval.expected_version
-            )
+            prior = next((row for row in previous if row["id"] == retry_of), None)
+            resume_summary = prior is not None and prior["pdf_status"] == "sent"
+            reserve = (getattr(provider, "reserve_summary_retry", provider.reserve_for_send)
+                       if resume_summary else provider.reserve_for_send)
+            quotation = reserve(connection, saved_id, approval.expected_version)
+            if resume_summary and (quotation.version != prior["version"] or
+                    sha256(quotation.pdf_bytes).hexdigest() != prior["pdf_sha256"] or
+                    quotation.telegram_summary != prior["summary_text"] or
+                    list(quotation.source_message_ids or []) != list(prior["source_message_ids"] or [])):
+                raise HTTPException(status_code=409, detail="Accepted PDF and summary snapshot cannot change")
             validate_quotation(quotation, saved_id, approval.expected_version)
             source = connection.execute(
                 select(telegram_updates.c.chat_id, enquiries.c.business_profile_id)
@@ -167,6 +175,9 @@ def send_quotation(
                     pdf_bytes=quotation.pdf_bytes,
                     summary_text=quotation.telegram_summary,
                     source_message_ids=list(quotation.source_message_ids) if quotation.source_message_ids is not None else None,
+                    pdf_status="sent" if resume_summary else "pending",
+                    provider_message_id=prior["provider_message_id"] if resume_summary else None,
+                    summary_status="pending",
                     status="pending",
                     updated_at=approved_at,
                 )
@@ -190,7 +201,7 @@ def send_quotation(
                 connection, **activity, action="pm_approved", result="approved"
             )
             record_activity(
-                connection, **activity, action="pdf_send_attempted", result="pending"
+                connection, **activity, action="summary_send_attempted" if resume_summary else "pdf_send_attempted", result="pending"
             )
     except HTTPException:
         raise
@@ -221,19 +232,33 @@ def send_quotation(
             status_code=503, detail="Delivery preparation failed"
         ) from None
 
-    # The durable pending row blocks retries even if the process dies from here on.
-    try:
-        result = sender.send_pdf(chat_id, quotation.pdf_bytes)
-        if result.status not in {"sent", "failed", "unknown"}:
-            raise ValueError("Invalid delivery result")
-    except Exception:
-        result = DeliveryResult(status="unknown", error_code="unexpected_send_error")
+    # Persist PDF acceptance before attempting its summary. Any crash/save failure
+    # leaves a pending hold; accepted PDFs are never blindly uploaded again.
+    pdf_result = (DeliveryResult("sent", message_id=prior["provider_message_id"])
+                  if resume_summary else safe_send(lambda: sender.send_pdf(chat_id, quotation.pdf_bytes)))
+    summary_result = None
+    if pdf_result.status == "sent":
+        try:
+            with integration_transaction(engine) as connection:
+                connection.execute(send_attempts.update().where(send_attempts.c.id == attempt_id).values(
+                    pdf_status="sent", provider_message_id=pdf_result.message_id,
+                    updated_at=datetime.now(timezone.utc)))
+        except Exception:
+            return JSONResponse(status_code=503, content={"attempt_id": attempt_id, "status": "unknown",
+                                "detail": "PDF outcome could not be saved; verify delivery"})
+        summary_result = safe_send(lambda: sender.send_text(chat_id, quotation.telegram_summary))
+        result = summary_result
+    else:
+        result = pdf_result
     try:
         with integration_transaction(engine) as connection:
             connection.execute(
                 send_attempts.update().where(send_attempts.c.id == attempt_id).values(
                     status=result.status,
-                    provider_message_id=result.message_id,
+                    provider_message_id=pdf_result.message_id,
+                    pdf_status=pdf_result.status,
+                    summary_status=summary_result.status if summary_result else "not_attempted",
+                    summary_provider_message_id=summary_result.message_id if summary_result else None,
                     safe_error_code=safe_error_code(result.error_code),
                     updated_at=datetime.now(timezone.utc),
                 )
@@ -257,20 +282,24 @@ def send_quotation(
                 .values(status=enquiry_status)
             )
             provider.record_outcome(
-                connection, saved_id, result.status, result.message_id
+                connection, saved_id, result.status, pdf_result.message_id
             )
             record_activity(
                 connection,
                 **activity,
-                action={
+                action="pdf_reused" if resume_summary else {
                     "sent": "pdf_send_succeeded",
                     "failed": "pdf_send_failed",
                     "unknown": "delivery_unknown",
-                }[result.status],
-                result=result.status,
-                provider_reference=result.message_id,
-                safe_error_code=safe_error_code(result.error_code),
+                }[pdf_result.status],
+                result=pdf_result.status,
+                provider_reference=pdf_result.message_id,
+                safe_error_code=safe_error_code(pdf_result.error_code),
             )
+            if summary_result:
+                record_activity(connection, **activity, action="summary_send_" + summary_result.status,
+                                result=summary_result.status, provider_reference=summary_result.message_id,
+                                safe_error_code=safe_error_code(summary_result.error_code))
     except Exception:
         return JSONResponse(
             status_code=503,
@@ -284,3 +313,16 @@ def send_quotation(
         status_code={"sent": 200, "failed": 502, "unknown": 202}[result.status],
         content={"attempt_id": attempt_id, "status": result.status},
     )
+
+
+def safe_send(send):
+    try:
+        result = send()
+        if not isinstance(result, DeliveryResult) or result.status not in {"sent", "failed", "unknown"}:
+            raise ValueError("Invalid delivery result")
+        if result.status == "sent" and (not isinstance(result.message_id, str) or
+                not result.message_id.isdecimal() or int(result.message_id) <= 0):
+            raise ValueError("Accepted message reference required")
+        return result
+    except Exception:
+        return DeliveryResult("unknown", error_code="unexpected_send_error")

@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.database import outgoing_messages, message_links, telegram_updates
+from app.database import outgoing_messages, message_links, telegram_updates, send_attempts
 from app.activity import record_activity
 from app.telegram_client import DeliveryResult
 from backend.errors import AppError, object_fields, text, safe_delivery_error_code
@@ -30,10 +30,25 @@ class ConversationService:
             ).where(message_links.c.enquiry_id == enquiry_id)).mappings().all()
             outgoing = connection.execute(select(outgoing_messages).where(
                 outgoing_messages.c.enquiry_id == enquiry_id)).mappings().all()
+            deliveries = connection.execute(select(send_attempts).where(
+                send_attempts.c.enquiry_id == enquiry_id).order_by(send_attempts.c.approved_at)).mappings().all()
         items = [{"id": "in-" + str(r["update_id"]), "direction": "incoming", "actor": "customer",
                   "text": r["original_text"], "status": "received", "created_at": r["received_at"],
                   "provider_message_id": str(r["message_id"]), "assigned_by": r["assigned_by"]} for r in received]
         items += [{**dict(r), "direction": "outgoing"} for r in outgoing]
+        by_id = {row['id']: row for row in deliveries}
+        for row in deliveries:
+            prior = by_id.get(row['retry_of_attempt_id'])
+            if not prior or prior.get('pdf_status') != 'sent':
+                items.append({'id': 'pdf-' + row['id'], 'direction': 'outgoing', 'actor': row['actor_id'],
+                              'kind': 'quotation_pdf', 'text': 'Quotation PDF', 'version': row['version'],
+                              'quotation_id': row['quotation_id'], 'status': row.get('pdf_status') or row['status'],
+                              'provider_message_id': row['provider_message_id'], 'created_at': row['approved_at']})
+            if row['summary_text'] and row.get('summary_status') not in {None, 'not_attempted'}:
+                items.append({'id': 'summary-' + row['id'], 'direction': 'outgoing', 'actor': row['actor_id'],
+                              'kind': 'quotation_summary', 'text': row['summary_text'], 'version': row['version'],
+                              'quotation_id': row['quotation_id'], 'status': row['summary_status'],
+                              'provider_message_id': row['summary_provider_message_id'], 'created_at': row['updated_at']})
         # All timestamps are written UTC; SQLite's adapter drops the tz marker.
         for item in items:
             if item["created_at"].tzinfo is None:

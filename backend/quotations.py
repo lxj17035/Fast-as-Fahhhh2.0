@@ -2,7 +2,7 @@ import calendar
 from copy import deepcopy
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from .errors import AppError, object_fields, text
 from .settings import VALIDITIES, require_profile
@@ -192,6 +192,8 @@ class QuotationService:
         with self.store.transaction():
             value = self.get(quotation_id)
             expected_version(value, patch.get("version"))
+            if value["status"] == "send_failed" and self.delivered_pdf(quotation_id):
+                raise AppError("PDF already delivered; only retry its unchanged summary", 409)
             if value["status"] not in ("draft", "send_failed"):
                 raise AppError("Quotation is locked after approval or sending", 409)
             if "client" in patch:
@@ -233,14 +235,22 @@ class QuotationService:
             self.store.put("quotations", quotation_id, value)
             return value
 
-    def validate_for_send(self, quotation_id, version, role, *, today=None):
+    def delivered_pdf(self, quotation_id):
+        from sqlalchemy import select
+        from app.database import send_attempts
+        with self.store.reading() as connection:
+            return connection.execute(select(send_attempts.c.id).where(
+                send_attempts.c.quotation_id == str(UUID(quotation_id)),
+                send_attempts.c.pdf_status == "sent").limit(1)).first() is not None
+
+    def validate_for_send(self, quotation_id, version, role, *, today=None, delivered_pdf_retry=False):
         value = self.get(quotation_id)
         if role != "pm":
             raise AppError("Only the simulated PM role may approve sending", 403)
         expected_version(value, version)
         if value["status"] not in ("draft", "send_failed"):
             raise AppError("Quotation is already approved, sent, or has an uncertain outcome", 409)
-        if not self.source_is_current(value):
+        if not (delivered_pdf_retry and self.delivered_pdf(quotation_id)) and not self.source_is_current(value):
             raise AppError("New customer messages require Staff review and an updated saved quotation", 409)
         fields = {}
         if not value["client"]["name"].strip():

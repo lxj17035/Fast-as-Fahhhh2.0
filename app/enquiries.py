@@ -56,6 +56,9 @@ class DeliveryAttempt(BaseModel):
     requires_verification: bool
     retry_of_attempt_id: str | None
     can_retry: bool
+    pdf_status: str | None = None
+    summary_status: str | None = None
+    summary_provider_message_id: str | None = None
     telegram_summary: str | None = None
     source_message_ids: list[str] | None = None
 
@@ -157,6 +160,9 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
                     send_attempts.c.provider_message_id,
                     send_attempts.c.safe_error_code,
                     send_attempts.c.summary_text,
+                    send_attempts.c.pdf_status,
+                    send_attempts.c.summary_status,
+                    send_attempts.c.summary_provider_message_id,
                     send_attempts.c.source_message_ids,
                 )
                 .where(send_attempts.c.enquiry_id == str(enquiry_id))
@@ -200,6 +206,8 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
                 provider_message_id=attempt["provider_message_id"],
                 safe_error_code=attempt["safe_error_code"],
                 telegram_summary=attempt["summary_text"],
+                pdf_status=attempt["pdf_status"], summary_status=attempt["summary_status"],
+                summary_provider_message_id=attempt["summary_provider_message_id"],
                 source_message_ids=attempt["source_message_ids"],
                 requires_verification=attempt["status"] in {"pending", "unknown"},
                 retry_of_attempt_id=attempt["retry_of_attempt_id"],

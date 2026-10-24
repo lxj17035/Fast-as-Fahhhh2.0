@@ -185,7 +185,7 @@ rerun. Live provider verification remains separate.
 
 ### Backend approval configuration
 
-For supervised Manager pricing, review and sending, set `ENABLE_DEMO_APPROVAL=true` before startup. Price changes require `X-Demo-Actor: pm`; Staff can prepare details while retaining existing Manager prices. For sending use that header with `{"expected_version": N, "approved": true}` after reviewing the current saved version. The final-review endpoint is `GET /api/quotations/:id/review?version=N`. Confirmed failures may be retried only after fresh PM approval referencing the failed `retry_of_attempt_id`. Enquiry detail exposes `can_retry`; duplicate approvals and pending/sent/unknown outcomes return 409. See [the current approval contract](docs/PM_APPROVAL.md); V2 AI/frontend and PDF-plus-summary orchestration remain later phases.
+For supervised Manager pricing, review and sending, set `ENABLE_DEMO_APPROVAL=true` before startup. Price changes require `X-Demo-Actor: pm`; Staff can prepare details while retaining existing Manager prices. For sending use that header with `{"expected_version": N, "approved": true}` after reviewing the current saved version. The final-review endpoint is `GET /api/quotations/:id/review?version=N`. Confirmed failures may be retried only after fresh PM approval referencing the failed `retry_of_attempt_id`. Enquiry detail exposes `can_retry`; duplicate approvals and pending/sent/unknown outcomes return 409. See [the current approval contract](docs/PM_APPROVAL.md); V2 AI analysis and PDF-plus-summary orchestration are implemented; the V2 frontend remains Phase 3.
 
 Set your private `DATABASE_URL` and `TELEGRAM_WEBHOOK_SECRET` in local `.env`
 before starting. Both modules use this same PostgreSQL database. Set

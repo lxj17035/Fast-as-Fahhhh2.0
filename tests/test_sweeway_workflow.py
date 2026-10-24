@@ -33,7 +33,7 @@ def completed_response(value):
 
 @pytest.fixture
 def workflow(engine, settings, update, headers, request):
-    state = {"mode": getattr(request, "param", "success"), "ai_requests": [], "telegram_requests": []}
+    state = {"mode": getattr(request, "param", "success"), "ai_requests": [], "telegram_requests": [], "text_requests": []}
 
     def extract_transport(payload):
         state["ai_requests"].append(payload)
@@ -52,6 +52,11 @@ def workflow(engine, settings, update, headers, request):
 
     def telegram_transport(request):
         raw = request.read()
+        if request.url.path.endswith('/sendMessage'):
+            payload = json.loads(raw)
+            state['text_requests'].append(payload)
+            return httpx.Response(200, json={'ok': True, 'result': {'message_id': 424243,
+                                  'chat': {'id': payload['chat_id'] if isinstance(payload['chat_id'], int) else int(payload['chat_id'])}}})
         mime = BytesParser(policy=policy.default).parsebytes(
             f"Content-Type: {request.headers['content-type']}\r\nMIME-Version: 1.0\r\n\r\n".encode()
             + raw
@@ -138,7 +143,7 @@ def test_sweeway_ai_boundary_to_actual_telegram_transport(workflow, update, head
     assert Counter(event["action"] for event in events) == Counter({
         "telegram_received": 1, "enquiry_created": 1, "quotation_draft_created": 1,
         "quotation_updated": 1, "pm_approved": 1, "pdf_send_attempted": 1,
-        "pdf_send_succeeded": 1,
+        "pdf_send_succeeded": 1, "summary_send_sent": 1,
     })
     by_action = {event["action"]: event for event in events}
     for action in ("quotation_updated", "pm_approved", "pdf_send_attempted", "pdf_send_succeeded"):

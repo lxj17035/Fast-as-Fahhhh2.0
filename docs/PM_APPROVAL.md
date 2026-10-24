@@ -80,3 +80,37 @@ transactional. The frontend should show Retry only to PM when `can_retry` is tru
 and disable the button while its request is running.
 
 See [delivery details](DELIVERY.md) for validation, response codes and boundaries.
+
+
+## V2 A5 PDF plus summary delivery
+
+New approvals require a nonblank deterministic summary from the same saved
+quotation/version as the previewed PDF. The real adapter supplies it; no model
+call is made at send time. `send_attempts` now stores nullable `pdf_status`,
+`summary_status`, and `summary_provider_message_id` as well as the PDF reference,
+bytes/hash, summary text and source IDs. Null component outcomes on legacy rows
+remain unknown historical evidence; startup does not invent a sent summary.
+
+Telegram acceptance of PDF is committed before attempting summary. Overall Sent
+requires both accepted. A rejected PDF never triggers summary. A rejected summary
+leaves overall Failed, freezes edits to the already-delivered PDF version and
+requires fresh Manager approval referencing that exact failed attempt. Only the
+identical saved summary is retried; accepted PDF bytes are reused, never uploaded
+again. A retry must preserve version, hash, summary and approved source IDs.
+Summary retries use the original delivered snapshot even if a newer customer
+message exists, and keep the enquiry Needs review in that case. Expired snapshots
+still block retry. New requirements use explicit review/revision after delivery.
+
+Pending/unknown component outcomes or outcome-save failures retain a hold and
+cannot be retried automatically. A crash between Telegram and persistence can
+require manual verification; this MVP cannot claim exactly-once external delivery.
+No retry is permitted merely because a request timed out. Staff messages continue
+to use the separate explicit request-ID mechanism. Conversation history includes
+quotation PDF and summary attempts; replies to either accepted component resolve
+to the same scoped enquiry. No real Telegram verification is claimed here.
+
+For a confirmed summary failure after PDF acceptance, final review returns
+`delivery_mode: summary_only` (otherwise `pdf_and_summary`) and the original
+approved source IDs. The frozen PDF remains previewable even after new customer
+messages arrive. This recovery completes delivery of already-approved content;
+it does not acknowledge or apply the newer requirements.

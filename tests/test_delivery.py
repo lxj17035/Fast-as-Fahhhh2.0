@@ -58,6 +58,11 @@ class FakeSender:
         self.result = result
         self.error = error
         self.calls = []
+        self.text_calls = []
+
+    def send_text(self, chat_id, content):
+        self.text_calls.append((chat_id, content))
+        return self.result
 
     def send_pdf(self, chat_id, pdf):
         self.calls.append((chat_id, pdf))
@@ -98,6 +103,7 @@ def delivery(engine, settings, headers, update):
         items=(QuotationItem(description="Printed shirts", quantity=Decimal("20"),
                              unit_price=Decimal("25.00")),),
         pdf_version=1, pdf_bytes=b"%PDF-1.4\nsynthetic saved document\n%%EOF",
+        telegram_summary="Fictional saved quotation: RM 500.00; valid until " + (today + timedelta(days=7)).isoformat(),
     )
     provider = FakeQuotationProvider(snapshot)
     test_metadata.create_all(engine)

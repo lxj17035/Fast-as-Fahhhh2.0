@@ -10,6 +10,7 @@ from sqlalchemy.engine import Connection
 from app.database import activities
 
 ACTIONS = frozenset({
+    "summary_send_attempted", "summary_send_sent", "summary_send_failed", "summary_send_unknown", "pdf_reused",
     "telegram_received",
     "enquiry_created",
     "quotation_draft_created",

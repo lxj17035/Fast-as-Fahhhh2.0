@@ -20,9 +20,14 @@ from app.telegram_client import DeliveryResult
 class RecordingTelegram:
     def __init__(self):
         self.calls = []
+        self.text_calls = []
         self.result = DeliveryResult("sent", message_id="87654321")
         self.entered = None
         self.release = None
+
+    def send_text(self, chat_id, content):
+        self.text_calls.append((chat_id, content))
+        return self.result
 
     def send_pdf(self, chat_id, pdf):
         self.calls.append((chat_id, pdf))

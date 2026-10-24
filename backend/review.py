@@ -29,7 +29,8 @@ class ReviewService:
             raise AppError("Manager (PM) review is required", 403)
         with self.store.transaction():
             quote = require_profile(self.quotations.get(quotation_id), self.quotations.settings.active_profile_id())
-            quote = self.quotations.validate_for_send(quotation_id, version, role)
+            resume = quote["status"] == "send_failed" and self.quotations.delivered_pdf(quotation_id)
+            quote = self.quotations.validate_for_send(quotation_id, version, role, delivered_pdf_retry=resume)
             enquiry = self.store.get("enquiries", quote["enquiryId"])
             if enquiry["source"] != "telegram":
                 raise AppError("Synthetic intake has no Telegram delivery target", 422)
@@ -40,4 +41,5 @@ class ReviewService:
                     "pdf": {"url": f"/api/quotations/{quotation_id}/pdf?version={saved_version}",
                             "version": saved_version, "sha256": sha256(pdf).hexdigest(), "content_type": "application/pdf"},
                     "telegram_summary": telegram_summary(quote),
-                    "source_message_ids": self.quotations.source_ids(quote["enquiryId"]), "send_ready": True}
+                    "source_message_ids": quote["reviewedMessageIds"] if resume else self.quotations.source_ids(quote["enquiryId"]),
+                    "delivery_mode": "summary_only" if resume else "pdf_and_summary", "send_ready": True}

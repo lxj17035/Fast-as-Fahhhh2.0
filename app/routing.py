@@ -49,12 +49,14 @@ def route_receipt(connection, update_id, message_id, chat_id, text, at, identity
                        outgoing_messages.c.provider_message_id == str(reply_to),
                        outgoing_messages.c.status == "sent", telegram_updates.c.chat_id == chat_id)).scalar_one_or_none()
         if target is None:
-            target = connection.execute(select(send_attempts.c.enquiry_id).join(
+            target = connection.execute(select(send_attempts.c.enquiry_id).distinct().join(
                 enquiries, send_attempts.c.enquiry_id == enquiries.c.id
             ).join(telegram_updates, enquiries.c.telegram_update_id == telegram_updates.c.update_id)
                 .where(enquiries.c.business_profile_id == identity, telegram_updates.c.chat_id == chat_id,
-                       send_attempts.c.provider_message_id == str(reply_to),
-                       send_attempts.c.status == "sent")).scalar_one_or_none()
+                       ((send_attempts.c.provider_message_id == str(reply_to)) &
+                        ((send_attempts.c.status == "sent") | (send_attempts.c.pdf_status == "sent"))) |
+                       ((send_attempts.c.summary_provider_message_id == str(reply_to)) &
+                        (send_attempts.c.summary_status == "sent")))).scalar_one_or_none()
     decision, target = association(text, candidates, target, reply_expected=reply_to is not None)
     if decision == "new":
         target = new_enquiry(connection, {"update_id": update_id, "received_at": at}, identity)

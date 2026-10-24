@@ -64,7 +64,7 @@ def test_full_activity_history_has_real_references_and_safe_fields(integrated, u
     assert Counter(item["action"] for item in events) == Counter({
         "telegram_received": 1, "enquiry_created": 1, "quotation_draft_created": 1,
         "quotation_updated": 1, "pm_approved": 1, "pdf_send_attempted": 1,
-        "pdf_send_succeeded": 1,
+        "pdf_send_succeeded": 1, "summary_send_sent": 1,
     })
     assert len({item["id"] for item in events}) == len(events)
     timestamps = [datetime.fromisoformat(item["timestamp"].replace("Z", "+00:00")) for item in events]

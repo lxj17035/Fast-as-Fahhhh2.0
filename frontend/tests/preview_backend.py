@@ -35,6 +35,9 @@ class SyntheticSender:
     def __init__(self):
         self.calls = 0
 
+    def send_text(self, chat_id, content):
+        return DeliveryResult("sent", message_id="52000")
+
     def send_pdf(self, chat_id, pdf):
         self.calls += 1
         print("MOCKED Telegram attempt:", self.calls, "PDF bytes:", len(pdf))

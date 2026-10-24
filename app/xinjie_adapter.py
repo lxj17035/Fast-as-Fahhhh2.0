@@ -33,12 +33,18 @@ class XinjieQuotationProvider:
     def reserve_for_send(
         self, connection: Connection, quotation_id: str, expected_version: int
     ) -> SavedQuotation:
+        return self._reserve(connection, quotation_id, expected_version)
+
+    def reserve_summary_retry(self, connection, quotation_id, expected_version):
+        return self._reserve(connection, quotation_id, expected_version, resume=True)
+
+    def _reserve(self, connection, quotation_id, expected_version, resume=False):
         store = Store(connection.engine, connection)
         key = UUID(quotation_id).hex
         try:
             with store.transaction():
                 service = QuotationService(store, SettingsService(store))
-                quote = service.validate_for_send(key, expected_version, "pm")
+                quote = service.validate_for_send(key, expected_version, "pm", delivered_pdf_retry=resume)
                 try:
                     cached = store.get("pdfs", f"{key}:{expected_version}")
                 except AppError as error:
@@ -65,9 +71,13 @@ class XinjieQuotationProvider:
                     pdf_version=quote["version"],
                     pdf_bytes=pdf,
                     telegram_summary=telegram_summary(quote),
-                    source_message_ids=tuple(service.source_ids(quote["enquiryId"])),
+                    source_message_ids=tuple(quote["reviewedMessageIds"] if resume else service.source_ids(quote["enquiryId"])),
                 )
-                service.begin_send(key, expected_version, "pm", "pm")
+                if resume:
+                    quote.update(status="sending", approvedBy="pm")
+                    store.put("quotations", key, quote)
+                else:
+                    service.begin_send(key, expected_version, "pm", "pm")
                 return result
         except AppError as error:
             raise translate_error(error) from None
