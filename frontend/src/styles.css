@@ -2535,3 +2535,6 @@ small metadata remains visually secondary. */
   .references dd { margin-bottom: 8px; }
   .simple-history > summary { padding: 18px; }
 }
+
+.assignment-form { padding: 20px 0; border-top: 1px solid var(--border); }
+.assignment-form blockquote { white-space: pre-wrap; overflow-wrap: anywhere; margin: 12px 0; }

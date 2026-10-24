@@ -164,3 +164,7 @@ the save. Existing enquiries and sent snapshots stay with the original profile.
 The profile label remains in the sidebar; profile choice never comes from AI.
 Native select/date popup geometry is deliberately platform owned. Textareas grow
 with entered content. No frontend package install or build is required for F1.
+
+V2 F2: Inbox includes Needs Assignment, original chat and association history.
+Staff explicitly assigns a same-chat enquiry reference, creates a new enquiry,
+or marks the message unrelated. Server validation remains authoritative.

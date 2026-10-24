@@ -65,3 +65,10 @@ test('malformed success cannot be mistaken for a confirmed delivery', async () =
     assert.equal(calls, 1);
   }
 });
+
+test('assignment actions use explicit human role and no chat override', async () => {
+  const calls = []; const api = new Api('', async (url, options) => { calls.push({url, ...options}); return Response.json({}); });
+  await api.assignments(); await api.assign('123', {action: 'assign', enquiry_id: 'same-chat'}, 'sales');
+  assert.equal(calls[0].url, '/api/assignments'); assert.equal(calls[1].headers['X-Demo-Actor'], 'sales');
+  assert.deepEqual(JSON.parse(calls[1].body), {action: 'assign', enquiry_id: 'same-chat'});
+});

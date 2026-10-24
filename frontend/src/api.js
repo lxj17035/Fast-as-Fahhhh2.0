@@ -80,6 +80,8 @@ export class Api {
     if (retryId) body.retry_of_attempt_id = retryId;
     return this.request(`/api/quotations/${encodeURIComponent(id)}/send`, { method: 'POST', body, role: 'pm', delivery: true });
   }
+  assignments() { return this.request('/api/assignments'); }
+  assign(id, body, role) { return this.request(`/api/assignments/${encodeURIComponent(id)}`, { method: 'POST', body, role }); }
   settings() { return this.request('/api/settings'); }
   profiles() { return this.request('/api/business-profiles'); }
   selectProfile(id) { return this.request('/api/business-profiles/active', { method: 'PATCH', body: { business_profile_id: id } }); }

@@ -14,7 +14,7 @@ const state = {
   error: null, notice: '', noticeKind: 'info', offset: 0, limit: 25, items: [], filter: 'all', search: '',
   detail: null, quote: null, form: null, dirty: false, previewVersion: null, pdfURL: null,
   settings: null, client: null, settingsDirty: false, clientDirty: false, hold: false, holdBaseline: [],
-  profiles: [], activeProfile: '', selectedProfile: '', profileLabel: '',
+  assignments: [], profiles: [], activeProfile: '', selectedProfile: '', profileLabel: '',
   pdfReady: false, pdfPage: 1, pdfPages: 0, companyName: 'Demo business workspace', focusPreview: false, expanded: {},
 };
 let loadId = 0;
@@ -88,12 +88,15 @@ function render() {
 }
 function statCard(title, value, symbol, color, filter) { return `<button type="button" class="stat-card stat-button" data-action="filter" data-filter="${filter}" aria-pressed="${state.filter === filter}"><span class="stat-top"><span>${title}</span><span class="stat-icon ${color}">${icon(symbol)}</span></span><strong class="stat-number">${value}</strong><span class="stat-hint">View enquiries ${icon('arrow')}</span></button>`; }
 function inboxPage() {
-  return `<section class="page-heading"><div><h1>Enquiries<span class="heading-dot">.</span></h1><p>Open a message, check the details, and prepare a quote.</p></div>${button('Refresh', 'refresh', { symbol: 'refresh' })}</section>${errorBox()}
+  return `<section class="page-heading"><div><h1>Enquiries<span class="heading-dot">.</span></h1><p>Open a message, check the details, and prepare a quote.</p></div>${button('Refresh', 'refresh', { symbol: 'refresh' })}</section>${errorBox()}${noticeBox()}${assignmentPanel()}
     ${state.items.length ? `<section class="stats-grid simple-stats" aria-label="Enquiries on this page">${statCard('To review', state.items.filter(item => item.status === 'needs_review').length, 'clock', 'amber', 'needs_review')}${statCard('Sent', state.items.filter(item => item.status === 'sent').length, 'check', 'green', 'sent')}${statCard('Needs checking', state.items.filter(item => ['failed', 'unknown'].includes(item.status)).length, 'alert', 'rose', 'attention')}</section>` : ''}
     <section class="panel inbox-panel"><div class="panel-heading"><div><h2>Customer messages <span class="count-pill">${state.items.length}</span></h2><p>Choose a message to get started.</p></div><span class="channel-label">${icon('telegram')} Telegram</span></div>
     <div class="table-toolbar"><div class="tabs" role="group" aria-label="Filter loaded enquiries">${[['all', 'All'], ['needs_review', 'To review'], ['sent', 'Sent'], ['attention', 'Needs checking']].map(([value, title]) => `<button type="button" data-action="filter" data-filter="${value}" class="tab ${state.filter === value ? 'selected' : ''}" aria-pressed="${state.filter === value}">${title}</button>`).join('')}</div><label class="search">${icon('search')}<input id="search" type="search" placeholder="Find a messageâ€¦" aria-label="Search loaded enquiries" value="${e(state.search)}" /></label></div>
     <div id="enquiry-results">${inboxResults()}</div><div class="table-footer"><span>Page ${Math.floor(state.offset / state.limit) + 1} Â· Search, counts, and filters apply to this page</span><div>${button('Previous', 'previous', { disabled: state.offset === 0 })}${button('Next', 'next', { disabled: state.items.length < state.limit })}</div></div></section>
     <p class="inbox-help">${icon('shield')} You review the details and prices. A project manager approves every send.</p>`;
+}
+function assignmentPanel() {
+  return `<section class="panel settings-panel"><h2>Needs Assignment <span class="count-pill">${state.assignments.length}</span></h2><p>Review the original message and choose its enquiry. Decisions are retained in history.</p>${state.assignments.map(message => `<form class="assignment-form" data-update="${e(message.update_id)}" novalidate><blockquote>${e(message.text)}</blockquote><p class="field-note">Original chat: ${e(message.chat_id)}</p><details><summary>Association history</summary>${message.history.map(h => `<p>${e(h.actor)} · ${e(h.action)} · ${e(dateTime(h.timestamp))}</p>`).join('')}</details><label class="field"><span>Existing enquiry reference (same chat)</span><input name="enquiry_id" placeholder="Paste the enquiry reference from More details" /></label><div class="editor-buttons"><button class="btn primary" name="action" value="assign" ${state.busy ? 'disabled' : ''}>Assign to enquiry</button><button class="btn secondary" name="action" value="new" ${state.busy ? 'disabled' : ''}>Create new enquiry</button><button class="btn secondary" name="action" value="unrelated" ${state.busy ? 'disabled' : ''}>Mark unrelated</button></div></form>`).join('') || '<p class="field-note">No messages need assignment.</p>'}</section>`;
 }
 function inboxResults() {
   const list = state.items.filter(item => matchesInboxFilter(item, state.filter) && `${item.original_text} ${item.id} ${item.telegram_chat_id}`.toLowerCase().includes(state.search.toLowerCase()));
@@ -240,7 +243,7 @@ async function loadRoute(route) {
       syncHold();
     } else {
       if (route !== '/') { state.route = '/'; history.replaceState(null, '', '#/'); }
-      const page = await api.enquiries(state.offset, state.limit); if (token !== loadId) return; state.items = page.items;
+      const [page, assignments] = await Promise.all([api.enquiries(state.offset, state.limit), api.assignments()]); if (token !== loadId) return; state.items = page.items; state.assignments = assignments.items;
     }
   } catch (error) { if (token === loadId) showError(error); }
   if (token !== loadId) return;
@@ -400,7 +403,11 @@ root.addEventListener('change', event => {
 });
 root.addEventListener('submit', async event => {
   event.preventDefault(); if (state.busy) return; const form = event.target;
-  if (form.id === 'quote-form') {
+  if (form.matches('.assignment-form')) {
+    const body = { action: event.submitter?.value };
+    if (body.action === 'assign') body.enquiry_id = new FormData(form).get('enquiry_id').trim();
+    await task(async () => { await api.assign(form.dataset.update, body, state.role); await loadRoute('/'); state.notice = 'Assignment saved. Original message and decision history retained.'; });
+  } else if (form.id === 'quote-form') {
     await saveQuoteAndPreview(false);
   } else if (form.id === 'profile-form') {
     const identity = state.selectedProfile;

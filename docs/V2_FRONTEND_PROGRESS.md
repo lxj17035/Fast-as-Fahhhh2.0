@@ -46,3 +46,15 @@ Commit checkpoint: **blocked**. `git add` and `git commit` failed because the
 session permits read-only `.git` access: `Unable to create .../.git/index.lock:
 Permission denied`. No commit hash, push or checkout change. F2â€“F5 were not edited;
 continue with the F1 commit in a Git-writable session before F2, following AGENTS.md.
+
+## F2 — Enquiry list and Needs Assignment
+
+Changed frontend/src/api.js, app.js, styles.css, frontend/tests/api.test.mjs.
+Inbox lists unresolved messages, source chat and association history. Explicit
+Staff assignment/new/unrelated actions use the existing server scope validation.
+Existing enquiry references are pasted from More details; no cross-chat lookup.
+Verification: `node --test frontend/tests/*.test.mjs`: 26 passed;
+`node frontend/tests/integration.mjs`: 8 passed. Edge browser at 1365x900
+and 390x844: empty/list, rejected invalid assignment, unrelated resolution,
+no horizontal overflow or page errors. Browser plugin unavailable; bundled
+Playwright used. Evidence ignored under .input/v2-f2-*. No backend changes.
