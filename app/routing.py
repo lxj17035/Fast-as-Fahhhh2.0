@@ -57,6 +57,7 @@ def route_receipt(connection, update_id, message_id, chat_id, text, at, identity
         status=decision, assigned_by="system", history=[link_event(target, "system", decision, at)],
     ))
     if target:
+        connection.execute(enquiries.update().where(enquiries.c.id == target).values(status="needs_review"))
         record_activity(connection, enquiry_id=target, action="telegram_received", result="received",
                         actor_id="system", role="system", actor_origin="system",
                         provider_reference=str(update_id), timestamp=at)

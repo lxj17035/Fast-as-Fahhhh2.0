@@ -8,11 +8,12 @@ from fastapi import APIRouter, Body, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, StrictBool
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.activity import optional_demo_actor, record_activity
+from app.activity import optional_demo_actor, require_demo_staff, record_quotation_activity
 from app.xinjie_store import Store
 from backend.errors import AppError
 from backend.pdf import PDFService
 from backend.quotations import QuotationService
+from backend.quotation_changes import QuotationChanges
 from backend.settings import SettingsService, require_profile
 
 router = APIRouter(prefix="/api", tags=["quotations"])
@@ -32,7 +33,7 @@ def services(request: Request):
     except AppError as error:
         raise HTTPException(
             status_code=error.status,
-            detail={"message": "Quotation request rejected", "fields": error.fields},
+            detail={"message": str(error), "fields": error.fields},
         ) from None
     except SQLAlchemyError:
         raise HTTPException(
@@ -111,19 +112,54 @@ def get_quotation(quotation_id: UUID, request: Request):
 @router.patch("/quotations/{quotation_id}")
 def patch_quotation(quotation_id: UUID, request: Request, patch: dict = Body(...)):
     actor = optional_demo_actor(request)
+    if "reviewedMessageIds" in patch:
+        require_demo_staff(request)
     with services(request) as (store, settings, quotations):
         with store.transaction():
             require_profile(quotations.get(quotation_id.hex), settings.active_profile_id())
             saved = quotations.update(quotation_id.hex, patch)
-            record_activity(
-                store.connection,
-                enquiry_id=saved["enquiryId"],
-                quotation_id=saved["id"],
-                version=saved["version"],
+            record_quotation_activity(
+                store, saved,
                 action="quotation_updated",
                 result="saved",
                 **actor,
             )
+            return saved
+
+
+@router.get("/enquiries/{enquiry_id}/quotations")
+def quotation_history(enquiry_id: UUID, request: Request):
+    with services(request) as (store, settings, _):
+        require_profile(store.get("enquiries", str(enquiry_id)), settings.active_profile_id())
+        return {"items": [q for q in store.list("quotations") if q["enquiryId"] == str(enquiry_id)]}
+
+
+@router.get("/quotations/{quotation_id}/suggestions")
+def suggestions(quotation_id: UUID, request: Request):
+    with services(request) as (_, settings, quotations):
+        require_profile(quotations.get(quotation_id.hex), settings.active_profile_id())
+        return QuotationChanges(quotations).list(quotation_id.hex)
+
+
+@router.post("/quotations/{quotation_id}/apply-changes")
+def apply_changes(quotation_id: UUID, request: Request, patch: dict = Body(...)):
+    actor = require_demo_staff(request)
+    with services(request) as (store, _, quotations):
+        with store.transaction():
+            saved = QuotationChanges(quotations).apply(quotation_id.hex, patch, actor)
+            record_quotation_activity(store, saved, action="quotation_changes_applied", result="applied",
+                            actor_id=actor, role=actor, actor_origin="simulated")
+            return saved
+
+
+@router.post("/quotations/{quotation_id}/fork")
+def fork_quotation(quotation_id: UUID, request: Request, patch: dict = Body(...)):
+    actor = require_demo_staff(request)
+    with services(request) as (store, _, quotations):
+        with store.transaction():
+            saved = quotations.fork(quotation_id.hex, patch, actor)
+            record_quotation_activity(store, saved, action="quotation_forked", result=patch["relationship"],
+                            actor_id=actor, role=actor, actor_origin="simulated")
             return saved
 
 

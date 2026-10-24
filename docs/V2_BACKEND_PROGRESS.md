@@ -60,3 +60,68 @@ The delivery error sanitizer is shared with existing quotation delivery.
 
 No live Telegram request was made. This supplies the backend conversation
 contract; frontend composer and AI clarification suggestions remain F3/A3.
+
+## B4 — Shared quotation items and versions
+
+Generic items persist `item_name`, positive/unknown `quantity`, `unit`, nullable
+`unit_price`, computed `amount`, and `notes`. Legacy description/unitPrice/
+lineTotal aliases remain available while F4 is pending. Conflicting aliases,
+computed input amounts and malformed data are rejected. Legacy edits preserve
+existing unit/notes when those descriptive fields are omitted.
+
+`QuotationChanges.suggest` stores minimal ADD_ITEM/UPDATE_ITEM/UPDATE_FIELD
+suggestions with base version and validated source evidence; it never updates a
+draft. GET `/api/quotations/{id}/suggestions` exposes them. Explicit Staff POST
+`/api/quotations/{id}/apply-changes` takes `{version, suggestion_set_id,
+selected, edits?}`. All selected edits apply atomically to one new saved version;
+unselected fields are preserved, stale sets rejected and human-applied content
+recorded in the suggestion audit. Prices/profile/recipient/send authority cannot
+be proposed or injected through suggestion edits. AI generation remains A4.
+
+New incoming or unassigned messages block refreshing an unsent PDF and approval.
+Staff explicitly acknowledges every current incoming ID using
+`reviewedMessageIds` in a saved quotation edit. An acknowledged source set must
+exactly match the conversation. Unassigned messages must first be assigned/new/
+unrelated through B2. Incomplete PDFs are visibly DRAFT QUOTATION; formal sending
+remains blocked for missing requirements, blank prices or required fields.
+
+Explicit Staff POST `/api/quotations/{id}/fork` takes `{version, relationship}`
+for `revision`, or adds `enquiry_id` for `additional`. Revisions create a new
+quotation ID/number linked to the sent original, with prices cleared and review
+required. Additional requires a distinct enquiry in the same customer chat and
+profile, retaining that independent request's draft. Ambiguous grouping is
+rejected for Staff clarification. GET `/api/enquiries/{id}/quotations` lists
+history; the existing singular quotation endpoint now selects the latest draft.
+The original sent quote JSON and cached PDF are retained byte-for-byte.
+
+Changed files: `backend/quotations.py`, new `backend/quotation_changes.py`,
+`backend/store.py`, `backend/drafting.py`, `backend/server.py`, `backend/pdf.py`,
+`app/activity.py`, `app/quotation_routes.py`, `app/routing.py`,
+`scripts/demo_pdfs.py`, new `tests/test_quotation_v2.py`.
+PostgreSQL verification also exposed a pre-existing synthetic enquiry/activity
+foreign-key mismatch. `record_quotation_activity` now keeps synthetic activity
+in JSON storage and native Telegram activity in its FK-backed table.
+
+Verification:
+
+- SQLite quotation/PDF/drafting/profile regression:
+  `.\.venv\Scripts\python.exe -m pytest -q tests/test_quotation_v2.py tests/test_quotations.py tests/test_pdf.py tests/test_drafting.py tests/test_business_profiles.py`:
+  **62 passed, 1 skipped** before final extra validation cases.
+- Final `tests/test_quotation_v2.py` SQLite run: **15 passed**.
+- With disposable `TEST_DATABASE_URL`,
+  `.\.venv\Scripts\python.exe -m pytest -q tests/test_quotation_v2.py tests/test_activity.py --basetemp=.input/v2-b4-verified -p no:cacheprovider`:
+  **52 passed** including the unassigned-message guard, before extra malformed
+  input cases. Initial PostgreSQL run had 3 failures exposing the activity FK
+  issue; the rerun passed after the fix.
+- `node frontend/tests/integration.mjs`: **7 passed**.
+- Final malformed-item/forbidden-suggestion cases with both adapters:
+  `.\.venv\Scripts\python.exe -m pytest -q tests/test_quotation_v2.py -k 'invalid_generic or stale_invalid' --basetemp=.input/v2-b4-validation-pg -p no:cacheprovider`:
+  **10 passed, 20 deselected**.
+- `.\.venv\Scripts\python.exe -m scripts.demo_pdfs` generated 5 synthetic saved
+  PDFs. All pages were rendered using `pdftoppm -r 90 -png` into ignored
+  `.input/pdf-review-v2-b4/` and visually inspected: three industry samples,
+  the CJK client sample, and all 9 pages of the multipage sample. Unit/notes,
+  dates/totals, repeated headings, last item/total and footers were legible and
+  aligned. Poppler reported its existing STSong font substitution; the inspected
+  Chinese client text rendered correctly.
+- Diff checks passed. No real providers or hosted migration/deployment tested.

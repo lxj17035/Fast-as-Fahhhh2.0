@@ -24,6 +24,8 @@ ACTIONS = frozenset({
     "staff_message_sent",
     "staff_message_failed",
     "staff_message_unknown",
+    "quotation_changes_applied",
+    "quotation_forked",
 })
 SAFE_ERROR_CODES = frozenset({
     "invalid_response",
@@ -112,3 +114,14 @@ def require_demo_staff(request: Request) -> str:
     if actor["role"] not in {"sales", "pm"}:
         raise HTTPException(status_code=403, detail="Explicit Staff action is required")
     return actor["role"]
+
+
+def record_quotation_activity(store, quotation, **fields):
+    """Synthetic enquiries use JSON activity; native Telegram rows use their FK log."""
+    if store.get("enquiries", quotation["enquiryId"])["source"] == "telegram":
+        return record_activity(store.connection, enquiry_id=quotation["enquiryId"],
+                               quotation_id=quotation["id"], version=quotation["version"], **fields)
+    from backend.activity import record_activity as record_synthetic_activity
+    return record_synthetic_activity(store, uuid4().hex, enquiryId=quotation["enquiryId"],
+                                     quotationId=quotation["id"], version=quotation["version"],
+                                     outcome=fields.get("result"), **fields)

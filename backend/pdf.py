@@ -42,10 +42,15 @@ def render_pdf(quote):
                                  topMargin=40, bottomMargin=48, title=quote["number"],
                                  author=quote["company"]["companyName"])
     width = A4[0] - 84
+    incomplete = bool(quote["missingInformation"] or quote["total"] is None
+                      or not quote["client"]["name"].strip() or not quote["items"]
+                      or any(not item["description"].strip() for item in quote["items"]))
     story = [paragraph(quote["company"]["companyName"], size=19, bold=True),
              paragraph(quote["company"]["companyAddress"]), Spacer(1, 12),
-             paragraph("QUOTATION", size=22, bold=True),
+             paragraph("DRAFT QUOTATION" if incomplete else "QUOTATION", size=22, bold=True),
              paragraph(f'{quote["number"]}  |  Saved version {quote["version"]}', size=9), Spacer(1, 10)]
+    if quote.get("parentQuotationNumber"):
+        story.append(paragraph(quote["relationship"].capitalize() + " of " + quote["parentQuotationNumber"], size=9))
     metadata = Table([
         [paragraph("PREPARED FOR", bold=True, size=9), paragraph("DATES AND CURRENCY", bold=True, size=9)],
         [paragraph(quote["client"]["name"] or "Client name required"),
@@ -62,7 +67,11 @@ def render_pdf(quote):
              paragraph("Unit price", bold=True, right=True, color="#ffffff"),
              paragraph("Amount", bold=True, right=True, color="#ffffff")]]
     for item in quote["items"]:
-        rows.append([paragraph(item["description"] or "Description required"),
+        item_content = [paragraph(item.get("item_name", item["description"]) or "Description required"),
+                        paragraph("Unit: " + item.get("unit", "unit"), size=8, color="#64748b")]
+        if item.get("notes"):
+            item_content.append(paragraph(item["notes"], size=9))
+        rows.append([item_content,
                      paragraph(item["quantity"] if item["quantity"] is not None else "TBD", right=True),
                      paragraph(item["unitPrice"] if item["unitPrice"] is not None else "TBD", right=True),
                      paragraph(item["lineTotal"] if item["lineTotal"] is not None else "TBD", right=True)])
@@ -75,7 +84,7 @@ def render_pdf(quote):
     notes_in_table = bool(quote["notes"]) and len(quote["notes"]) <= 1000
     if notes_in_table:
         rows.append([paragraph("NOTES\n" + quote["notes"]), "", "", ""])
-    oversized_rows = any(len(item["description"]) > 1000 for item in quote["items"])
+    oversized_rows = any(len(item["description"]) + len(item.get("notes", "")) > 1000 for item in quote["items"])
     table = LongTable(rows, colWidths=[width * .49, width * .12, width * .19, width * .20],
                       repeatRows=1, splitInRow=int(oversized_rows), hAlign="LEFT")
     table.setStyle(TableStyle([
@@ -93,13 +102,13 @@ def render_pdf(quote):
                                    ("BACKGROUND", (0, -1), (-1, -1), colors.white)]))
     # Keep ordinary last items with their total; very long rows must remain
     # splittable so they can flow across pages instead of raising LayoutError.
-    last_length = len(quote["items"][-1]["description"]) if quote["items"] else 0
+    last_length = (len(quote["items"][-1]["description"]) + len(quote["items"][-1].get("notes", ""))) if quote["items"] else 0
     if last_length + (len(quote["notes"]) / 2 if notes_in_table else 0) <= 1000:
         table.setStyle(TableStyle([("NOSPLIT", (0, -3 if notes_in_table else -2), (-1, -1))]))
     elif notes_in_table:
         table.setStyle(TableStyle([("NOSPLIT", (0, -2), (-1, -1))]))
     story.extend([table, Spacer(1, 12)])
-    if quote["missingInformation"] or quote["total"] is None:
+    if incomplete:
         story.extend([Spacer(1, 10), paragraph("INCOMPLETE DRAFT - PM review required", bold=True, color="#9b4c10")])
     if quote["notes"] and not notes_in_table:
         story.extend([Spacer(1, 15), paragraph("NOTES", bold=True, size=9), paragraph(quote["notes"])])
@@ -125,6 +134,8 @@ class PDFService:
             quote = self.quotations.get(quotation_id)
             if version is not None:
                 expected_version(quote, version)
+            if quote["status"] in {"draft", "send_failed"} and not self.quotations.source_is_current(quote):
+                raise AppError("Review the latest customer messages before refreshing a quotation PDF", 409)
             key = f'{quotation_id}:{quote["version"]}'
             try:
                 cached = self.store.get("pdfs", key)

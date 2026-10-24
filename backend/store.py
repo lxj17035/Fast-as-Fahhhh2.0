@@ -98,13 +98,20 @@ class Store:
             statement = statement.where(enquiries.c.id == key)
         result = []
         for row in connection.execute(statement).mappings():
-            messages = connection.execute(select(telegram_updates.c.original_text).join(
+            messages = connection.execute(select(telegram_updates.c.original_text, telegram_updates.c.update_id).join(
                 message_links, message_links.c.update_id == telegram_updates.c.update_id
             ).where(message_links.c.enquiry_id == row["id"])
-                .order_by(telegram_updates.c.received_at, telegram_updates.c.update_id)).scalars().all()
+                .order_by(telegram_updates.c.received_at, telegram_updates.c.update_id)).mappings().all()
             context = connection.execute(select(records.c.body).where(
                 records.c.kind == "enquiry_context", records.c.id == row["id"])).scalar_one_or_none() or {}
-            result.append({"id": row["id"], "text": "\n\n".join(messages) if messages else row["original_text"], "source": row["source"],
+            unresolved = connection.execute(select(message_links.c.update_id).join(
+                telegram_updates, message_links.c.update_id == telegram_updates.c.update_id
+            ).where(message_links.c.business_profile_id == row["business_profile_id"],
+                    telegram_updates.c.chat_id == row["chat_id"], message_links.c.status == "needs_assignment")
+                .order_by(telegram_updates.c.received_at, telegram_updates.c.update_id)).scalars().all()
+            result.append({"id": row["id"], "text": "\n\n".join(m["original_text"] for m in messages) if messages else row["original_text"], "source": row["source"],
+                           "messageUpdateIds": [str(m["update_id"]) for m in messages] if messages else [str(row["update_id"])],
+                           "unassignedMessageIds": [str(identity) for identity in unresolved],
                            "business_profile_id": row["business_profile_id"],
                            "chatId": str(row["chat_id"]), "clientId": context.get("clientId"),
                            "providerUpdateId": str(row["update_id"]),

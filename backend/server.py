@@ -83,7 +83,7 @@ class Application:
                 return 200, self.drafts.create(parts[2], manual=body.get("manual", False))
             if len(parts) == 4 and parts[3] == "quotation" and method == "GET":
                 self.store.get("enquiries", parts[2])
-                for quote in self.store.list("quotations"):
+                for quote in reversed(self.store.list("quotations")):
                     if quote["enquiryId"] == parts[2]:
                         return 200, quote
                 raise AppError("Draft is not available yet; refresh or retry drafting", 404)

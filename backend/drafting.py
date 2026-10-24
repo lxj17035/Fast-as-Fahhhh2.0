@@ -133,7 +133,7 @@ class DraftService:
     def create(self, enquiry_id, *, manual=False):
         enquiry = self.store.get("enquiries", enquiry_id)
         identity = enquiry["business_profile_id"]
-        for quotation in self.store.list("quotations"):
+        for quotation in reversed(self.store.list("quotations")):
             if quotation["enquiryId"] == enquiry_id:
                 return quotation
         message = text(enquiry["text"], "enquiry.text", required=True, limit=20000)
@@ -167,7 +167,7 @@ class DraftService:
                          "missingInformation": ["Review original enquiry and add required quotation items"]}
         with self.store.transaction():
             # A second request may have completed while this provider was running.
-            for existing in self.store.list("quotations"):
+            for existing in reversed(self.store.list("quotations")):
                 if existing["enquiryId"] == enquiry_id:
                     return existing
             quote = self.quotations.create(enquiry_id, enquiry["clientId"], extracted=extracted,

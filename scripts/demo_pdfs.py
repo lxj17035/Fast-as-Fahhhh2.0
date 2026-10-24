@@ -28,6 +28,21 @@ def main():
             path = output / (name + ".pdf")
             path.write_bytes(pdfs.get(quote["id"], 2)[0])
             print(path.resolve())
+        for identity, item in [
+            ("printing", {"item_name": "Event flyers", "quantity": 1000, "unit": "pcs",
+                          "unit_price": "0.25", "notes": "A5, full colour, 150gsm. Fictional sample."}),
+            ("cleaning", {"item_name": "Office cleaning", "quantity": 2, "unit": "visit",
+                          "unit_price": "150.00", "notes": "800 sq ft office; windows included. Fictional sample."}),
+            ("repair", {"item_name": "Laptop diagnosis", "quantity": "1.5", "unit": "hour",
+                        "unit_price": "80.00", "notes": "Fictional device with screen fault; diagnosis only."}),
+        ]:
+            settings.select_profile({"business_profile_id": identity})
+            quote = quotes.create("sample-" + identity, settings.demo_client_id(identity), issue_date="2026-10-23")
+            saved = quotes.update(quote["id"], {"version": 1, "items": [item],
+                                               "notes": "Synthetic-data demonstration. No customer delivery."})
+            path = output / ("quotation-" + identity + ".pdf")
+            path.write_bytes(pdfs.get(saved["id"], saved["version"])[0])
+            print(path.resolve())
     finally:
         store.close()
 
