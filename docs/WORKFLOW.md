@@ -88,3 +88,27 @@ Use synthetic business/customer data and team-controlled test channels. Simulate
 Defer WhatsApp/Instagram/Facebook, real Orbyte integration, production identity, multi-tenancy, analytics dashboards, model training, attachments/voice, payments, statutory filings, and legal/financial advice. Optional validation or a business-model sentence can strengthen the pitch; neither needs a new feature.
 
 Source: supplied Domain 2 PDF, physical pages 2-7. Requirements are summarized here; implementation choices are ours.
+
+## Current Staff → Manager handoff (24 October 2026)
+
+This supersedes the earlier PM-only preparation description:
+
+1. Telegram receipt creates the scoped enquiry and starts an automatic AI/manual
+   draft. Staff To do starts at Needs info.
+2. Staff reads Messages, checks/edits selected AI suggestions or manually edits
+   Quote. Customer replies to accepted Staff questions resolve to the same enquiry;
+   ambiguous non-replies stay Needs sorting. No chat-wide automatic merge.
+3. Save draft permits incomplete requirements. Confirm handled & save quote only
+   acknowledges the exact current incoming IDs explicitly reviewed by the user.
+4. Submit for review validates and stores the saved version/source IDs. It needs
+   complete customer/item/unit/date information and resolved questions/assignments,
+   but no prices or PDF preview. Only this explicit handoff moves preparation into
+   Manager To do. No notification or customer message is sent.
+5. Manager edits, prices and saves, then reviews the exact saved PDF and summary.
+   Staff edits/AI apply require a new submission; new incoming requirements cannot
+   reuse old handoff evidence. Manager edits invalidate the previous version/PDF
+   review while retaining the pricing task if customer source IDs are unchanged.
+6. Manager explicitly confirms sending to the original Telegram chat. Existing
+   pending/unknown/sent and partial-delivery protections remain authoritative.
+
+See PM_APPROVAL.md for the submit-review and existing saved-review/send contracts.

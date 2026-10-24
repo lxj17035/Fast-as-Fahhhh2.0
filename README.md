@@ -54,7 +54,7 @@ The initial use case is a small printing business preparing quotations for items
 1. A customer sends an enquiry to the business's Telegram bot.
 2. The system stores the enquiry and connects it with client/company details and quotation defaults.
 3. AI extracts the stated requirements, drafts item descriptions, and flags missing information. Prices remain blank.
-4. The PM reviews the draft, edits client details, and enters quantities and prices.
+4. Staff checks Messages, edits Quote and saves a draft or explicitly submits complete requirements for Manager review; prices and Staff PDF preview are optional. The Manager reviews the submitted details and enters prices.
 5. The backend calculates totals and expiry; the PM previews the saved PDF.
 6. The PM approves sending to the original Telegram conversation.
 7. The system shows the outcome and records the action in an activity log.
@@ -184,6 +184,16 @@ passed**, with injected mocked AI/Telegram providers. Desktop/mobile layouts and
 the saved PDF were visually checked. The existing backend suite passed **274
 tests, 2 skipped** in the local SQLite-adapter run; PostgreSQL-only cases were not
 rerun. Live provider verification remains separate.
+
+### Staff handoff
+
+Staff uses Save draft for incomplete details and Submit for review for complete,
+saved requirements. The latter persists the exact saved version and source IDs
+through `/api/quotations/:id/submit-review`; it moves the task into Manager To do
+without sending a notification or customer message. Staff edits and new customer
+requirements require another submission. Manager edits require fresh saved
+PDF/summary review. See [the current workflow](docs/WORKFLOW.md) and
+[local verification](docs/LOCAL_DEVELOPMENT_20261024.md).
 
 ### Backend approval configuration
 

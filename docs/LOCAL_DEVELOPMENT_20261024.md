@@ -20,3 +20,67 @@ Owner follow-up: place Show synthetic channel examples below Refresh inbox. CSS-
 
 ## Mobile action containment and failure recovery
 Actual mobile recovery check found Staff Save/Submit/Preview actions extending behind the sidebar. Narrow editor actions now stack vertically. 45 frontend checks passed. Browser on 390px verified AI failure still permits manual save/submission; explicit PDF rejection needs a fresh Manager approval and then succeeds; unknown delivery locks editing and offers no retry; PDF accepted/summary rejected freezes editing and retries only the identical saved summary/PDF snapshot. Saved PDF bytes matched before/after recovery. Both recovery scripts use temporary DB/mocked services; screenshots/scripts under .input/local-preview/recovery-*. No live provider proof.
+
+## Preview and static audit notes
+
+The current-code synthetic preview is http://127.0.0.1:8093/ (API 8094). Its
+SQLite test adapter uses a consistent backup of the five original 8091/8092
+synthetic records; the original database/processes were left running unchanged.
+The two previews diverge after backup. No runtime PostgreSQL settings or .env
+were changed. Browser checked the new submit endpoint is loaded, preserved IDs,
+desktop/360px refresh/switch geometry, no overflow/page errors. The old preview
+must not be used to validate newly loaded Python endpoints.
+
+Strict premium UI audit was executed, evidence at ignored
+.input/review-final-ui-audit.json. It reports five actionless-button findings
+for existing data-action controls (missing-detail check, tabs, remove item and
+Inbox actions). Inspection of audit_project.py lines 722-726 shows it recognizes
+inline onclick/Vue handlers but not this application's delegated data-action
+handler. These are scanner false positives, not a clean audit result. The shared
+root click dispatcher and corresponding actions remain present; actual browser
+journeys verify the controls. No inline handler or fake action was added to
+silence the scanner. DESIGN.md/runtime palette and canonical shared form/button,
+sidebar, settings, PDF and final confirmation ownership remain unchanged. No new
+build/typecheck/a11y command is configured in premium-ui.json/package.json;
+Node checks, real browser checks and project API tests supply runtime evidence.
+
+## Local commit sections
+
+| Commit | Section |
+| --- | --- |
+| 241cc8a | Existing short-title extraction and saved display metadata |
+| 9b692bb | Existing task Inbox and tabbed detail workbench |
+| cb2f5e1 | Transactional persisted review submission |
+| 91c5268 | Staff/Manager routing, submission controls and tab order |
+| 1eb68c4 | Synthetic channel switch below Refresh inbox |
+| 64ba066 | Messages-owned AI changes and analysis progress/recovery |
+| 074fe92 | Preserve deferred history browsing and incomplete RP2 notes |
+| add0ae3 | Narrow-screen Staff draft actions |
+| 34b155f | Reopen locally closed records on formal handoff |
+
+Branch stayed codex/feat-domain2-v2. All commits are local; no push/deployment.
+
+## Final regression result
+
+- `.venv/Scripts/python.exe -m pytest -q` with disposable
+  `TEST_DATABASE_URL=postgresql+psycopg://postgres@127.0.0.1:55439/quoteflow_test`:
+  **676 passed, 5 skipped**, 888.99 seconds. This is the final source run including
+  analysis progress; the earlier pre-AI run was 672 passed / 5 skipped.
+- One existing FastAPI/Starlette httpx deprecation warning; no failing test.
+- `node --test frontend/tests/*.test.mjs`: **46 passed**.
+- `node frontend/tests/integration.mjs`: **10 passed** against actual isolated API.
+- Updated journeys.mjs: Printing/Cleaning/Repair, both roles, desktop/mobile,
+  current-source review, manual save, AI edit/apply, composer/unsaved-input
+  retention, submit/edit/resubmit, inbox ownership, saved-version PDF/hash/summary,
+  explicit send cancellation/confirmation, Revision/Additional all passed.
+- Additional actual API/browser checks: switch placement at 1365/390/360,
+  same-version submission reopens session-closed row, AI failure manual fallback,
+  explicit rejection retry, unknown hold, frozen summary-only retry passed.
+- Final git diff --check passed. Strict static scanner limitations are recorded
+  above and are not presented as a clean static audit.
+
+All backend verification used isolated SQLite adapters and the disposable local
+PostgreSQL database, with mocked external providers. The dedicated Docker test
+container was stopped/removed after verification; the pre-existing container was
+untouched. No real Telegram/Runpod checks, pushes or Replit publication. RP2 still
+requires matched Runpod request/usage evidence and remains incomplete.
