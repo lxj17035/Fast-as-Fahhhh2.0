@@ -50,3 +50,8 @@ test('old AI evidence is stale after a message, edit, assignment or sent staff m
   assert.equal(analysisCurrent(analysis, quote, detail, [], [{chat_id:'1',update_id:'3'}]), false);
   assert.equal(analysisCurrent(analysis, quote, detail, [{direction:'outgoing',status:'sent',text:'new',provider_message_id:'5'}]), false);
 });
+
+test('generic item units and notes survive edits while blank price stays unknown', () => {
+  const form = editorForm({...quote, items: [{description:'Cleaning',quantity:'2',unit:'visit',notes:'120 sqm',unitPrice:null}]});
+  const item = quotePatch(form, 2).items[0]; assert.equal(item.unit, 'visit'); assert.equal(item.notes, '120 sqm'); assert.equal(item.unitPrice, null);
+});

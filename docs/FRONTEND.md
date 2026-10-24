@@ -173,3 +173,9 @@ V2 F3: Conversation Room shares panel/form/feedback helpers. The original chat
 is immutable; AI text is advisory and editable. Explicit Send is attributed to
 Staff or Manager, using a request ID; unknown/pending outcomes hold further sends.
 Analyze requests never send text. Stale evidence hides clarification actions.
+
+V2 F4: Existing item rows own item name, quantity, unit, Manager-only price,
+saved amount and notes. AI Suggested Changes uses native labelled selection
+checkboxes and existing fields, explicit apply and stale version rejection.
+An explicit message-review checkbox acknowledges exactly the loaded incoming IDs.
+Sent quotation forks require a confirmed revision/additional choice.

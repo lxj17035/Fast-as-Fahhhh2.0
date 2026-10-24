@@ -23,6 +23,8 @@ from app.telegram_client import DeliveryResult
 class SyntheticExtractor:
     def extract(self, message, context):
         return {
+            "clarificationSuggestions": ["Please confirm the print colour."],
+            "proposedChanges": ([{"type": "UPDATE_ITEM", "index": 0, "data": {"notes": "Customer confirmed blue"}}] if context.get("savedQuotation") else []),
             "summary": "Fictional event team requests 20 printed cotton T-shirts for their next event.",
             "clientName": "Example Events (fictional)",
             "clientAddress": "12 Demo Road, Fictional Town",

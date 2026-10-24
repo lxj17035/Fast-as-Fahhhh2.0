@@ -71,3 +71,21 @@ Unknown/pending text outcomes hold sends; no automatic retries.
 conversation attribution, explicit mocked send, renewed analysis, no page errors
 or horizontal overflow. Screenshots .input/v2-f3-*. No live providers called.
 F2 implementation commit: 520ee21. F1 already committed as 00d6565.
+
+## F4 - Generic quotation editor
+
+Changed frontend/src/api.js, app.js, model.js, styles.css; API fixture, model
+tests and integration.mjs. Units, item notes and saved amounts now survive edits.
+Staff retains Manager prices; mutations always use the selected human role.
+Explicit current-message acknowledgement is included only when checked.
+AI change sets are selected/edited/applied within the review, with version and
+evidence validation on the server. Sent quotes offer explicit revision/additional
+creation (additional requires a distinct same-chat enquiry). Historical PDFs
+remain server-owned snapshots.
+`node --test frontend/tests/*.test.mjs`: 30 passed;
+`node frontend/tests/integration.mjs`: 9 passed, including generic fields, Staff
+price rejection, edited selected changes and stale replay rejection. Edge
+1365x900/390x844: unit/notes save, Staff readonly prices, editable clarification,
+selected edited change apply, Manager pricing, no overflow/page errors. Initial
+browser run caught suggestion refresh gap; fixed and the same script passed.
+No PDF template or backend source changed. F3 commit: 4355e3c.

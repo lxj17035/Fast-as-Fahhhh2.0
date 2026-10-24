@@ -25,7 +25,7 @@ export function quotePatch(form, version) {
   return {
     version, client: { name: form.client.name.trim(), address: form.client.address.trim() },
     issueDate: form.issueDate, validity: form.validity, notes: form.notes,
-    items: form.items.map(item => ({ description: item.description.trim(), quantity: item.quantity === '' ? null : item.quantity, unitPrice: item.unitPrice === '' ? null : item.unitPrice })),
+    items: form.items.map(item => ({ description: item.description.trim(), quantity: item.quantity === '' ? null : item.quantity, unit: item.unit || '', notes: item.notes || '', unitPrice: item.unitPrice === '' ? null : item.unitPrice })),
     missingInformation: [...form.missingInformation],
   };
 }
@@ -33,7 +33,7 @@ export function editorForm(quote) {
   return {
     client: { name: quote.client.name, address: quote.client.address }, issueDate: quote.issueDate,
     validity: quote.validity, notes: quote.notes || '', missingInformation: [...quote.missingInformation],
-    items: quote.items.map(item => ({ description: item.description, quantity: item.quantity ?? '', unitPrice: item.unitPrice ?? '' })),
+    items: quote.items.map(item => ({ description: item.description, quantity: item.quantity ?? '', unit: item.unit ?? '', notes: item.notes || '', unitPrice: item.unitPrice ?? '' })),
   };
 }
 export function decimalValid(value, price = false) {

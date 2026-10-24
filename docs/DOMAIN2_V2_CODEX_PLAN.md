@@ -22,7 +22,7 @@ After each section, update this checklist before handing work back.
 - [x] F1 — Business Profile Settings.
 - [x] F2 — Enquiry list & Needs Assignment.
 - [x] F3 — Conversation Room.
-- [ ] F4 — Generic Quotation Editor.
+- [x] F4 — Generic Quotation Editor.
 - [ ] F5 — Manager Review & Send.
 - [ ] T1 — Printing end to end.
 - [ ] T2 — Cleaning and Repair compatibility.
