@@ -100,3 +100,9 @@ Documentation-only change. Application tests and live provider/hosted checks wer
 - [x] Verified required section headings, local link targets, balanced Markdown fences and git diff whitespace checks.
 
 Documentation only; application suites, fresh setup and live hosted/provider checks were not rerun. Reviewed current template options for a separate slide-style recommendation; no presentation was created.
+
+## Social enquiry positioning (24 October 2026)
+
+- [x] Broadened README problem/product positioning to WhatsApp, Telegram, Instagram and Facebook enquiries at the owner's request.
+- [x] Explicitly retained Telegram as the implemented demo channel and the other integrations as future extensions; no application behavior or contracts changed.
+- [x] Checked channel-scope wording, all 20 local links, Markdown fences and git diff whitespace. Documentation only; application/live tests not rerun.

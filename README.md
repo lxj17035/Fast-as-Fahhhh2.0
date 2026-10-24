@@ -1,10 +1,12 @@
 # QuoteFlow
 
-> QuoteFlow helps Malaysian small business teams turn Telegram enquiries into AI-assisted quotations with Staff preparation, Manager pricing, and approved PDF delivery.
+> QuoteFlow helps Malaysian small business teams turn social and messaging enquiries into AI-assisted quotations with Staff preparation, Manager pricing, and approved PDF delivery.
 
 Built for the **Orbyte Smart SME Challenge: Less Busywork, Better Business (Domain 2)**.
 
-QuoteFlow helps small business teams move from a Telegram enquiry to an AI-assisted draft, Staff preparation, Manager pricing and review, and an approved PDF sent back to the original conversation. It keeps messages, quotation versions, delivery outcomes, and activity together.
+QuoteFlow addresses customer enquiries across social and messaging channels such as WhatsApp, Telegram, Instagram, and Facebook. The intended journey connects each enquiry to an AI-assisted draft, Staff preparation, Manager pricing and review, and approved quotation delivery. It keeps messages, quotation versions, delivery outcomes, and activity together.
+
+**Demo scope:** Telegram is the implemented channel used to demonstrate this journey. WhatsApp, Instagram, and Facebook integrations are planned future extensions.
 
 This README reflects the code in `origin/main` at `90a8491` (24 October 2026). The prototype uses fictional business/customer data and simulated roles for a supervised demo.
 
@@ -35,13 +37,13 @@ The published URL is not evidence that the latest source or complete live journe
 
 ### Problem
 
-Malaysian micro and small businesses receive customer requirements in messages, then manually copy them into quotations. Missing details, repeated edits, and unclear handoffs can delay replies and create inconsistent documents. Staff and managers need a shared view of what needs clarification, pricing, approval, or follow-up.
+Malaysian micro and small businesses receive customer enquiries across WhatsApp, Telegram, Instagram, and Facebook, then manually copy requirements from messages into quotations. Missing details, repeated edits, and unclear handoffs can delay replies and create inconsistent documents. Staff and managers need a shared view of what needs clarification, pricing, approval, or follow-up.
 
 ### Solution
 
-QuoteFlow connects Telegram enquiries with stored business/client context. AI extracts stated requirements, suggests draft items and clarification questions, and leaves unknown facts and prices for people to resolve. Staff prepares the quotation, while Manager controls pricing and approves the saved PDF and summary before delivery.
+QuoteFlow aims to connect social and messaging enquiries with stored business/client context. The current demo implements this through Telegram. AI extracts stated requirements, suggests draft items and clarification questions, and leaves unknown facts and prices for people to resolve. Staff prepares the quotation, while Manager controls pricing and approves the saved PDF and summary before delivery.
 
-### Workflow
+### Workflow (Telegram Demo)
 
 1. **Receive:** Telegram receipt stores an enquiry and starts an AI draft or labelled manual fallback. Each enquiry retains its selected business profile: Printing, Cleaning, or Repair.
 2. **Prepare:** Staff reads Messages, checks AI suggestions, asks clarification questions, and edits Quote. Incomplete requirements can be saved as drafts. AI preserves unknown information and leaves prices blank.
@@ -266,7 +268,7 @@ Content-Type: application/json
 - [ ] Measure preparation time and errors with paired fictional-enquiry trials.
 - [ ] Complete slides, demo video and required submission PDFs.
 - [ ] Evaluate production identity, per-business isolation and privacy requirements after the supervised MVP.
-- [ ] Consider additional messaging channels and optional email alerts after validating the core journey.
+- [ ] Extend the Telegram demonstration to WhatsApp, Instagram, and Facebook integrations after validating the core journey; email alerts remain optional.
 
 ## Team
 
