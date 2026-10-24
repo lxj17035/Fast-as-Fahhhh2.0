@@ -24,7 +24,7 @@ After each section, update this checklist before handing work back.
 - [x] F3 — Conversation Room - `4355e3c`; [verification](V2_FRONTEND_PROGRESS.md).
 - [x] F4 — Generic Quotation Editor - `6d2d26b`; [verification](V2_FRONTEND_PROGRESS.md).
 - [x] F5 — Manager Review & Send - `9fef80d`; [verification](V2_FRONTEND_PROGRESS.md).
-- [ ] T1 — Printing end to end.
+- [x] T1 — Printing end to end; SQLite/PostgreSQL + actual desktop/mobile UI, [evidence](V2_INTEGRATION_PROGRESS.md).
 - [ ] T2 — Cleaning and Repair compatibility.
 - [ ] T3 — Post-send changes.
 - [x] RP1 - One bounded live V2 Runpod check: HTTP 200; 1,362 tokens; [sanitized evidence](V2_RUNPOD_RP1.md).
@@ -272,6 +272,11 @@ Single final page with all confirmed fields, PDF preview, Telegram short summary
 
 ### T1 — Printing end to end
 Incoming Telegram enquiry → AI extraction → Staff clarification in Conversation Room → customer follow-up → generic items → Manager pricing → final preview → Manager approves/sends PDF + summary. Verify message/PDF history and expiry consistency.
+
+**Completed locally — 24 October 2026.** Two SQLite/PostgreSQL acceptance cases
+and one complete actual UI journey passed on desktop/mobile with mocked Runpod
+HTTP/Telegram. Exact files/commands/limits: [Phase 4 report](V2_INTEGRATION_PROGRESS.md).
+Hosted/live RP2 remains separate and blocked on the published V2 build/evidence.
 
 ### T2 — Cleaning and Repair compatibility
 Repeat representative cases using dynamic profiles and item notes. Ensure no Printing-specific behavior leaks.
