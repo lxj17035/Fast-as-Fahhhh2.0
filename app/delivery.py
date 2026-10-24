@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.activity import record_activity
-from app.database import enquiries, send_attempts, telegram_updates
+from app.database import enquiries, send_attempts, telegram_updates, message_links
 from app.quotation_contract import (
     IntegrationUnavailable,
     QuotationConflict,
@@ -165,6 +165,8 @@ def send_quotation(
                     approved_at=approved_at,
                     pdf_sha256=sha256(quotation.pdf_bytes).hexdigest(),
                     pdf_bytes=quotation.pdf_bytes,
+                    summary_text=quotation.telegram_summary,
+                    source_message_ids=list(quotation.source_message_ids) if quotation.source_message_ids is not None else None,
                     status="pending",
                     updated_at=approved_at,
                 )
@@ -236,10 +238,23 @@ def send_quotation(
                     updated_at=datetime.now(timezone.utc),
                 )
             )
+            enquiry_status = result.status
+            if result.status == "sent" and quotation.source_message_ids is not None:
+                current = connection.execute(select(message_links.c.update_id).join(
+                    telegram_updates, message_links.c.update_id == telegram_updates.c.update_id
+                ).where(message_links.c.enquiry_id == quotation.enquiry_id)
+                    .order_by(telegram_updates.c.received_at, telegram_updates.c.update_id)).scalars().all()
+                pending = connection.execute(select(message_links.c.update_id).join(
+                    telegram_updates, message_links.c.update_id == telegram_updates.c.update_id
+                ).where(message_links.c.business_profile_id == source["business_profile_id"],
+                        telegram_updates.c.chat_id == chat_id, message_links.c.status == "needs_assignment")
+                    .limit(1)).first()
+                if [str(i) for i in current] != list(quotation.source_message_ids) or pending is not None:
+                    enquiry_status = "needs_review"
             connection.execute(
                 enquiries.update()
                 .where(enquiries.c.id == quotation.enquiry_id)
-                .values(status=result.status)
+                .values(status=enquiry_status)
             )
             provider.record_outcome(
                 connection, saved_id, result.status, result.message_id

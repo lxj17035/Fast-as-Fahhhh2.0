@@ -1,4 +1,5 @@
 from copy import deepcopy
+from dataclasses import replace
 
 from sqlalchemy import select
 
@@ -11,7 +12,8 @@ def receive(client, headers, update):
     return next(item for item in page["items"] if item["original_text"] == update["message"]["text"])
 
 
-def test_postgres_inbound_to_priced_pdf_in_one_application(client, engine, headers, update):
+def test_postgres_inbound_to_priced_pdf_in_one_application(client, engine, headers, update, settings):
+    client.app.state.settings = replace(settings, enable_demo_approval=True)
     enquiry = receive(client, headers, update)
     response = client.post(f'/api/enquiries/{enquiry["id"]}/draft', json={"manual": True})
     assert response.status_code == 200
@@ -19,7 +21,7 @@ def test_postgres_inbound_to_priced_pdf_in_one_application(client, engine, heade
     assert quote["enquiryId"] == enquiry["id"]
     assert quote["client"]["name"] == ""  # Unknown sender is not the seeded demo client.
     path = f'/api/quotations/{quote["id"]}'
-    saved = client.patch(path, json={"version": 1,
+    saved = client.patch(path, headers={"X-Demo-Actor": "pm"}, json={"version": 1,
         "client": {"name": "Fictional Telegram Customer", "address": "12 Demo Road"},
         "items": [{"description": "Printed T-shirts", "quantity": 20, "unitPrice": "25.00"}],
         "missingInformation": []})

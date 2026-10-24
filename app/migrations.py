@@ -24,6 +24,8 @@ def upgrade_delivery_schema(engine):
             "ALTER TABLE send_attempts ADD COLUMN IF NOT EXISTS "
             "retry_of_attempt_id VARCHAR(36) REFERENCES send_attempts(id)"
         ))
+        connection.execute(text("ALTER TABLE send_attempts ADD COLUMN IF NOT EXISTS summary_text TEXT"))
+        connection.execute(text("ALTER TABLE send_attempts ADD COLUMN IF NOT EXISTS source_message_ids JSON"))
         # Old releases constrained quotation_id alone. Keep rows, PDF bytes and
         # activity foreign keys, replacing only that obsolete uniqueness rule.
         for constraint in inspect(connection).get_unique_constraints("send_attempts"):

@@ -59,6 +59,7 @@ def draft(client, enquiry):
 
 def edit(client, quotation, /, **fields):
     return client.patch(f"/api/quotations/{quotation['id']}",
+                        headers={"X-Demo-Actor": "pm"} if "items" in fields else {},
                         json={"version": quotation["version"], **fields})
 
 

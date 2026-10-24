@@ -2,7 +2,7 @@
 import re
 
 
-def association(text, candidates, reply_target=None):
+def association(text, candidates, reply_target=None, *, reply_expected=False):
     content = text.strip()
     if re.match(r"^/(start|help)(?:@[\w]+)?(?:\s|$)", content, re.I):
         return "command", None
@@ -13,6 +13,8 @@ def association(text, candidates, reply_target=None):
         return "new", None
     if reply_target in candidates:
         return "assigned", reply_target
+    if reply_expected:
+        return "needs_assignment", None
     if not candidates:
         return "new", None
     followup = re.match(

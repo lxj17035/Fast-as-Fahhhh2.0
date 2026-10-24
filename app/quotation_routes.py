@@ -14,6 +14,7 @@ from backend.errors import AppError
 from backend.pdf import PDFService
 from backend.quotations import QuotationService
 from backend.quotation_changes import QuotationChanges
+from backend.review import ReviewService
 from backend.settings import SettingsService, require_profile
 
 router = APIRouter(prefix="/api", tags=["quotations"])
@@ -117,7 +118,7 @@ def patch_quotation(quotation_id: UUID, request: Request, patch: dict = Body(...
     with services(request) as (store, settings, quotations):
         with store.transaction():
             require_profile(quotations.get(quotation_id.hex), settings.active_profile_id())
-            saved = quotations.update(quotation_id.hex, patch)
+            saved = quotations.update(quotation_id.hex, patch, role=actor["role"])
             record_quotation_activity(
                 store, saved,
                 action="quotation_updated",
@@ -139,6 +140,14 @@ def suggestions(quotation_id: UUID, request: Request):
     with services(request) as (_, settings, quotations):
         require_profile(quotations.get(quotation_id.hex), settings.active_profile_id())
         return QuotationChanges(quotations).list(quotation_id.hex)
+
+
+@router.get("/quotations/{quotation_id}/review")
+def manager_review(quotation_id: UUID, request: Request,
+                   version: Annotated[int, Query(gt=0, le=2**31 - 1)]):
+    actor = require_demo_staff(request)
+    with services(request) as (_, _, quotations):
+        return ReviewService(quotations).get(quotation_id.hex, version, actor)
 
 
 @router.post("/quotations/{quotation_id}/apply-changes")

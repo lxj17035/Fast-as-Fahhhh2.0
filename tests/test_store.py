@@ -64,7 +64,7 @@ def test_sent_snapshot_and_pdf_persist_in_shared_database(engine):
     quotes = QuotationService(store, settings)
     quote = quotes.create("fictional-enquiry", issue_date="2026-10-23")
     quote = quotes.update(quote["id"], {"version": 1, "items": [
-        {"description": "Event shirts", "quantity": 20, "unitPrice": "25.00"}]})
+        {"description": "Event shirts", "quantity": 20, "unitPrice": "25.00"}]}, role="pm")
     before = PDFService(store, quotes).get(quote["id"], 2)[0]
     quotes.begin_send(quote["id"], 2, "Fictional PM", "pm", today=date(2026, 10, 23))
     quotes.record_send_result(quote["id"], "accepted", "fictional-reference")
@@ -88,7 +88,7 @@ def test_postgres_two_store_instances_cannot_approve_twice(engine):
     services = [QuotationService(store, SettingsService(store)) for store in stores]
     quote = services[0].create("fictional-race", issue_date="2026-10-23")
     quote = services[0].update(quote["id"], {"version": 1, "items": [
-        {"description": "Event shirts", "quantity": 20, "unitPrice": "25.00"}]})
+        {"description": "Event shirts", "quantity": 20, "unitPrice": "25.00"}]}, role="pm")
     def approve(service):
         try:
             service.begin_send(quote["id"], 2, "Fictional PM", "pm", today=date(2026, 10, 23))

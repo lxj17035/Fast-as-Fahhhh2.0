@@ -9,8 +9,8 @@ contract in the frontend.
 
 1. Receive a fictional Telegram enquiry. Drafting starts automatically after durable receipt.
 2. Read `GET /api/enquiries/:id/quotation`; 404 means drafting has not completed. The explicit draft endpoint can retry.
-3. PATCH the quotation with its current `version`, reviewed client details/items and manual prices. Resolve `missingInformation`.
-4. Display `GET /api/quotations/:id/pdf?version=N`. Changes require a new preview.
+3. Staff prepares details; only `X-Demo-Actor: pm` with enabled demo approval may change unit prices through PATCH. Both `unit_price` and legacy `unitPrice`, including clearing a price, are protected. Staff may retain an existing PM price while editing description/quantity. AI-created drafts always have blank prices.
+4. Resolve missing requirements and unassigned messages. After new incoming messages, Staff explicitly saves the full current `reviewedMessageIds`. Manager opens `GET /api/quotations/:id/review?version=N` with `X-Demo-Actor: pm`. It returns saved customer/company/items/notes/dates, actual saved PDF URL/version/SHA-256 and a deterministic Telegram summary preview. Changes require a refreshed saved review/PDF. The normal `/pdf?version=N` route remains available.
 5. With private `TELEGRAM_BOT_TOKEN` and `ENABLE_DEMO_APPROVAL=true` configured, POST `/api/quotations/:id/send`:
 
 ```http
@@ -26,6 +26,20 @@ Content-Type: application/json
 The server validates the current saved version, cached PDF, required client/items,
 prices, missing information and dates. The recipient comes only from the stored
 Telegram chat. The send request cannot override recipients or upload PDF URLs.
+
+V2 B5 snapshots the approved summary text and reviewed incoming message IDs in
+`send_attempts`, alongside the exact PDF bytes/hash. Summary fields come only
+from saved data. **PDF-plus-summary transport is A5 work:** the current document
+sender still delivers PDF only. A summary snapshot is not evidence of delivery.
+
+New customer messages during an approved upload do not change its PDF or summary
+snapshot. After successful delivery, they leave the enquiry in `needs_review`;
+unknown delivery stays held. Data readiness in review does not guarantee provider
+availability; sending still checks configuration and actual transport outcome.
+
+The frontend still requires F4/F5: send its explicit simulated role on price
+edits, acknowledge new incoming IDs, and render one final review page. Complete
+those phases and A5 before deploying/recording the full V2 demo.
 
 ## Outcomes
 

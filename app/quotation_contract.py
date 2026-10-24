@@ -43,6 +43,8 @@ class SavedQuotation(BaseModel):
     items: tuple[QuotationItem, ...]
     pdf_version: Annotated[int, Field(strict=True, gt=0)]
     pdf_bytes: bytes
+    telegram_summary: str | None = None
+    source_message_ids: tuple[str, ...] | None = None
 
 
 class QuotationProvider(Protocol):

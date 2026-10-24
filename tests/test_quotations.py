@@ -18,7 +18,7 @@ class QuotationTests(unittest.TestCase):
 
     def ready(self, items=None):
         return self.service.update(self.quote["id"], {"version": 1, "items": items or [
-            {"description": "Printed shirts", "quantity": "20", "unitPrice": "25.00"}]})
+            {"description": "Printed shirts", "quantity": "20", "unitPrice": "25.00"}]}, role="pm")
 
     def test_all_validities_and_month_end_leap_year(self):
         for code, expected in {"7d": "2026-10-30", "14d": "2026-11-06", "1m": "2026-11-23",

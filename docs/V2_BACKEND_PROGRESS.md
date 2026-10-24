@@ -125,3 +125,81 @@ Verification:
   aligned. Poppler reported its existing STSong font substitution; the inspected
   Chinese client text rendered correctly.
 - Diff checks passed. No real providers or hosted migration/deployment tested.
+
+## B5 — Manager review, approval and delivery contracts
+
+`QuotationService.update(..., role=...)` defaults to no pricing authority. Only
+PM can change normalized unit prices (including clearing them); Staff can edit
+descriptions/quantities while retaining existing prices. Both price aliases are
+checked. AI draft creation clears supplied prices independently of provider
+validation. Trusted sample/test calls pass `role="pm"` explicitly. HTTP routes
+require enabled demo controls and a simulated PM header for pricing.
+
+New `backend/review.py` builds Manager-only final review from one saved version:
+customer/company snapshot, items/notes/total, existing issue date/validity/expiry,
+actual PDF URL/version/SHA-256 and deterministic Telegram summary preview.
+`GET /api/quotations/{id}/review?version=N` is exposed in FastAPI and the
+standalone route. Missing fields, blank prices, stale/new/unassigned messages,
+expired/future dates and non-PM review are blocked.
+
+`SavedQuotation` adds optional summary/source snapshot fields; the real adapter
+fills them from the same saved version before reservation. PostgreSQL upgrade
+adds `summary_text` and `source_message_ids` to send attempts without rewriting
+old PDF bytes/outcomes. Customer messages arriving during approved upload keep
+the enquiry Needs review after document success; approved PDF/summary snapshots
+remain unchanged. Incoming routing cannot clear pending/unknown delivery holds.
+Draft creation records only the source IDs captured before the provider call;
+messages arriving during analysis remain unreviewed and block approval until
+Staff reviews them. A faulty provider cannot silently acknowledge new evidence.
+
+**A5 remains required:** the current document transport sends PDF only. This
+phase supplies the summary preview/snapshot contract. The current UI still
+requires F4/F5 role-aware pricing, explicit message review and the final review
+page. No product frontend code was changed, and no full V2 demo is claimed.
+
+Changed production source: `backend/quotations.py`, `backend/quotation_changes.py`,
+`backend/server.py`, `backend/routing.py`, `backend/drafting.py`, new `backend/review.py`, `app/main.py`, `app/routing.py`,
+`app/quotation_routes.py`, `app/quotation_contract.py`, `app/xinjie_adapter.py`,
+`app/database.py`, `app/migrations.py`, `app/enquiries.py`, `app/delivery.py`.
+Trusted sample script updated: `scripts/demo_pdfs.py`. Price/action fixtures
+updated in `tests/test_api.py`, `tests/test_quotations.py`, `tests/test_pdf.py`,
+`tests/test_store.py`, `tests/test_drafting.py`, `tests/test_sending.py`,
+`tests/test_xinjie_integration.py`, `tests/test_activity.py`,
+`tests/test_shared_quotation_api.py`, `tests/test_quotation_v2.py`, `tests/test_routing_v2.py`,
+`tests/test_sweeway_workflow.py`, and
+`frontend/tests/integration.mjs`. New cases: `tests/test_manager_review_v2.py`.
+Shared contract: `docs/PM_APPROVAL.md` and README setup example.
+
+Checks before final merged suite:
+
+- `.\.venv\Scripts\python.exe -m pytest -q tests/test_api.py tests/test_quotations.py tests/test_pdf.py tests/test_activity.py tests/test_quotation_v2.py tests/test_shared_quotation_api.py tests/test_xinjie_integration.py tests/test_delivery.py tests/test_store.py tests/test_drafting.py tests/test_sending.py`:
+  **141 passed, 1 skipped** (SQLite plus pure service tests).
+- `.\.venv\Scripts\python.exe -m pytest -q tests/test_manager_review_v2.py`:
+  **18 passed, 1 skipped** (PostgreSQL migration skipped on SQLite).
+- `node --test frontend/tests/*.test.mjs`: **24 passed**.
+- `node frontend/tests/integration.mjs`: **7 passed**, with explicit PM pricing.
+- Final reply-reference/Manager SQLite regression:
+  `.\.venv\Scripts\python.exe -m pytest -q tests/test_routing_v2.py tests/test_manager_review_v2.py`:
+  **31 passed, 1 skipped**. Customer replies to an accepted PDF route through its
+  saved provider reference. Unverifiable/cross-profile references remain Needs
+  Assignment, with the reference preserved in assignment history for later AI
+  evidence validation.
+- `.\.venv\Scripts\python.exe -m pytest -q tests/test_sweeway_workflow.py`:
+  **5 passed**; manual recovery price corrections explicitly use the PM role.
+- `.\.venv\Scripts\python.exe -m pytest -q tests/test_manager_review_v2.py tests/test_drafting.py tests/test_automatic_drafting.py tests/test_sweeway_workflow.py`:
+  **41 passed, 1 skipped**, including a customer message arriving during AI
+  extraction. The skip is the PostgreSQL migration case under SQLite.
+
+Final merged acceptance, with `TEST_DATABASE_URL` pointing to the disposable
+localhost PostgreSQL 16 container (no live/customer database):
+
+- `.\.venv\Scripts\python.exe -m pytest -q --basetemp=.input/v2-backend-phase1-final-source -p no:cacheprovider`:
+  **590 passed, 4 skipped, 1 existing Starlette deprecation warning**, in 591.11s.
+- All four skips are PostgreSQL-specific checks under SQLite: cross-instance
+  advisory locking, legacy delivery schema, legacy profile scope column and
+  legacy summary/source snapshot columns. All four PostgreSQL counterparts
+  passed in this same run.
+- `git diff --check` passed. No real Telegram/AI calls or Replit deployment.
+
+Backend Phase 1 is complete. Stop here and continue A1–A5 in a new chat using
+`docs/V2_PHASE_HANDOFF.md`; product frontend and final release acceptance remain.

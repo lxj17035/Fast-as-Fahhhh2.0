@@ -18,6 +18,7 @@ from app.xinjie_store import Store
 from backend.errors import AppError
 from backend.quotations import QuotationService
 from backend.settings import SettingsService
+from backend.review import telegram_summary
 
 
 def translate_error(error: AppError):
@@ -63,6 +64,8 @@ class XinjieQuotationProvider:
                     ),
                     pdf_version=quote["version"],
                     pdf_bytes=pdf,
+                    telegram_summary=telegram_summary(quote),
+                    source_message_ids=tuple(service.source_ids(quote["enquiryId"])),
                 )
                 service.begin_send(key, expected_version, "pm", "pm")
                 return result

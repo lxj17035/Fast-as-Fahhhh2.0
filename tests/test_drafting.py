@@ -103,7 +103,7 @@ class DraftingTests(unittest.TestCase):
     def test_repeated_draft_request_does_not_overwrite_manual_prices(self):
         first = self.service.create("demo")
         self.quotes.update(first["id"], {"version": 1, "items": [
-            {"description": "PM edited", "quantity": 20, "unitPrice": "25.00"}]})
+            {"description": "PM edited", "quantity": 20, "unitPrice": "25.00"}]}, role="pm")
         second = self.service.create("demo")
         self.assertEqual(second["version"], 2)
         self.assertEqual(second["total"], "500.00")

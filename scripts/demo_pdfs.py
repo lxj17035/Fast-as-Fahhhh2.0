@@ -24,7 +24,7 @@ def main():
             quotes.update(quote["id"], {"version": 1,
                           "client": {"name": "Example Events / 测试客户", "address": "12 Demo Road, Fictional Town"},
                           "items": items,
-                          "notes": "Please review item details before approval. This document uses fictional data only."})
+                          "notes": "Please review item details before approval. This document uses fictional data only."}, role="pm")
             path = output / (name + ".pdf")
             path.write_bytes(pdfs.get(quote["id"], 2)[0])
             print(path.resolve())
@@ -39,7 +39,7 @@ def main():
             settings.select_profile({"business_profile_id": identity})
             quote = quotes.create("sample-" + identity, settings.demo_client_id(identity), issue_date="2026-10-23")
             saved = quotes.update(quote["id"], {"version": 1, "items": [item],
-                                               "notes": "Synthetic-data demonstration. No customer delivery."})
+                                               "notes": "Synthetic-data demonstration. No customer delivery."}, role="pm")
             path = output / ("quotation-" + identity + ".pdf")
             path.write_bytes(pdfs.get(saved["id"], saved["version"])[0])
             print(path.resolve())

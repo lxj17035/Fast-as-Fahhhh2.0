@@ -131,7 +131,7 @@ class QuotationService:
         return value.get("reviewedMessageIds", legacy) == enquiry.get("messageUpdateIds", [])
 
     def create(self, enquiry_id, client_id="demo-client", *, issue_date=None,
-               extracted=None, draft_mode="manual", draft_error=None):
+               extracted=None, draft_mode="manual", draft_error=None, source_message_ids=None):
         extracted = extracted or {}
         with self.store.transaction():
             existing = [q for q in self.store.list("quotations") if q["enquiryId"] == enquiry_id]
@@ -154,7 +154,23 @@ class QuotationService:
                 client["address"] = extracted["clientAddress"]
             quote_id = uuid4().hex
             issue = issue_date or business_today().isoformat()
-            items, total = normalize_items(extracted.get("items", []))
+            extracted_items = extracted.get("items", [])
+            if not isinstance(extracted_items, list):
+                raise AppError("Extracted items must be a list")
+            # Pricing authority is enforced here even for an injected/faulty provider.
+            unpriced = []
+            for item in extracted_items:
+                if not isinstance(item, dict):
+                    raise AppError("Extracted item must be an object")
+                unpriced.append({**{k: v for k, v in item.items() if k not in {"unitPrice", "unit_price"}},
+                                 "unit_price": None})
+            items, total = normalize_items(unpriced)
+            current_source = self.source_ids(enquiry_id)
+            reviewed_source = current_source if source_message_ids is None else source_message_ids
+            if (not isinstance(reviewed_source, list) or any(not isinstance(i, str) for i in reviewed_source)
+                    or len(reviewed_source) != len(set(reviewed_source))
+                    or [i for i in current_source if i in reviewed_source] != reviewed_source):
+                raise AppError("Draft evidence no longer matches its source conversation", 409)
             value = {
                 "id": quote_id, "number": "QUO-" + quote_id[:12].upper(),
                 "enquiryId": enquiry_id, "version": 1, "status": "draft",
@@ -166,12 +182,12 @@ class QuotationService:
                 "summary": extracted.get("summary", ""),
                 "missingInformation": extracted.get("missingInformation", []),
                 "draftMode": draft_mode, "draftError": draft_error,
-                "reviewedMessageIds": self.source_ids(enquiry_id),
+                "reviewedMessageIds": reviewed_source,
             }
             self.store.put("quotations", quote_id, value)
             return value
 
-    def update(self, quotation_id, patch):
+    def update(self, quotation_id, patch, *, role=None):
         object_fields(patch, {"version", "client", "issueDate", "validity", "items", "notes", "missingInformation", "reviewedMessageIds"})
         with self.store.transaction():
             value = self.get(quotation_id)
@@ -187,6 +203,7 @@ class QuotationService:
                     value[key] = patch[key]
             value["expiryDate"] = expiry_date(value["issueDate"], value["validity"])
             if "items" in patch:
+                original_items = value["items"]
                 supplied = patch["items"]
                 if isinstance(supplied, list):
                     # Legacy editors may omit the new descriptive fields.
@@ -194,6 +211,11 @@ class QuotationService:
                                     for k in ("unit", "notes") if i < len(value["items"])}, **item}
                                 if isinstance(item, dict) else item for i, item in enumerate(supplied)]
                 value["items"], value["total"] = normalize_items(supplied)
+                prices_changed = any(
+                    item["unitPrice"] != (original_items[i]["unitPrice"] if i < len(original_items) else None)
+                    for i, item in enumerate(value["items"]))
+                if prices_changed and role != "pm":
+                    raise AppError("Only the simulated Manager (PM) may change unit prices", 403)
             if "notes" in patch:
                 value["notes"] = text(patch["notes"], "notes", limit=4000)
             if "missingInformation" in patch:
@@ -235,6 +257,8 @@ class QuotationService:
             fields["missingInformation"] = "Resolve or dismiss the missing details before approval"
         if parse_date(value["expiryDate"]) < (today or business_today()):
             fields["expiryDate"] = "Quotation has expired"
+        if parse_date(value["issueDate"]) > (today or business_today()):
+            fields["issueDate"] = "Quotation issue date is in the future"
         if fields:
             raise AppError("Quotation is not ready to send", fields=fields)
         return value

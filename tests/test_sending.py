@@ -16,7 +16,7 @@ def ready_quote(tmp_path):
         store.put("enquiries", enquiry["id"], {**enquiry, "source": "telegram", "chatId": "12345"})
     quote = app.drafts.create(enquiry["id"], manual=True)
     quote = app.quotations.update(quote["id"], {"version": 1, "missingInformation": [],
-        "items": [{"description": "Shirts", "quantity": 20, "unitPrice": "25.00"}]})
+        "items": [{"description": "Shirts", "quantity": 20, "unitPrice": "25.00"}]}, role="pm")
     app.pdfs.get(quote["id"], 2)
     sender = Mock(configured=True)
     sender.send_document.return_value = DeliveryResult("accepted", reference="9001")

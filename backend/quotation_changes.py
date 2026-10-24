@@ -112,7 +112,7 @@ class QuotationChanges:
                 else:
                     update[change["field"]] = change["value"]
                 applied.append({"id": selected_id, **change})
-            saved = self.quotations.update(quotation_id, update)
+            saved = self.quotations.update(quotation_id, update, role=actor)
             proposal.update(applied=True, appliedBy=actor, appliedVersion=saved["version"],
                             appliedChanges=applied, appliedAt=datetime.now(timezone.utc).isoformat())
             self.store.put("quotation_suggestions", proposal["id"], proposal)

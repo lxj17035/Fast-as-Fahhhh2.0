@@ -96,6 +96,8 @@ send_attempts = Table(
     Column("approved_at", DateTime(timezone=True), nullable=False),
     Column("pdf_sha256", String(64), nullable=False),
     Column("pdf_bytes", LargeBinary, nullable=False),
+    Column("summary_text", Text),
+    Column("source_message_ids", JSON),
     Column("status", String(20), nullable=False),
     Column("provider_message_id", String(80)),
     Column("safe_error_code", String(80)),

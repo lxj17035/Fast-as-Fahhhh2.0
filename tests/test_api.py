@@ -12,7 +12,7 @@ from backend.store import Store
 class APITests(unittest.TestCase):
     def setUp(self):
         self.store = Store.for_test()
-        self.app = Application(self.store, OpenAIExtractor("", ""))
+        self.app = Application(self.store, OpenAIExtractor("", ""), enable_demo_approval=True)
         self.server = LocalServer(("127.0.0.1", 0), handler_for(self.app))
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -27,8 +27,9 @@ class APITests(unittest.TestCase):
 
     def request(self, method, route, body=None, *, raw=None, headers=None):
         payload = json.dumps(body).encode() if body is not None else raw
+        actor = {"X-Demo-Actor": "pm"} if method == "PATCH" and route.startswith("/api/quotations/") else {}
         request = Request(self.base + route, data=payload, method=method,
-                          headers={"Content-Type": "application/json", **(headers or {})})
+                          headers={"Content-Type": "application/json", **actor, **(headers or {})})
         try:
             response = urlopen(request, timeout=5)
         except HTTPError as error:

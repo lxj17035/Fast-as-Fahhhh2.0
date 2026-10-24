@@ -101,3 +101,12 @@ def test_restart_does_not_turn_commands_or_unassigned_messages_into_enquiries(cl
     with TestClient(create_app(settings, engine)) as reopened:
         assert len(reopened.get("/api/enquiries").json()["items"]) == 1
         assert len(reopened.get("/api/assignments").json()["items"]) == 1
+
+
+def test_unverifiable_or_cross_profile_reply_reference_requires_assignment(client, headers, update):
+    receive(client, headers, update, 0, "Original printing request")
+    client.patch("/api/business-profiles/active", json={"business_profile_id": "cleaning"})
+    receive(client, headers, update, 1, "Yes, blue", reply=update["message"]["message_id"])
+    assert client.get("/api/enquiries").json()["items"] == []
+    [pending] = client.get("/api/assignments").json()["items"]
+    assert pending["history"][-1]["reply_to_message_id"] == str(update["message"]["message_id"])

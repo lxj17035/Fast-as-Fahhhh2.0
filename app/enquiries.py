@@ -56,6 +56,8 @@ class DeliveryAttempt(BaseModel):
     requires_verification: bool
     retry_of_attempt_id: str | None
     can_retry: bool
+    telegram_summary: str | None = None
+    source_message_ids: list[str] | None = None
 
 
 class ActivityRecord(BaseModel):
@@ -154,6 +156,8 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
                     send_attempts.c.updated_at,
                     send_attempts.c.provider_message_id,
                     send_attempts.c.safe_error_code,
+                    send_attempts.c.summary_text,
+                    send_attempts.c.source_message_ids,
                 )
                 .where(send_attempts.c.enquiry_id == str(enquiry_id))
                 .order_by(send_attempts.c.approved_at, send_attempts.c.id)
@@ -195,6 +199,8 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
                 updated_at=utc_timestamp(attempt["updated_at"]),
                 provider_message_id=attempt["provider_message_id"],
                 safe_error_code=attempt["safe_error_code"],
+                telegram_summary=attempt["summary_text"],
+                source_message_ids=attempt["source_message_ids"],
                 requires_verification=attempt["status"] in {"pending", "unknown"},
                 retry_of_attempt_id=attempt["retry_of_attempt_id"],
                 can_retry=(attempt["status"] == "failed" and attempt["id"] not in consumed

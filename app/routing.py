@@ -6,7 +6,7 @@ from fastapi import APIRouter, Body, Request
 from sqlalchemy import select
 
 from app.activity import record_activity, require_demo_staff
-from app.database import enquiries, telegram_updates, message_links, enquiry_values, outgoing_messages
+from app.database import enquiries, telegram_updates, message_links, enquiry_values, outgoing_messages, send_attempts
 from app.xinjie_store import Store, integration_transaction
 from backend.errors import AppError, object_fields
 from backend.routing import association
@@ -32,7 +32,7 @@ def route_receipt(connection, update_id, message_id, chat_id, text, at, identity
     candidates = list(connection.execute(select(enquiries.c.id).join(
         telegram_updates, enquiries.c.telegram_update_id == telegram_updates.c.update_id
     ).where(enquiries.c.business_profile_id == identity, telegram_updates.c.chat_id == chat_id,
-            enquiries.c.status.in_(["needs_review", "sent", "failed"]))
+            enquiries.c.status.in_(["needs_review", "sent", "failed", "unknown"]))
         .order_by(enquiries.c.created_at.desc())).scalars())
     target = None
     if reply_to:
@@ -48,16 +48,27 @@ def route_receipt(connection, update_id, message_id, chat_id, text, at, identity
                 .where(outgoing_messages.c.business_profile_id == identity,
                        outgoing_messages.c.provider_message_id == str(reply_to),
                        outgoing_messages.c.status == "sent", telegram_updates.c.chat_id == chat_id)).scalar_one_or_none()
-    decision, target = association(text, candidates, target)
+        if target is None:
+            target = connection.execute(select(send_attempts.c.enquiry_id).join(
+                enquiries, send_attempts.c.enquiry_id == enquiries.c.id
+            ).join(telegram_updates, enquiries.c.telegram_update_id == telegram_updates.c.update_id)
+                .where(enquiries.c.business_profile_id == identity, telegram_updates.c.chat_id == chat_id,
+                       send_attempts.c.provider_message_id == str(reply_to),
+                       send_attempts.c.status == "sent")).scalar_one_or_none()
+    decision, target = association(text, candidates, target, reply_expected=reply_to is not None)
     if decision == "new":
         target = new_enquiry(connection, {"update_id": update_id, "received_at": at}, identity)
         decision = "assigned"
+    evidence = link_event(target, "system", decision, at)
+    if reply_to is not None:
+        evidence["reply_to_message_id"] = str(reply_to)
     connection.execute(message_links.insert().values(
         update_id=update_id, business_profile_id=identity, enquiry_id=target,
-        status=decision, assigned_by="system", history=[link_event(target, "system", decision, at)],
+        status=decision, assigned_by="system", history=[evidence],
     ))
     if target:
-        connection.execute(enquiries.update().where(enquiries.c.id == target).values(status="needs_review"))
+        connection.execute(enquiries.update().where(enquiries.c.id == target, enquiries.c.status != "unknown")
+                           .values(status="needs_review"))
         record_activity(connection, enquiry_id=target, action="telegram_received", result="received",
                         actor_id="system", role="system", actor_origin="system",
                         provider_reference=str(update_id), timestamp=at)

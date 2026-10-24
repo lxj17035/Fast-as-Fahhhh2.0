@@ -84,9 +84,9 @@ def test_full_activity_history_has_real_references_and_safe_fields(integrated, u
     assert by_action["pm_approved"]["role"] == "pm"
     assert by_action["pm_approved"]["actor_origin"] == "simulated"
     assert by_action["pdf_send_succeeded"]["provider_reference"] == "87654321"
-    assert by_action["quotation_updated"]["actor_id"] is None
-    assert by_action["quotation_updated"]["role"] is None
-    assert by_action["quotation_updated"]["actor_origin"] == "unknown"
+    assert by_action["quotation_updated"]["actor_id"] == "pm"
+    assert by_action["quotation_updated"]["role"] == "pm"
+    assert by_action["quotation_updated"]["actor_origin"] == "simulated"
     serialized = json.dumps(events)
     assert update["message"]["text"] not in serialized
     assert "synthetic-test-secret" not in serialized

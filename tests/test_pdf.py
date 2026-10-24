@@ -21,7 +21,7 @@ class PDFTests(unittest.TestCase):
 
     def priced(self):
         return self.quotes.update(self.quote["id"], {"version": 1, "items": [
-            {"description": "Printed T-shirts", "quantity": 20, "unitPrice": "25.00"}]})
+            {"description": "Printed T-shirts", "quantity": 20, "unitPrice": "25.00"}]}, role="pm")
 
     def test_saved_pdf_contains_details_dates_and_exact_total(self):
         self.priced()
@@ -53,7 +53,7 @@ class PDFTests(unittest.TestCase):
     def test_multipage_table_repeats_headers_and_keeps_last_item(self):
         items = [{"description": f"Item {i}: fictional print service, " + "extended description " * 20,
                   "quantity": 1, "unitPrice": "2.00"} for i in range(30)]
-        self.quotes.update(self.quote["id"], {"version": 1, "items": items, "notes": "Fictional review note"})
+        self.quotes.update(self.quote["id"], {"version": 1, "items": items, "notes": "Fictional review note"}, role="pm")
         data, _ = self.pdfs.get(self.quote["id"])
         reader = PdfReader(BytesIO(data))
         self.assertGreater(len(reader.pages), 1)
@@ -82,7 +82,7 @@ class PDFTests(unittest.TestCase):
 
     def test_very_long_cjk_item_can_split_across_pages(self):
         self.quotes.update(self.quote["id"], {"version": 1, "items": [
-            {"description": "测试印刷服务" * 300, "quantity": 1, "unitPrice": "1.00"}]})
+            {"description": "测试印刷服务" * 300, "quantity": 1, "unitPrice": "1.00"}]}, role="pm")
         data, _ = self.pdfs.get(self.quote["id"])
         reader = PdfReader(BytesIO(data))
         self.assertGreater(len(reader.pages), 1)

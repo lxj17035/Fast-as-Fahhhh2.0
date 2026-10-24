@@ -28,7 +28,7 @@ async function pricedDraft(id) {
   const draft = await api.quotation(id);
   const form = editorForm(draft);
   form.items[0].unitPrice = '25.00'; form.missingInformation = [];
-  return api.saveQuote(draft.id, quotePatch(form, draft.version), 'sales');
+  return api.saveQuote(draft.id, quotePatch(form, draft.version), 'pm');
 }
 
 try {

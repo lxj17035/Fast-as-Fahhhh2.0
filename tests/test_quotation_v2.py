@@ -18,11 +18,12 @@ from tests.test_xinjie_integration import integrated, ready, preview, deliver
     ("cleaning", "visit", "Office cleaning", "800 sq ft; windows included"),
     ("repair", "hour", "Laptop diagnosis", "Fictional device; screen fault"),
 ])
-def test_generic_items_exact_totals_and_pdf_notes(client, profile, unit, name, notes):
+def test_generic_items_exact_totals_and_pdf_notes(client, settings, profile, unit, name, notes):
+    client.app.state.settings = replace(settings, enable_demo_approval=True)
     client.patch("/api/business-profiles/active", json={"business_profile_id": profile})
     enquiry = client.post("/api/demo/enquiries", json={"text": "Synthetic " + name}).json()
     quote = client.post(f"/api/enquiries/{enquiry['id']}/draft", json={"manual": True}).json()
-    saved = client.patch(f"/api/quotations/{quote['id']}", json={"version": 1, "items": [
+    saved = client.patch(f"/api/quotations/{quote['id']}", headers={"X-Demo-Actor": "pm"}, json={"version": 1, "items": [
         {"item_name": name, "quantity": "2.5", "unit": unit, "unit_price": "10.00", "notes": notes}],
         "missingInformation": []})
     assert saved.status_code == 200, saved.text

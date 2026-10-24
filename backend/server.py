@@ -1,4 +1,5 @@
 import json
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -9,6 +10,7 @@ from .drafting import DraftService
 from .errors import AppError, object_fields, text
 from .pdf import PDFService
 from .quotations import QuotationService
+from .review import ReviewService
 from .settings import SettingsService, require_profile
 from .store import Store
 from .sending import SendService
@@ -21,15 +23,22 @@ ALLOWED_ORIGINS = {f"http://{host}:{port}" for host in ("localhost", "127.0.0.1"
 
 
 class Application:
-    def __init__(self, store, extractor=None, telegram_token=None):
+    def __init__(self, store, extractor=None, telegram_token=None, enable_demo_approval=None):
         self.store = store
+        self.enable_demo_approval = (os.environ.get("ENABLE_DEMO_APPROVAL", "").lower() == "true"
+                                     if enable_demo_approval is None else enable_demo_approval)
         self.settings = SettingsService(store)
         self.quotations = QuotationService(store, self.settings)
         self.drafts = DraftService(store, self.settings, self.quotations, extractor)
         self.pdfs = PDFService(store, self.quotations)
         self.sending = SendService(store, self.quotations, self.pdfs, TelegramDocumentSender(telegram_token))
 
-    def route(self, method, path, body, query):
+    def route(self, method, path, body, query, *, actor=None):
+        if actor is not None:
+            if actor not in {"sales", "pm"}:
+                raise AppError("Unknown demo actor", 401)
+            if not self.enable_demo_approval:
+                raise AppError("Demo approval is disabled", 503)
         parts = [part for part in path.split("/") if part]
         if path == "/api/health" and method == "GET":
             return 200, {"status": "ok", "mode": "local-synthetic-demo"}
@@ -91,6 +100,12 @@ class Application:
                 return 200, {"items": enquiry_activity(self.store, parts[2])}
         if len(parts) >= 3 and parts[:2] == ["api", "quotations"]:
             require_profile(self.quotations.get(parts[2]), self.settings.active_profile_id())
+            if len(parts) == 4 and parts[3] == "review" and method == "GET":
+                try:
+                    version = int(query.get("version", [""])[0])
+                except (ValueError, TypeError, IndexError):
+                    raise AppError("A saved quotation version is required") from None
+                return 200, ReviewService(self.quotations).get(parts[2], version, actor)
             if len(parts) == 4 and parts[3] == "activity" and method == "GET":
                 quote = self.quotations.get(parts[2])
                 return 200, {"items": enquiry_activity(self.store, quote["enquiryId"])}
@@ -98,7 +113,7 @@ class Application:
                 if method == "GET":
                     return 200, self.quotations.get(parts[2])
                 if method == "PATCH":
-                    return 200, self.quotations.update(parts[2], body)
+                    return 200, self.quotations.update(parts[2], body, role=actor)
             if len(parts) == 4 and parts[3] == "pdf" and method == "GET":
                 version = None
                 if "version" in query:
@@ -143,7 +158,8 @@ def handler_for(app):
                     if not isinstance(body, dict):
                         raise AppError("Body must be a JSON object", 400)
                 url = urlparse(self.path)
-                result = app.route(self.command, url.path, body, parse_qs(url.query, keep_blank_values=True))
+                result = app.route(self.command, url.path, body, parse_qs(url.query, keep_blank_values=True),
+                                   actor=self.headers.get("X-Demo-Actor"))
                 status, payload = result[:2]
                 if len(result) == 3:
                     headers = result[2]

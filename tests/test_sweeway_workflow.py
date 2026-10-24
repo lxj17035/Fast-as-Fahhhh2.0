@@ -177,7 +177,7 @@ def test_failed_or_out_of_contract_extraction_preserves_manual_enquiry(workflow,
     manual = client.post(f"/api/enquiries/{enquiry['id']}/draft", json={"manual": True})
     assert manual.status_code == 200 and manual.json()["id"] == quote["id"]
     assert len(workflow["ai_requests"]) == 1
-    corrected = client.patch(f"/api/quotations/{quote['id']}", json={
+    corrected = client.patch(f"/api/quotations/{quote['id']}", headers={"X-Demo-Actor": "pm"}, json={
         "version": 1, "client": {"name": "Fictional Customer"}, "items": [{"description": "Manually reviewed shirts",
         "quantity": "20", "unitPrice": "25.00"}], "missingInformation": [],
     })
