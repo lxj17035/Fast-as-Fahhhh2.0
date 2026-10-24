@@ -6,7 +6,7 @@ from fastapi import APIRouter, Body, Request
 from sqlalchemy import select
 
 from app.activity import record_activity, require_demo_staff
-from app.database import enquiries, telegram_updates, message_links, enquiry_values
+from app.database import enquiries, telegram_updates, message_links, enquiry_values, outgoing_messages
 from app.xinjie_store import Store, integration_transaction
 from backend.errors import AppError, object_fields
 from backend.routing import association
@@ -41,6 +41,13 @@ def route_receipt(connection, update_id, message_id, chat_id, text, at, identity
         ).where(message_links.c.business_profile_id == identity,
                 telegram_updates.c.chat_id == chat_id, telegram_updates.c.message_id == reply_to,
                 message_links.c.status == "assigned")).scalar_one_or_none()
+        if target is None:
+            target = connection.execute(select(outgoing_messages.c.enquiry_id).join(
+                enquiries, outgoing_messages.c.enquiry_id == enquiries.c.id
+            ).join(telegram_updates, enquiries.c.telegram_update_id == telegram_updates.c.update_id)
+                .where(outgoing_messages.c.business_profile_id == identity,
+                       outgoing_messages.c.provider_message_id == str(reply_to),
+                       outgoing_messages.c.status == "sent", telegram_updates.c.chat_id == chat_id)).scalar_one_or_none()
     decision, target = association(text, candidates, target)
     if decision == "new":
         target = new_enquiry(connection, {"update_id": update_id, "received_at": at}, identity)

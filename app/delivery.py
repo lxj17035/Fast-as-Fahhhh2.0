@@ -2,7 +2,6 @@
 
 from datetime import datetime, timezone
 from hashlib import sha256
-import re
 from typing import Annotated, Literal
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
@@ -24,20 +23,10 @@ from app.quotation_contract import (
 )
 from app.telegram_client import DeliveryResult
 from app.xinjie_store import Store, integration_transaction
+from backend.errors import safe_delivery_error_code as safe_error_code
 
 router = APIRouter(prefix="/api/quotations", tags=["delivery"])
 MAX_PDF_BYTES = 10 * 1024 * 1024
-
-
-def safe_error_code(value: str | None) -> str | None:
-    if value is None or value in {
-        "invalid_response", "telegram_timeout", "telegram_transport_error",
-        "unconfirmed_response", "unexpected_send_error",
-    }:
-        return value
-    if re.fullmatch(r"telegram_4[0-9]{2}", value):
-        return value
-    return "unclassified_delivery_error"
 
 
 class SendApproval(BaseModel):

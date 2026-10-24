@@ -33,3 +33,30 @@ reply reference, or a clearly phrased follow-up when one candidate exists.
 Ambiguity deliberately requires Staff. AI reassessment is Phase 2 work; this
 section provides a validated association action that cannot overwrite confirmed
 decisions. No customer text replies are sent by this section.
+
+## B3 — Conversation Room APIs
+
+Added `backend/conversation.py` and `app/conversations.py`. Staff with enabled
+demo controls can explicitly POST `{text, request_id}` to
+`/api/enquiries/{id}/messages`; GET `/api/enquiries/{id}/conversation` combines
+incoming/outgoing records with attribution, timestamps and delivery outcomes.
+Recipient is loaded from the original enquiry. Provider calls run outside the
+reservation transaction; request replay returns the committed pending/sent/
+failed/unknown record without sending again. A failed outcome save retains a
+pending hold. Original inbound receipts remain unchanged. Telegram replies to
+a Staff message also resolve to its enquiry in the same profile/chat.
+
+Changed files: `app/database.py`, `app/activity.py`, `app/main.py`,
+`app/routing.py`, `app/telegram_client.py`, `app/delivery.py`,
+`backend/errors.py`, plus the new services and `tests/test_conversations_v2.py`.
+The delivery error sanitizer is shared with existing quotation delivery.
+
+- `.\.venv\Scripts\python.exe -m pytest -q tests/test_conversations_v2.py tests/test_routing_v2.py tests/test_telegram_client.py`:
+  **45 passed** (isolated SQLite and mocked transports).
+- With disposable `TEST_DATABASE_URL`,
+  `.\.venv\Scripts\python.exe -m pytest -q tests/test_conversations_v2.py tests/test_delivery.py --basetemp=.input/v2-b3-pg -p no:cacheprovider`:
+  **107 passed** across SQLite/PostgreSQL and pure transport checks.
+- Diff checks passed; existing Starlette/httpx deprecation warning remains.
+
+No live Telegram request was made. This supplies the backend conversation
+contract; frontend composer and AI clarification suggestions remain F3/A3.

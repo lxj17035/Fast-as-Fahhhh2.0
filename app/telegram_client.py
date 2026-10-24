@@ -33,6 +33,17 @@ class TelegramSender:
                 "timeout": {"connect": 10, "read": 30, "write": 30, "pool": 10}
             },
         )
+        return self._deliver(request, chat_id)
+
+    def send_text(self, chat_id: int, content: str) -> DeliveryResult:
+        request = httpx.Request(
+            "POST", f"https://api.telegram.org/bot{self._bot_token}/sendMessage",
+            json={"chat_id": str(chat_id), "text": content},
+            extensions={"timeout": {"connect": 10, "read": 30, "write": 30, "pool": 10}},
+        )
+        return self._deliver(request, chat_id)
+
+    def _deliver(self, request, chat_id):
         transport = self._transport
         owns_transport = transport is None
         if transport is None:

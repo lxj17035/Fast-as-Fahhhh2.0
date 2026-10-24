@@ -17,6 +17,7 @@ from sqlalchemy import (
     String,
     Table,
     Text,
+    UniqueConstraint,
     select,
 )
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
@@ -65,6 +66,22 @@ message_links = Table(
     Column("history", JSON, nullable=False),
     CheckConstraint("status IN ('assigned', 'needs_assignment', 'command', 'unrelated')",
                     name="message_links_status_check"),
+)
+outgoing_messages = Table(
+    "outgoing_messages", metadata,
+    Column("id", String(36), primary_key=True),
+    Column("enquiry_id", String(36), ForeignKey("enquiries.id"), nullable=False),
+    Column("business_profile_id", String(40), nullable=False),
+    Column("request_id", String(36), nullable=False),
+    Column("actor", String(20), nullable=False),
+    Column("text", Text, nullable=False),
+    Column("status", String(20), nullable=False),
+    Column("provider_message_id", String(80)),
+    Column("safe_error_code", String(80)),
+    Column("created_at", DateTime(timezone=True), nullable=False),
+    Column("updated_at", DateTime(timezone=True), nullable=False),
+    UniqueConstraint("business_profile_id", "request_id", name="outgoing_request_unique"),
+    CheckConstraint("status IN ('pending', 'sent', 'failed', 'unknown')", name="outgoing_status_check"),
 )
 send_attempts = Table(
     "send_attempts",

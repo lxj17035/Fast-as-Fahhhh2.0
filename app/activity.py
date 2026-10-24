@@ -20,6 +20,10 @@ ACTIONS = frozenset({
     "pdf_send_failed",
     "delivery_unknown",
     "message_assigned",
+    "staff_message_requested",
+    "staff_message_sent",
+    "staff_message_failed",
+    "staff_message_unknown",
 })
 SAFE_ERROR_CODES = frozenset({
     "invalid_response",
