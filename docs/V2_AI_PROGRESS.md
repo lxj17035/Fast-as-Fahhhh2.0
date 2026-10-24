@@ -51,3 +51,19 @@ With disposable `TEST_DATABASE_URL`:
 analysis and synthetic fixture/manual-cache issues; corrected before this rerun.
 No customer send or quotation overwrite. Conservative assignment needs Staff to
 associate a confirmation first; vague evidence stays Needs Assignment. UI is F3.
+
+## A4 — Quotation change suggestions
+
+Changed `backend/drafting.py`, `backend/analysis.py`, new `backend/ai_changes.py`,
+`tests/test_ai_v2.py`. Schema adds ADD_ITEM/UPDATE_ITEM/UPDATE_FIELD and advisory
+relationshipIntent. Backend validates allowed fields, de-duplicates additions,
+rejects invalid item indices/authority, drops conflicting updates for clarification,
+and stores existing version-bound suggestion sets. Only explicit human selection
+applies them; Staff prices/notes are preserved. Sent quotes require an explicit
+fork before changes can be proposed against an editable draft.
+
+With disposable `TEST_DATABASE_URL`:
+`.\.venv\Scripts\python.exe -m pytest -q tests/test_ai_v2.py tests/test_quotation_v2.py tests/test_drafting.py tests/test_runpod.py --basetemp=.input/v2-a4 -p no:cacheprovider`:
+**106 passed**, existing warning; diff checks passed. Includes revision/additional/
+unclear intent, duplicate suppression, human apply, authority rejection, immutable
+sent content and the existing revision/PDF tests. No inference creates a fork.

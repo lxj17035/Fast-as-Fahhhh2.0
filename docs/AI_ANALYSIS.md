@@ -34,3 +34,12 @@ interpret vague confirmations or create a new grouping policy.
 
 Runtime uses PostgreSQL. Provider failures return sanitized manual/failed analysis,
 and tests mock all providers. Frontend integration is Phase 3.
+
+
+Renewed analysis also exposes `suggestionSetId`, `changeWarnings` and
+`relationshipIntent`. GET quotation `/suggestions` and POST `/apply-changes`
+remain the existing explicit review mechanism. Raw model changes do not update
+quotation fields. Identical changes are collapsed; duplicate additions or
+conflicting updates are flagged. Sent quotes only yield an advisory relationship
+and warning; Staff explicitly forks first. Initial extraction already supplies
+new-draft items, so its proposed changes are not reapplied as duplicate additions.

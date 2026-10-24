@@ -100,5 +100,8 @@ class AnalysisService:
                         pass  # Unproven association remains for Staff.
                 if result['resolvedAssignments']:
                     result['stale'] = True
+            if extracted and not result['stale'] and quote:
+                from .ai_changes import store_proposals
+                result.update(store_proposals(self.quotations, quote, extracted, signature['sourceMessageIds']))
             self.store.put('enquiry_analyses', result['id'], result)
         return result

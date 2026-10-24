@@ -22,13 +22,26 @@ EXTRACTION_SCHEMA = {
         }},
         "missingInformation": {"type": "array", "items": {"type": "string"}},
         "clarificationSuggestions": {"type": "array", "items": {"type": "string"}},
+        "relationshipIntent": {"type": "string", "enum": ["none", "revision", "additional", "unclear"]},
+        "proposedChanges": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"type": {"type": "string", "enum": ["ADD_ITEM", "UPDATE_ITEM", "UPDATE_FIELD"]},
+                           "index": {"type": ["integer", "null"]},
+                           "field": {"type": ["string", "null"]}, "value": {"type": ["string", "null"]},
+                           "data": {"type": ["object", "null"], "additionalProperties": False,
+                                    "properties": {"item_name": {"type": ["string", "null"]},
+                                                   "quantity": {"type": ["number", "null"]},
+                                                   "unit": {"type": ["string", "null"]},
+                                                   "notes": {"type": ["string", "null"]}},
+                                    "required": ["item_name", "quantity", "unit", "notes"]}},
+            "required": ["type", "index", "field", "value", "data"]}},
         "assignmentSuggestions": {"type": "array", "items": {
             "type": "object", "additionalProperties": False,
             "properties": {"update_id": {"type": "string"}, "confirmation_update_id": {"type": "string"}},
             "required": ["update_id", "confirmation_update_id"]}},
     },
     "required": ["summary", "clientName", "clientAddress", "items", "missingInformation",
-                 "clarificationSuggestions", "assignmentSuggestions"],
+                 "clarificationSuggestions", "assignmentSuggestions", "relationshipIntent", "proposedChanges"],
 }
 INSTRUCTIONS = """You assist a fictional SME with enquiry analysis. Use the single
 backend-validated businessProfile and company/client context supplied at runtime;
@@ -52,7 +65,17 @@ chronological conversation evidence; later explicit corrections supersede earlie
 values, while uncertain corrections require clarification. Do not mix separate
 enquiries. assignmentSuggestions may only cite unresolved update_id and a later
 confirmation_update_id that replies to that exact message and explicitly names
-the enquiry ID or quotation number. Backend validates these claims independently. Return JSON following the required schema."""
+the enquiry ID or quotation number. Backend validates these claims independently.
+Compare savedQuotation with the consolidated customer evidence. proposedChanges
+contains only ADD_ITEM, UPDATE_ITEM by zero-based index, or UPDATE_FIELD for
+client.name/client.address/notes/issueDate/validity, using only explicitly stated
+facts. Do not propose prices, computed totals, recipients, profile or authority.
+Use null for irrelevant change fields. Consolidate successive corrections into
+one change per item; avoid adding an item already present. Respect Staff-edited
+content; changes are suggestions only. For post-send grouping, relationshipIntent
+is revision for explicit amendment/combine, additional for explicit independent
+quotation, unclear for ambiguous grouping (ask Staff/customer), otherwise none.
+Do not infer Additional merely from a different purpose. Never mutate a sent PDF. Return JSON following the required schema."""
 
 
 def business_context(settings, enquiry):
@@ -115,6 +138,12 @@ def validate_extraction(value):
                 not isinstance(v, str) or not v.isdecimal() for v in assignment.values()):
             raise AppError("Invalid assignment evidence")
     result["assignmentSuggestions"] = assignments
+    from .ai_changes import validate_proposals
+    result["proposedChanges"] = validate_proposals(value.get("proposedChanges", []))
+    intent = value.get("relationshipIntent", "none")
+    if not isinstance(intent, str) or intent not in {"none", "revision", "additional", "unclear"}:
+        raise AppError("Invalid quotation relationship intent")
+    result["relationshipIntent"] = intent
     return result
 
 

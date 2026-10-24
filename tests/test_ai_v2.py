@@ -154,3 +154,67 @@ def test_analysis_race_marks_snapshot_stale_and_never_acknowledges_new_message(e
     assert result['stale']
     assert result['signature']['sourceMessageIds'] == ['1']
     assert drafts.quotations.get(quote['id'])['reviewedMessageIds'] == ['1']
+
+
+@pytest.mark.parametrize('intent', ['revision', 'additional', 'unclear'])
+def test_proposed_changes_require_human_apply_and_preserve_saved_quote(engine, intent):
+    from backend.analysis import AnalysisService
+    from backend.quotation_changes import QuotationChanges
+    store = Store(engine=engine)
+    settings = SettingsService(store)
+    with store.transaction():
+        store.put('enquiries', 'change-test', {'id': 'change-test', 'text': 'Actually 1500 flyers',
+                  'source': 'demo', 'chatId': 'demo-chat', 'clientId': 'demo-client'})
+    quotes = QuotationService(store, settings)
+    drafts = DraftService(store, settings, quotes)
+    quote = drafts.create('change-test', manual=True)
+    quote = quotes.update(quote['id'], {'version': 1, 'items': [
+        {'item_name': 'Flyers', 'quantity': 1000, 'unit': 'pcs', 'unit_price': '1.00'}],
+        'notes': 'Staff owns this'}, role='pm')
+    value = valid_output()
+    change = {'type': 'UPDATE_ITEM', 'index': 0, 'data': {'quantity': 1500}}
+    value.update(relationshipIntent=intent, proposedChanges=[change, change,
+        {'type': 'ADD_ITEM', 'data': {'item_name': 'Flyers', 'quantity': 1500, 'unit': 'pcs'}}])
+    drafts.extractor = OpenAIExtractor('synthetic', 'test', Mock(return_value=response(value)))
+    result = AnalysisService(drafts).run('change-test')
+    assert result['relationshipIntent'] == intent
+    assert result['changeWarnings']
+    assert quotes.get(quote['id']) == quote
+    [proposal] = QuotationChanges(quotes).list(quote['id'])['items']
+    assert len(proposal['changes']) == 1
+    saved = QuotationChanges(quotes).apply(quote['id'], {'version': quote['version'],
+        'suggestion_set_id': proposal['id'], 'selected': [proposal['changes'][0]['id']]}, 'sales')
+    assert saved['items'][0]['quantity'] == '1500'
+    assert saved['items'][0]['unitPrice'] == '1.00'
+    assert saved['notes'] == 'Staff owns this'
+    assert len(saved['items']) == 1
+
+
+@pytest.mark.parametrize('change', [
+    {'type': 'UPDATE_ITEM', 'index': 0, 'data': {'unit_price': 2}},
+    {'type': 'UPDATE_FIELD', 'field': 'business_profile_id', 'value': 'repair'},
+    {'type': 'UPDATE_FIELD', 'field': 'recipient', 'value': '123'},
+    {'type': 'UPDATE_FIELD', 'field': 'approved', 'value': 'true'}])
+def test_forbidden_proposed_changes_rejected(change):
+    from backend.drafting import ProviderError
+    value = valid_output()
+    value['proposedChanges'] = [change]
+    with pytest.raises(ProviderError):
+        OpenAIExtractor('synthetic', 'test', Mock(return_value=response(value))).extract('Fictional', {})
+
+
+def test_sent_quote_suggestions_never_change_snapshot(engine):
+    from backend.ai_changes import store_proposals
+    store = Store(engine=engine)
+    settings = SettingsService(store)
+    quotes = QuotationService(store, settings)
+    quote = quotes.create('sent-synthetic')
+    with store.transaction():
+        quote['status'] = 'sent'
+        store.put('quotations', quote['id'], quote)
+        result = store_proposals(quotes, quote, {'proposedChanges': [
+            {'type': 'UPDATE_FIELD', 'field': 'notes', 'value': 'Amendment'}],
+            'relationshipIntent': 'revision'}, [])
+    assert result['suggestionSetId'] is None and result['changeWarnings']
+    assert quotes.get(quote['id']) == quote
+    assert store.list('quotation_suggestions') == []
