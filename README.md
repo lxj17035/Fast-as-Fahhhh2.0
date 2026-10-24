@@ -68,7 +68,7 @@ Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are fu
 | Component | Status |
 | --- | --- |
 | Editable business/client settings and PostgreSQL persistence | Implemented and locally tested |
-| V2 B1: Printing/Cleaning/Repair profile persistence and pinned enquiry scope | Backend implemented; F1 profile selection/settings locally verified (uncommitted checkpoint). See [profile contract and checks](docs/BUSINESS_PROFILES.md). |
+| V2 B1: Printing/Cleaning/Repair profile persistence and pinned enquiry scope | Backend implemented; F1 profile selection/settings committed and locally verified. See [profile contract and checks](docs/BUSINESS_PROFILES.md). |
 | Quotation drafts, exact totals, configurable validity, version checks | Implemented and locally tested |
 | PM-role validation and send-state helpers | Implemented and locally tested; not a production identity system |
 | AI extraction | Runpod GLM-5.3 integrated; one live synthetic extraction passed. OpenAI remains an optional mocked/tested alternative |
@@ -185,7 +185,7 @@ rerun. Live provider verification remains separate.
 
 ### Backend approval configuration
 
-For supervised Manager pricing, review and sending, set `ENABLE_DEMO_APPROVAL=true` before startup. Price changes require `X-Demo-Actor: pm`; Staff can prepare details while retaining existing Manager prices. For sending use that header with `{"expected_version": N, "approved": true}` after reviewing the current saved version. The final-review endpoint is `GET /api/quotations/:id/review?version=N`. Confirmed failures may be retried only after fresh PM approval referencing the failed `retry_of_attempt_id`. Enquiry detail exposes `can_retry`; duplicate approvals and pending/sent/unknown outcomes return 409. See [the current approval contract](docs/PM_APPROVAL.md); V2 AI analysis and PDF-plus-summary orchestration are implemented; the V2 frontend remains Phase 3.
+For supervised Manager pricing, review and sending, set `ENABLE_DEMO_APPROVAL=true` before startup. Price changes require `X-Demo-Actor: pm`; Staff can prepare details while retaining existing Manager prices. For sending use that header with `{"expected_version": N, "approved": true}` after reviewing the current saved version. The final-review endpoint is `GET /api/quotations/:id/review?version=N`. Confirmed failures may be retried only after fresh PM approval referencing the failed `retry_of_attempt_id`. Enquiry detail exposes `can_retry`; duplicate approvals and pending/sent/unknown outcomes return 409. See [the current approval contract](docs/PM_APPROVAL.md); V2 AI analysis and PDF-plus-summary orchestration are implemented; the V2 frontend F1-F5 is implemented; Phase 4 integration/release checks remain.
 
 Set your private `DATABASE_URL` and `TELEGRAM_WEBHOOK_SECRET` in local `.env`
 before starting. Both modules use this same PostgreSQL database. Set
@@ -254,3 +254,14 @@ We plan to compare manual and assisted preparation using the same fictional enqu
 ## License
 
 See [LICENSE](LICENSE).
+
+## V2 Phase 3 checkpoint (24 October 2026)
+
+F1-F5 are implemented: profile settings, Needs Assignment, Conversation Room,
+generic items and reviewed AI changes, and a single Manager Review & Send page
+with the actual saved PDF and matching Telegram summary. Partial summary failures
+freeze the accepted PDF and require fresh approval for summary-only delivery.
+Latest verification: 31 frontend checks, 10 mocked real-API checks, and full
+SQLite/disposable PostgreSQL backend regression **644 passed, 5 skipped**.
+Desktop/mobile Edge interactions passed. No live Telegram or hosted V2 verification
+is claimed. Continue with [Phase 4 handoff](docs/V2_PHASE_HANDOFF.md).

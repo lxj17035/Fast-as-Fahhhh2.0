@@ -11,7 +11,7 @@ Repair) with one manually selected active profile. New enquiries retain their
 profile for life; switching profiles changes the demo workspace scope without
 moving existing records. See [business profile contract](BUSINESS_PROFILES.md).
 F1 adds explicit profile selection in Business settings; selection changes the
-shared demo workspace. Remaining V2 conversation/review UI is separate work.
+shared demo workspace. V2 F2-F5 now expose assignments, Conversation Room, generic items, selected AI changes and final Manager review. Phase 4 integration/release checks remain.
 
 ## One complete journey
 

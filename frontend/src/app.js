@@ -411,6 +411,7 @@ const actions = {
         state.noticeKind = result.status === 'sent' ? 'info' : 'warning';
         state.notice = { sent: 'Your quote was accepted by Telegram. This doesn’t confirm it has been read.', failed: 'The quote wasn’t sent: Telegram rejected this attempt. Check the cause before approving another try.', unknown: 'We can’t confirm delivery. Check the original Telegram chat. Sending again is blocked.' }[result.status];
         state.finalReview = null; await refreshDetail(); await loadConversation(state.detail.id);
+        if (result.status === 'failed' && frozenDelivery()) state.notice = 'Telegram accepted the PDF, but rejected its summary. The PDF is protected. Review and approve summary-only delivery after checking the cause.';
       } catch (error) {
         // All 4xx responses from this handler reject before upload; persisted
         // attempts still independently block duplicate/pending/unknown sends.

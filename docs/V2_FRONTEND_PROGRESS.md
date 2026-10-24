@@ -128,3 +128,12 @@ Existing screen patterns and simulated permissions are retained. All external
 providers are mocked here. No live Telegram, hosted Runpod/RP2, deployment,
 production identity, full accessibility certification or cross-browser claim.
 T1-T3/RP2 remain Phase 4. F4 commit: `6d2d26b`.
+
+Implementation commits: F1 `00d6565`, F2 `520ee21`, F3 `4355e3c`,
+F4 `6d2d26b`, F5 `9fef80d`. Final recovery copy distinguishes an accepted PDF
+from a rejected summary. F1 profile-switch/save/cancel/discard browser script
+reran successfully after shared styling changes. PostgreSQL container removed.
+
+Final F5 recovery-copy browser rerun passed against actual temporary API and
+mocked summary failure. Phase 3 ends here; continue T1-T3/RP2 in a new chat.
+The phase-end fast-forward publication is verified separately from deployment.

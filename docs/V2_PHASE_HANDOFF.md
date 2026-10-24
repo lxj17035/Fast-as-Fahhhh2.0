@@ -1,119 +1,87 @@
 # Domain 2 V2 - phase handoff
 
 Updated 24 October 2026, Asia/Kuala_Lumpur.
-Branch: `codex/feat-domain2-v2`, existing repository. Work one phase per chat,
-test and commit each section, then stop. Do not switch checkout during a run.
+Existing branch: `codex/feat-domain2-v2`. Do not switch checkout during a run.
 
 ## Current checkpoint
 
-Phase 1 B1-B5 and Phase 2 A1-A5 are complete and committed. Stop here.
-Next chat: Phase 3 F1-F5 only. No V2 push or Replit redeployment was performed.
-Anonymous synthetic preview remains; production identity/channels/queues remain
-out of scope. Live Telegram and hosted Runpod proof remain release work.
+Phases 1 (B1-B5), 2 (A1-A5) and 3 (F1-F5) are complete.
+Next chat: Phase 4 T1-T3/RP2 and release verification. No V2 deployment or
+new live provider call was performed in Phase 3. Synthetic preview and simulated
+Staff/Manager roles remain; production identity/channels/queues are out of scope.
 
-| Section | Commit | Section verification |
+| Section | Implementation commit | Section verification |
 | --- | --- | --- |
-| A1 dynamic core prompt/context | `dc2a39c` | 51 passed |
-| A2 extraction/sufficiency | `33f7ecf` | 88 passed |
-| A3 clarification/renewed analysis | `3ca6165` | 96 passed |
-| A4 suggested changes | `c3702bd` | 106 passed |
-| A5 approved PDF plus summary | `7f28fe7` | full 640 passed, 5 skipped; final focus 67 passed, 2 skipped |
+| F1 profile settings | `00d6565` (existing) | 25 frontend + 8 API; desktop/mobile |
+| F2 Needs Assignment | `520ee21` | 26 frontend + 8 API; desktop/mobile |
+| F3 Conversation Room | `4355e3c` | 29 frontend + 8 API; desktop/mobile |
+| F4 generic editor/change application | `6d2d26b` | 30 frontend + 9 API; desktop/mobile |
+| F5 Manager Review & Send | `9fef80d` | 31 frontend + 10 API; desktop/mobile and partial-summary recovery |
 
-All automated provider tests are mocked; SQLite adapters and disposable localhost
-PostgreSQL 16 exercised. Skips are PostgreSQL-only cases under SQLite; PostgreSQL
-counterparts passed. Full merged suite used
-`.\.venv\Scripts\python.exe -m pytest -q --basetemp=.input/v2-phase2-full -p no:cacheprovider`
-with disposable `TEST_DATABASE_URL`: 640 passed, 5 skipped, existing Starlette
-warning, 589.33s. The final frozen-preview/review adjustment was then checked with
-`tests/test_pdf.py tests/test_outbound_v2.py tests/test_manager_review_v2.py`
-using `--basetemp=.input/v2-a5-final-review -p no:cacheprovider`: 67 passed,
-2 skipped. Frontend unit checks 24 passed; mocked API integration 7 passed.
-Exact source files/commands: [Phase 2 report](V2_AI_PROGRESS.md).
-Phase 1 history: [backend report](V2_BACKEND_PROGRESS.md).
-No PDF template change; saved bytes/hash and summary dates/totals are tested.
+Full merged backend suite used TEST_DATABASE_URL on a fresh disposable localhost
+PostgreSQL 16 container and isolated SQLite adapters: **644 passed, 5 skipped,
+1 existing Starlette warning**, 665.87s. PostgreSQL-only skips under SQLite had
+PostgreSQL counterparts. The container was removed after verification.
 
-## Phase 3 contracts and implementation notes
+Exact source files, commands, limitations and static audit exceptions:
+[frontend progress](V2_FRONTEND_PROGRESS.md). Earlier backend/AI reports remain
+[V2 backend](V2_BACKEND_PROGRESS.md), [V2 AI](V2_AI_PROGRESS.md).
+No backend business logic or PDF template changed in Phase 3. Saved PDF bytes
+are verified against the final review SHA-256 in the browser before approval.
 
-Read AGENTS.md, README, docs/WORKFLOW.md, the canonical plan, this handoff,
+## Continue Phase 4
+
+Read AGENTS.md, README.md, docs/WORKFLOW.md and
+[canonical plan](DOMAIN2_V2_CODEX_PLAN.md) before changes. Use
 [AI analysis contract](AI_ANALYSIS.md), [approval contract](PM_APPROVAL.md),
-and existing frontend docs/source before changes. Use the applicable frontend
-skills, preserve existing UI patterns, and test rendered interactions.
+[frontend contract](FRONTEND.md) and current source as authoritative behavior.
+Test and commit each section before the next. Stop at the phase boundary;
+perform the plan's standing-authorized origin/working-branch and origin/main
+publication while preserving remote changes. Publication is not deployment.
 
-- F1: profile settings and active selection exist at `/api/business-profiles`.
-  Intake pins identity; AI never selects it. Old enquiries retain their scope.
-- F2: `/api/assignments` lists Needs Assignment. Explicit Staff assignment/new/
-  unrelated actions preserve history and enforce same profile/chat.
-- F3: GET `/api/enquiries/{id}/conversation` includes attributed incoming,
-  Staff outgoing, quotation PDF and summary attempts. POST `/messages` takes
-  `{text, request_id}` with enabled simulated Staff header, never recipient.
-  GET/POST `/analysis` reads/requests analysis; POST requires explicit Staff.
-  Customer follow-ups automatically request renewed analysis; duplicates do not.
-  Initial draft analysis is retained without a second inference request.
-  Display `extraction.clarificationSuggestions` as editable suggestions; Staff
-  must click Send. AI has no sender. Failed/manual analysis permits manual work.
-- Analysis snapshots include quotation/baseVersion, source/unresolved IDs,
-  business context and attributed evidence in `signature`. Compare with current
-  quote/conversation as well as checking `stale`; never treat old analysis as
-  acknowledgement of messages arriving later. Pinned internal analysis works
-  after active-profile switches; HTTP views still respect active scope.
-- AI assignment is intentionally conservative: exact later customer confirmation
-  replying to the unresolved message and naming enquiry/quote reference, with
-  backend validation. Staff may associate confirmation first. Vague/model-only
-  claims remain Needs Assignment. No Staff decision can be overridden.
-- F4: common item_name/quantity/unit/unit_price/amount/notes exist with legacy
-  aliases. Staff must retain Manager prices; every price save needs enabled
-  `X-Demo-Actor: pm`. AI proposedChanges are validated and de-duplicated, then
-  stored via existing QuotationChanges sets. Renewed analysis returns
-  `suggestionSetId`, `changeWarnings`, advisory `relationshipIntent`. Use GET
-  quotation `/suggestions` and explicit POST `/apply-changes` selections/edits.
-  Initial extraction already supplies draft items; do not apply them twice.
-- `reviewedMessageIds` is the exact current chronological incoming ID list.
-  Staff explicitly reviews it on save. Unassigned/new messages block formal
-  review/send. Incomplete PDF previews remain labelled drafts; prices stay blank.
-- Revisions/additional quotations require explicit Staff `/fork` actions.
-  AI relationship intent never creates a fork. Sent PDFs remain immutable.
-- F5: Manager GET quotation `/review?version=N` returns the exact saved quote,
-  PDF URL/version/hash and deterministic `telegram_summary`. Final page must show
-  these together and use explicit approval/current version for `/send`.
-  `delivery_mode` is `pdf_and_summary` normally or `summary_only` after confirmed
-  summary failure with accepted PDF. In that recovery, content is frozen and
-  Back to Edit must explain the lock. Fresh approval references the exact failed
-  `retry_of_attempt_id`; accepted PDF is reused and only the same summary sent.
-  Frozen preview/review remains available if newer messages arrive, but delivery
-  completion leaves enquiry Needs review. It does not apply newer requirements.
-- Delivery attempts expose pdf_status, summary_status and summary provider ID.
-  Overall Sent requires both accepted. Pending/unknown/save failures hold; never
-  retry them automatically. Old rows have nullable component metadata, not proof
-  of summary delivery. Expired partial snapshots cannot be retried. Show errors.
+- T1: complete synthetic Printing journey through real UI/API with attributed
+  clarification/customer answer, explicit current-message review, Manager pricing,
+  final saved PDF plus matching summary and approved send. Verify histories/dates.
+- T2: representative Cleaning and Repair cases, dynamic context and generic notes;
+  no Printing assumptions. Phase 3 verified profile switching and generic field
+  contracts; it does not replace these complete cross-profile scenarios.
+- T3: explicit Revision/Additional and unclear grouping, immutable old PDF,
+  negative authority/scope/stale/duplicate/unknown cases. Phase 3 includes focused
+  backend/API safeguards; retain the full integration acceptance checklist.
+- RP2: separately verify the published Replit provider configuration, then a fresh
+  fictional enquiry in a team-controlled Telegram chat. Capture sanitized matching
+  hosted application and Runpod evidence before recording. No customer sends.
+  Missing access is a blocker, never evidence of completion.
 
-## Release boundary
+## Frontend behavior to retain
 
-After F1-F5, stop for Phase 4 T1-T3/RP2 and release. Verify actual Replit provider
-selection, a team-controlled Telegram journey, hosted Runpod evidence, deployment
-and recording rehearsal separately. Current UI has not implemented these V2
-flows; backend tests are not a full hosted demonstration.
+Inbox exposes Needs Assignment with explicit Staff actions and original history.
+Conversation Room uses attributed messages and editable AI questions; only explicit
+Send calls /messages with a stable request ID. Pending/unknown text sends hold
+across reloads. No automatic resend. Analysis evidence is compared with current
+quotation version, source IDs, unresolved messages and accepted Staff messages.
 
-For tests create a new disposable localhost-only PostgreSQL container. The Phase 2
-container is removed at handoff. Never use local runtime/Replit/customer databases.
-Use fresh ignored `.input/<unique>` basetemp paths and `-p no:cacheprovider`.
-Secrets stay local; no generated/raw artifacts in Git. No live customer sends.
+Generic items retain units/notes and blank prices. Staff cannot enter prices;
+Manager mutation headers are explicit. Selected AI changes can be edited/excluded
+and applied through version/evidence-bound /apply-changes. New incoming messages
+need an explicit review checkbox when saving. Sent quote forks are explicit;
+Additional requires a distinct enquiry in the same original chat.
 
+Manager Review & Send shows server-saved fields, actual PDF and deterministic
+summary together. Approval uses current version and exact eligible retry ID.
+Confirmed summary failure freezes the accepted PDF and offers summary-only retry.
+Back to Edit explains that lock. New messages are not silently acknowledged.
+Unknown/pending outcomes hold. Nullable legacy component data is not evidence of
+summary acceptance. Existing Valid For engine and server totals remain canonical.
 
-## RP1 result
+## Live evidence and release limits
 
-Passed: exactly one synthetic live Runpod glm-5.3 request, HTTP 200, 12:30
-Malaysia time on 24 October 2026. Request ID and 1,362-token usage captured in
-[sanitized evidence](V2_RUNPOD_RP1.md). This verifies changed V2 prompt/context,
-not the hosted app. Model left unit unknown despite stated visits, and listed
-unagreed pricing as missing: Staff must review those flags, Manager sets prices.
-No pricing/recipient/send authority was granted. No retry or billing-balance
-verification. RP2 remains required after frontend and before demo recording.
+RP1 is historical: one V2 Runpod request on 24 October 2026, HTTP 200, 1,362
+tokens; [sanitized report](V2_RUNPOD_RP1.md). It does not verify hosted Replit,
+Telegram or billing. RP2 stays unchecked. Phase 3 providers were all mocked.
+No hosted deployment, production identity, full accessibility certification,
+all-browser validation or measured productivity result is claimed.
 
-
-## F1 working-tree checkpoint (24 October 2026)
-
-F1 profile settings implemented and locally verified: 25 frontend tests and
-8 actual-API mocked integration checks passed; desktop/mobile browser QA passed.
-See [frontend progress](V2_FRONTEND_PROGRESS.md). **Uncommitted:** this session
-has read-only `.git` access and Git cannot create `index.lock`. Commit the tested
-F1 working tree before implementing F2. F2–F5 and Phase 4 remain pending.
+For later backend tests create a new disposable localhost-only PostgreSQL
+container. Never use runtime, Replit or customer storage. Keep raw artifacts,
+screenshots and scripts ignored under .input; secrets remain local and unprinted.

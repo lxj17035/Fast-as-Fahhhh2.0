@@ -29,17 +29,17 @@ Telegram chat. The send request cannot override recipients or upload PDF URLs.
 
 V2 B5 snapshots the approved summary text and reviewed incoming message IDs in
 `send_attempts`, alongside the exact PDF bytes/hash. Summary fields come only
-from saved data. **PDF-plus-summary transport is A5 work:** the current document
-sender still delivers PDF only. A summary snapshot is not evidence of delivery.
+from saved data. **PDF-plus-summary transport is implemented in A5.** Component statuses record
+acceptance separately; a summary snapshot alone is not evidence of delivery.
 
 New customer messages during an approved upload do not change its PDF or summary
 snapshot. After successful delivery, they leave the enquiry in `needs_review`;
 unknown delivery stays held. Data readiness in review does not guarantee provider
 availability; sending still checks configuration and actual transport outcome.
 
-The frontend still requires F4/F5: send its explicit simulated role on price
-edits, acknowledge new incoming IDs, and render one final review page. Complete
-those phases and A5 before deploying/recording the full V2 demo.
+The F4/F5 frontend sends explicit simulated roles, acknowledges reviewed incoming
+IDs on explicit save, and renders the final saved PDF and deterministic summary
+on one Manager confirmation view. Phase 4 and live/hosted checks remain.
 
 ## Outcomes
 

@@ -2547,7 +2547,7 @@ small metadata remains visually secondary. */
 .item-row { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px; }
 .item-notes { grid-column: 1 / -1; }
 .suggestion-change { padding: 16px 0; border-bottom: 1px solid var(--border); }
-input[readonly] { background: var(--background); }
+input[readonly] { background: #f6f8f7; }
 
 .summary-preview { white-space: pre-wrap; overflow-wrap: anywhere; margin: 16px 0; line-height: 1.7; }
 
