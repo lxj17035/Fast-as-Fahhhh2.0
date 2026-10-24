@@ -87,3 +87,11 @@ test('final review uses an explicit Manager role and exact saved version', async
   let call; const api = new Api('', async (url, options) => {call={url,...options};return Response.json({send_ready:true});});
   await api.review('abc', 7); assert.equal(call.url, '/api/quotations/abc/review?version=7'); assert.equal(call.headers['X-Demo-Actor'], 'pm'); assert.equal(call.method, 'GET');
 });
+
+test('review submission sends saved version, source IDs and explicit human role only', async () => {
+ let call; const api = new Api('', async (url, options) => {call={url,...options};return Response.json({});});
+ await api.submitReview('abc',7,['123'],'sales');
+ assert.equal(call.url,'/api/quotations/abc/submit-review');
+ assert.equal(call.headers['X-Demo-Actor'],'sales');
+ assert.deepEqual(JSON.parse(call.body),{version:7,sourceMessageIds:['123']});
+});

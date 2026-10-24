@@ -1,4 +1,4 @@
-import { pendingCustomerMessages, detailStage, detailNext, canSavePrices, eventLabel } from './detail.js';
+import { pendingCustomerMessages, detailStage, detailNext, canSavePrices, eventLabel, initialDetailTab, submissionIssues } from './detail.js';
 import { UNDO_SECONDS, enquiryRow, inboxMarkup, DEMO_ROWS } from './inbox.js';
 import { Api } from './api.js';
 import { API_BASE_URL } from '../config.js';
@@ -102,7 +102,7 @@ function assignmentForm(message) {
   return `<form class="assignment-form inbox-sort-panel" data-update="${e(message.update_id)}" novalidate><blockquote>${e(message.text)}</blockquote><label class="field"><span>Add to an existing enquiry…</span><select name="enquiry_id"><option value="">Choose an enquiry from this page…</option>${state.items.filter(item => sameId(item.telegram_chat_id,message.chat_id)).map(item => `<option value="${e(item.id)}" ${state.assignmentTargets[message.update_id] === item.id ? 'selected' : ''}>${e(dateTime(item.created_at))} · ${e(item.original_text.slice(0,100))}</option>`).join('')}</select></label><div class="editor-buttons"><button class="btn primary" name="action" value="assign">Add</button><button class="btn secondary" name="action" value="new">New enquiry</button><button class="btn secondary" name="action" value="unrelated">Mark unrelated</button></div><details><summary>Association history</summary>${(message.history || []).map(h => `<p>${e(h.actor)} · ${e(h.action)} · ${e(dateTime(h.timestamp))}</p>`).join('') || '<p>No assignment decisions yet.</p>'}</details><details><summary>Enquiry not on this page?</summary><label class="field"><span>Enquiry ID</span><input name="manual_enquiry_id" placeholder="Paste a copied enquiry ID" /></label></details><p class="field-note">Close hides this message locally. Mark unrelated records a decision on the server.</p></form>`;
 }
 function inboxPage() {
-  return `${errorBox()}${noticeBox()}<div class="inbox-tools"><button type="button" class="btn quiet" data-action="refresh">Refresh</button>${localInboxDemo ? `<label><input id="inbox-demo" type="checkbox" ${state.inboxDemo ? 'checked' : ''} /> Show synthetic channel examples</label>` : ''}</div>${inboxMarkup(state, inboxRows(), state.inboxClosed, dateTime, assignmentForm)}${localInboxDemo && state.inboxDemo ? '<p class="field-note">Extra channels are synthetic display examples. Sending is available only for Telegram.</p>' : ''}`;
+  return `${errorBox()}${noticeBox()}<div class="inbox-tools"><button type="button" class="btn secondary" data-action="refresh">↻ Refresh inbox</button>${localInboxDemo ? `<label><input id="inbox-demo" type="checkbox" ${state.inboxDemo ? 'checked' : ''} /> Show synthetic channel examples</label>` : ''}</div>${inboxMarkup(state, inboxRows(), state.inboxClosed, dateTime, assignmentForm)}${localInboxDemo && state.inboxDemo ? '<p class="field-note">Extra channels are synthetic display examples. Sending is available only for Telegram.</p>' : ''}`;
 }
 function disclosure(key, defaultOpen = false) {
   return `data-disclosure="${key}" ${(state.expanded[key] ?? defaultOpen) ? 'open' : ''}`;
@@ -140,7 +140,7 @@ function reviewPage() {
   const d=state.detail,q=state.quote,stage=detailStage(state),next=detailNext(state),pending=pendingCustomerMessages(q,d);
   const stageLabel=q?.status==='sent'?'Sent':({ 'need-info':'Draft · needs info','need-price':'Draft · needs price',ready:'Ready to send',attention:'Needs checking' })[stage] || 'Draft';
   return `<div class="detail-workspace"><div class="review-top"><a href="#/" data-nav="/" class="back-link">${icon('back')} All enquiries</a>${button('Refresh','refresh',{disabled:state.busy})}</div><section class="page-heading review-heading"><div><h1>${q?.client.name.trim()?`Quote for ${e(q.client.name)}`:'Prepare a quote'}</h1><p>${q?`${e(q.number)} · ${e(q.currency)} · Telegram`:'Telegram enquiry'}</p></div><span class="badge ${stage==='sent'?'green':stage==='ready'?'blue':'amber'}">${e(stageLabel)}</span></section><div id="review-progress">${progressMarkup()}</div>${errorBox()}${noticeBox()}<section class="detail-next next-step-panel" data-kind="${next.stage}" aria-label="Next step"><div id="next-step-content">${nextStepMarkup()}</div></section>${newMessageAlert()}
-  <div class="detail-tabs" role="tablist" aria-label="Quotation sections">${[['quote','Quote'],['preview','Preview'],['messages',`Messages${pending.length?` (${pending.length} new)`:''}`],['activity','Activity']].map(([tab,label])=>`<button type="button" role="tab" id="detail-tab-${tab}" aria-selected="${state.detailTab===tab}" aria-controls="detail-pane-${tab}" data-action="detail-tab" data-tab="${tab}">${label}</button>`).join('')}</div>
+  <div class="detail-tabs" role="tablist" aria-label="Quotation sections">${[['messages',`Messages${pending.length?` (${pending.length} new)`:''}`],['quote','Quote'],['preview','Preview'],['activity','Activity']].map(([tab,label])=>`<button type="button" role="tab" id="detail-tab-${tab}" aria-selected="${state.detailTab===tab}" aria-controls="detail-pane-${tab}" data-action="detail-tab" data-tab="${tab}">${label}</button>`).join('')}</div>
   <section id="detail-pane-quote" role="tabpanel" aria-labelledby="detail-tab-quote" ${state.detailTab!=='quote'?'hidden':''}>${detailChecks()}<details class="detail-ai-changes" ${disclosure('suggestions')}><summary>AI assistance & suggested changes</summary>${suggestionsPanel()}${button('Analyze current messages','analyze',{disabled:state.busy||state.dirty})}</details>${relationshipPanel()}<section class="panel editor-panel"><div class="panel-heading"><div><h2>Quote details</h2><p>${state.role==='pm'?'Edit the details and prices before sending.':'Prepare the details. Only a Manager can enter prices.'}</p></div><span id="save-state" class="save-state"></span></div>${q?editor():`<div class="settings-panel"><p>Prepare a draft first, or open Messages to read the enquiry.</p>${button('Prepare draft','draft-ai',{disabled:state.busy})}${button('Write it myself','draft-manual',{disabled:state.busy})}</div>`}</section></section>
   <section id="detail-pane-preview" role="tabpanel" aria-labelledby="detail-tab-preview" ${state.detailTab!=='preview'?'hidden':''}><section class="panel preview-panel" id="preview-panel"><div class="panel-heading"><div><h2>Quote preview</h2><p id="preview-status">${q?.total===null?'Draft preview. Prices are not set yet.':'The saved PDF your customer will receive.'}</p></div></div>${state.detailTab==='preview'?pdfContent():''}<div class="preview-actions">${button(state.pdfURL?'Refresh preview':'Load saved PDF','detail-preview',{disabled:state.busy||!q||(pending.length>0&&q.status!=='sent'&&!frozenDelivery())})}${state.pdfURL?`<a class="text-link" href="${e(state.pdfURL)}" target="_blank" rel="noopener">Open full PDF ↗</a>`:''}</div></section>${q&&editable(q)?`<section class="detail-checkpoint"><h3>Before final Manager approval</h3><p>${pending.length?'Latest customer requirements need checking.':'Latest customer requirements are checked.'} ${pending.length?button('Go to Messages','detail-messages'):''}</p><p>${state.form.missingInformation.length?`${state.form.missingInformation.length} points still to check.`:'All flagged points checked.'} ${state.form.missingInformation.length?button('Go to checks','detail-quote'):''}</p><div class="editor-buttons">${button('Back to edit','detail-quote')}${button('Save draft','detail-save',{disabled:state.busy||!state.dirty})}${state.role==='pm'?button('Manager Review & Send','approve',{kind:'primary',disabled:state.busy||state.dirty||pending.length>0||state.hold||!canSavePrices(state.form)||state.form.missingInformation.length>0}):'<span>Only a Manager can price and approve. Saving does not notify a Manager.</span>'}</div></section>`:''}</section>
   <section id="detail-pane-messages" role="tabpanel" aria-labelledby="detail-tab-messages" ${state.detailTab!=='messages'?'hidden':''}>${conversationPanel()}</section>
@@ -190,7 +190,7 @@ function editor() {
       <div class="total-bar"><div><span id="total-label">Saved total</span><small id="total-note">Valid through ${e(dateOnly(q.expiryDate))}</small></div><strong>${q.total === null ? (state.role === 'pm' ? 'Prices needed' : 'Waiting for Manager pricing') : `${e(q.currency)} ${e(q.total)}`}</strong></div>
     </div>
     <details class="editor-options" ${disclosure('options')}><summary>Dates & notes <span>Optional changes</span></summary><div class="drawer-content"><div class="field-grid">${input('Issue date', 'issueDate', f.issueDate, { type: 'date' })}${validitySelect(f.validity)}</div><p class="field-note">The saved quote is valid through ${e(dateOnly(q.expiryDate))}. Save date changes to update this.</p><label class="field notes-field"><span>Notes for the customer <small>Optional</small></span><textarea style="resize: none" name="notes" rows="3" maxlength="4000" placeholder="Add any reviewed terms or a helpful note…">${e(f.notes)}</textarea></label></div></details>
-    </fieldset><div class="editor-bottom"><span>${locked && !state.busy ? 'Protected after sending or while delivery is unconfirmed.' : 'Save a draft at any time. Preview before sending.'}</span><div class="editor-buttons"><button class="btn secondary" type="submit" id="save-quote" ${locked || !state.dirty ? 'disabled' : ''}>Save draft</button><button class="btn primary" type="button" id="save-preview" data-action="save-preview" ${locked ? 'disabled' : ''}>${icon('file')} ${state.dirty ? 'Save & preview' : state.role === 'pm' ? 'Preview quote' : 'Preview draft'}</button></div></div></form>`;
+    </fieldset><div class="editor-bottom"><span>${locked && !state.busy ? 'Protected after sending or while delivery is unconfirmed.' : 'Save a draft at any time. Preview before sending.'}</span><div class="editor-buttons"><button class="btn secondary" type="submit" id="save-quote" ${locked || !state.dirty ? 'disabled' : ''}>Save draft</button>${state.role==='sales'?button('Submit for review','submit-review',{kind:'primary',disabled:state.busy||submissionIssues(state).length>0}):''}<button class="btn secondary" type="button" id="save-preview" data-action="save-preview" ${locked ? 'disabled' : ''}>${icon('file')} ${state.dirty ? 'Save & preview' : state.role === 'pm' ? 'Preview quote' : 'Preview draft'}</button></div></div></form>`;
 }
 function pdfContent() {
   if (state.pdfURL) return `<div class="pdf-renderer"><canvas id="pdf-canvas" role="img" aria-label="Saved quotation PDF version ${state.previewVersion}, page ${state.pdfPage} of ${state.pdfPages}"></canvas></div><p class="pdf-render-status" id="pdf-render-status"></p><div class="pdf-pagination">${button('Previous page', 'pdf-previous', { disabled: state.pdfPage <= 1 })}<span>Page ${state.pdfPage} / ${state.pdfPages}</span>${button('Next page', 'pdf-next', { disabled: state.pdfPage >= state.pdfPages })}</div>`;
@@ -207,6 +207,7 @@ function updateEditorIndicators() {
   const savePreview = document.querySelector('#save-preview');
   savePreview.disabled = state.busy || !editable(state.quote) || frozenDelivery();
   savePreview.innerHTML = icon('file') + ' ' + (state.dirty ? 'Save & preview' : state.role === 'pm' ? 'Preview quote' : 'Preview draft');
+  document.querySelectorAll('[data-action="submit-review"]').forEach(button => { button.disabled = state.busy || submissionIssues(state).length > 0; });
   document.querySelectorAll('[data-action="preview"]').forEach(button => { button.disabled = state.busy || state.dirty; });
   document.querySelector('#total-label').textContent = state.dirty ? 'Last saved total' : 'Saved total';
   document.querySelector('#total-note').textContent = state.dirty ? 'Save to update the total and dates' : `Valid through ${dateOnly(state.quote.expiryDate)}`;
@@ -284,6 +285,7 @@ async function loadRoute(route) {
       if (q.status === 'fulfilled') setQuote(q.value);
       else if (q.reason.status !== 404) throw q.reason;
       await loadConversation(id); if (token !== loadId) return;
+      state.detailTab = initialDetailTab(state.quote, state.detail);
       syncHold();
     } else {
       if (route !== '/') { state.route = '/'; history.replaceState(null, '', '#/'); }
@@ -403,6 +405,11 @@ async function openDetailPreview() {
 const actions = {
   'detail-tab': target => { const tab=target.dataset.tab; if (tab==='preview') return openDetailPreview(); state.detailTab=tab; render(); root.querySelector('#detail-tab-' + tab)?.focus({preventScroll:true}); },
   'detail-preview': () => openDetailPreview(),
+  'submit-review': () => task(async () => {
+    if (submissionIssues(state).length) throw Error(submissionIssues(state)[0]);
+    setQuote(await api.submitReview(state.quote.id,state.quote.version,state.detail.messages.map(m=>String(m.update_id)),state.role));
+    await refreshDetail(); state.notice='Submitted for Manager review. The saved details are in Manager To do.';
+  }),
   'detail-save': () => saveQuoteAndPreview(false),
   'detail-save-prices': () => { if (state.role==='pm' && canSavePrices(state.form)) return saveQuoteAndPreview(true); },
   'detail-messages': () => { state.detailTab='messages'; render(); },
@@ -608,7 +615,7 @@ setInterval(async()=>{
     if (token!==loadId || state.busy || state.detail?.id!==id) return;
     const before=JSON.stringify(state.detail.messages.map(m=>m.update_id));
     if (before!==JSON.stringify(d.messages.map(m=>m.update_id))) {
-      state.detail=d; state.reviewed=false; revokePDF();
+      state.detail=d; state.reviewed=false; state.detailTab='messages'; revokePDF();
       await loadConversation(id);
       if (token===loadId && !state.busy) {
         const active=document.activeElement, name=active?.getAttribute('name'), pos=active?.selectionStart;

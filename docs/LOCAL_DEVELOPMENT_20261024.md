@@ -8,3 +8,6 @@ Reviewed existing uncommitted UI helpers, session-only Close/Restore, local-only
 
 ## Durable review submission
 Added transactional submit-review, saved version/source evidence and activity. Saves/AI applications invalidate old evidence; new/unassigned source checks reject stale handoffs. Tests: submission + Manager review 26 passed/1 skipped on SQLite; same command with disposable TEST_DATABASE_URL on localhost:55439: 53 passed/1 skipped (SQLite + PostgreSQL). Initial test found missing activity allowlist; fixed before this passing run. No real provider calls.
+
+## Staff handoff UI and navigation
+42 frontend checks passed. Updated journeys.mjs passed Printing/Cleaning/Repair desktop 1365x900/mobile 390x844, automatic new-message notice with unsaved input retained, formal unpriced submission, Manager pricing, current saved PDF/hash/summary, cancel/confirm send, Revision/Additional and original PDF retention. Browser plugin absent; existing Playwright/Edge used on ephemeral ports with temporary DB/mocked Runpod HTTP/Telegram. First browser run exposed a test assuming Quote on new-message reopening; corrected to explicitly select Quote. Existing 8091/8092 preview processes are preserved. No publish/live providers.

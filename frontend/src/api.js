@@ -77,6 +77,7 @@ export class Api {
   quotation(id) { return this.request(`/api/enquiries/${encodeURIComponent(id)}/quotation`); }
   draft(id, manual) { return this.request(`/api/enquiries/${encodeURIComponent(id)}/draft`, { method: 'POST', body: { manual } }); }
   saveQuote(id, body, role) { return this.request(`/api/quotations/${encodeURIComponent(id)}`, { method: 'PATCH', body, role }); }
+  submitReview(id, version, sourceMessageIds, role) { return this.request(`/api/quotations/${encodeURIComponent(id)}/submit-review`, { method: 'POST', body: {version, sourceMessageIds}, role }); }
   pdf(id, version) { return this.request(`/api/quotations/${encodeURIComponent(id)}/pdf?version=${version}`, { pdf: true }); }
   send(id, version, retryId) {
     const body = { expected_version: version, approved: true };

@@ -67,3 +67,5 @@
 @media(max-width:950px) { .inbox-shell .inbox-body { margin-left:74px; } }
 
 @media(max-width:420px) { .inbox-shell .inbox-body { margin-left:58px; } .inbox-shell .inbox-bar { flex-wrap:wrap; gap:8px; } .inbox-shell .inbox-tools { flex-wrap:wrap; } }
+
+.inbox-shell .inbox-tools { display:flex; justify-content:flex-end; gap:12px; }

@@ -118,3 +118,11 @@ IDs; no permanent review checkbox. Preserve the current saved PDF renderer and
 Manager's saved PDF/summary verification before a final send dialog. Changes
 retain existing prices and require saving/previewing again. Technical history
 stays collapsed in Activity; old quotation browsing remains future work.
+
+## Current approved handoff
+Messages / Quote / Preview / Activity is the canonical tab order. New messages
+open Messages; otherwise continue in Quote. Staff can save incomplete drafts and
+explicitly submit complete saved requirements without prices/PDF preview.
+The durable handoff owns Manager To do. Staff edits/new sources require another
+submission. Manager edits retain their pricing task but invalidate old review.
+Existing colors, shared form controls, PDF rendering and send confirmation remain.

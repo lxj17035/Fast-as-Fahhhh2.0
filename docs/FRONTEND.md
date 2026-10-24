@@ -325,3 +325,19 @@ separate 360px notice, Reply-to-Messages and keyboard-tab checks passed. Browser
 plugin absent; regular Playwright/Edge was used. No new live Telegram/Runpod call,
 Replit deployment or Git commit is claimed. Backend/PDF tests were not rerun for
 this frontend-only section; the earlier short-title backend results remain above.
+## Current local workflow — 24 October 2026
+
+This section supersedes the historical no-handover/preview-first notes above.
+Inbox retains a top-right `↻ Refresh inbox`. Tabs are Messages, Quote, Preview,
+Activity. New incoming source IDs select Messages; reopening without new sources
+selects Quote. Tabs retain quote/composer/suggestion state.
+
+Save draft permits incomplete details. Submit for review requires a saved,
+complete Staff draft and explicit current-message confirmation, but no prices or
+preview. It calls the durable submit-review endpoint. Only current handoffs move
+normal preparation tasks to Manager To do. Staff edits (including AI apply) return
+the preparation task to Staff; another submission is required. Manager's own
+edits retain Manager routing while the source IDs remain current, but invalidate
+the submitted version and require fresh saved PDF/summary review. New or unsorted
+customer requirements return preparation to Staff. Delivery holds stay Manager
+Needs checking. This does not implement Manager notification.

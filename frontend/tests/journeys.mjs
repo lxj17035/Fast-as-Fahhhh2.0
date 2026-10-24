@@ -124,6 +124,8 @@ try {
     quote = await api.quotation(enquiry.id);
     assert.deepEqual(quote.reviewedMessageIds, [String(updateId), String(updateId + 1)]);
     assert.equal(quote.items[0].unitPrice, null);
+    await page.getByRole('button',{name:'Submit for review',exact:true}).last().click();
+    await notice('Submitted for Manager review');
     await page.getByLabel('Simulated role').selectOption('pm');
     await page.getByLabel('Item 1 unit price', { exact: true }).fill(c.price);
     await page.locator('#save-quote').click();
@@ -175,6 +177,7 @@ try {
         }
         assert.ok(ready, 'Follow-up analysis completed');
         await page.reload();
+        await page.getByRole('tab',{name:'Quote',exact:true}).click();
         await page.getByRole('heading', { name: 'Post-send request', exact: true }).waitFor();
       }
       await reloadAfterAnalysis(3);
@@ -206,6 +209,8 @@ try {
     else await page.locator('#save-quote').click();
         await notice('Your draft is saved');
         assert.equal((await api.quotation(targetId)).total, null);
+        await page.getByRole('button',{name:'Submit for review',exact:true}).last().click();
+        await notice('Submitted for Manager review');
         await page.getByLabel('Simulated role').selectOption('pm');
         await page.getByLabel('Item 1 unit price', { exact: true }).fill('25.00');
         await page.locator('#save-quote').click();
@@ -231,6 +236,7 @@ try {
       }
       assert.ok(additional);
       await page.reload();
+      await page.getByRole('tab',{name:'Quote',exact:true}).click();
       await page.getByRole('heading', { name: 'Post-send request', exact: true }).waitFor();
       await page.locator('#fork-form select[name="relationship"]').selectOption('additional');
       await page.getByLabel('Additional enquiry reference', { exact: true }).fill(additional.id);

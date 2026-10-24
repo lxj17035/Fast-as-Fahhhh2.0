@@ -4,6 +4,16 @@ export const UNDO_SECONDS = 10;
 export const STAGES = { sort: 'Needs sorting', 'need-info': 'Needs info', 'need-price': 'Needs price', ready: 'Ready to send', sent: 'Sent', attention: 'Needs checking' };
 export const SOURCES = { telegram: 'Telegram', whatsapp: 'WhatsApp', instagram: 'Instagram (ad)', facebook: 'Facebook (ad)' };
 export const owner = stage => ['need-price', 'ready', 'attention'].includes(stage) ? 'pm' : ['sort', 'need-info'].includes(stage) ? 'sales' : '';
+export function submissionCurrent(quote, detail) {
+  const submission = quote?.reviewSubmission;
+  return !!submission && submission.version === quote.version && !submission.invalidatedBy &&
+    JSON.stringify(submission.sourceMessageIds) === JSON.stringify((detail?.messages || []).map(m => String(m.update_id)));
+}
+export function managerHandoff(quote, detail) {
+  const submission = quote?.reviewSubmission;
+  return submissionCurrent(quote, detail) || !!submission && submission.invalidatedBy === 'pm' &&
+    JSON.stringify(submission.sourceMessageIds) === JSON.stringify((detail?.messages || []).map(m => String(m.update_id)));
+}
 export function stageFor(item, quote, detail, unresolved = [], today = businessDate()) {
   if (['failed', 'unknown', 'pending'].includes(item.status) || ['send_failed', 'send_uncertain', 'sending'].includes(quote?.status) || detail?.delivery_attempts?.some(a => a.quotation_id === quote?.id && ['pending', 'unknown'].includes(a.status))) return 'attention';
   if (item.status === 'sent' && quote?.status === 'sent') return 'sent';
@@ -12,6 +22,7 @@ export function stageFor(item, quote, detail, unresolved = [], today = businessD
   if (JSON.stringify((quote.reviewedMessageIds || []).map(String)) !== JSON.stringify(ids) || unresolved.some(m => String(m.chat_id) === String(item.telegram_chat_id))) return 'need-info';
   if (preparationIssues(editorForm(quote), today, 'sales').length || quote.items.some(i => !(i.unit || '').trim()) || quote.expiryDate < today) return 'need-info';
   if (quote.status === 'sent') return 'need-info';
+  if (!managerHandoff(quote, detail)) return 'need-info';
   return quote.items.some(i => !decimalValid(i.unitPrice, true)) ? 'need-price' : 'ready';
 }
 export function enquiryRow(item, quote, detail, assignments, failed = false) {
