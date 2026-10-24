@@ -58,3 +58,16 @@ Verification: `node --test frontend/tests/*.test.mjs`: 26 passed;
 and 390x844: empty/list, rejected invalid assignment, unrelated resolution,
 no horizontal overflow or page errors. Browser plugin unavailable; bundled
 Playwright used. Evidence ignored under .input/v2-f2-*. No backend changes.
+
+## F3 - Conversation Room
+
+Changed frontend/src/api.js, app.js, model.js, styles.css and API/model tests.
+Attributed chronological customer, Staff, PDF and summary history, editable
+clarification suggestions and explicit human text sends. Analysis is rejected
+as current after quote/message/unresolved-assignment/outgoing-evidence changes.
+Unknown/pending text outcomes hold sends; no automatic retries.
+`node --test frontend/tests/*.test.mjs`: 29 passed;
+`node frontend/tests/integration.mjs`: 8 passed. Edge desktop/mobile browser:
+conversation attribution, explicit mocked send, renewed analysis, no page errors
+or horizontal overflow. Screenshots .input/v2-f3-*. No live providers called.
+F2 implementation commit: 520ee21. F1 already committed as 00d6565.

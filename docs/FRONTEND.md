@@ -168,3 +168,8 @@ with entered content. No frontend package install or build is required for F1.
 V2 F2: Inbox includes Needs Assignment, original chat and association history.
 Staff explicitly assigns a same-chat enquiry reference, creates a new enquiry,
 or marks the message unrelated. Server validation remains authoritative.
+
+V2 F3: Conversation Room shares panel/form/feedback helpers. The original chat
+is immutable; AI text is advisory and editable. Explicit Send is attributed to
+Staff or Manager, using a request ID; unknown/pending outcomes hold further sends.
+Analyze requests never send text. Stale evidence hides clarification actions.

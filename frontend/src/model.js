@@ -63,3 +63,14 @@ export function sendBlockers({ quote, detail, role, dirty, previewVersion, busy,
   }
   return [...new Set(reasons)];
 }
+
+export function analysisCurrent(analysis, quote, detail, conversation = [], assignments = []) {
+  if (!analysis || analysis.stale || analysis.status !== 'completed' || !detail) return false;
+  const signature = analysis.signature;
+  return !!signature && sameId(signature.quotationId, quote?.id) && signature.baseVersion === quote?.version &&
+    analysis.business_profile_id === detail.business_profile_id &&
+    JSON.stringify(signature.sourceMessageIds) === JSON.stringify(detail.messages.map(m => m.update_id)) &&
+    JSON.stringify(signature.unassignedMessageIds || []) === JSON.stringify(assignments.filter(m => m.chat_id === detail.telegram_chat_id).map(m => m.update_id)) &&
+    JSON.stringify((signature.conversation?.outgoing || []).map(m => [m.text, m.provider_message_id])) ===
+      JSON.stringify(conversation.filter(m => m.direction === 'outgoing' && !m.kind && m.status === 'sent').map(m => [m.text, m.provider_message_id]));
+}

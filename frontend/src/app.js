@@ -2,7 +2,7 @@ import { Api } from './api.js';
 import { API_BASE_URL } from '../config.js';
 import { preparationIssues, reviewGuidance } from './experience.js';
 import { loadPDF, paintPDF, releasePDF } from './pdf-viewer.js';
-import { VALIDITIES, STATUS, escapeHTML as e, sameId, editable, quotePatch, editorForm, sendBlockers, deliveryHoldResolved, matchesInboxFilter } from './model.js';
+import { VALIDITIES, STATUS, escapeHTML as e, sameId, editable, quotePatch, editorForm, sendBlockers, deliveryHoldResolved, matchesInboxFilter, analysisCurrent } from './model.js';
 
 const api = new Api(API_BASE_URL);
 const root = document.querySelector('#app');
@@ -14,7 +14,7 @@ const state = {
   error: null, notice: '', noticeKind: 'info', offset: 0, limit: 25, items: [], filter: 'all', search: '',
   detail: null, quote: null, form: null, dirty: false, previewVersion: null, pdfURL: null,
   settings: null, client: null, settingsDirty: false, clientDirty: false, hold: false, holdBaseline: [],
-  assignments: [], profiles: [], activeProfile: '', selectedProfile: '', profileLabel: '',
+  conversation: [], analysis: null, composer: '', messageRequest: null, messageHold: false, assignments: [], profiles: [], activeProfile: '', selectedProfile: '', profileLabel: '',
   pdfReady: false, pdfPage: 1, pdfPages: 0, companyName: 'Demo business workspace', focusPreview: false, expanded: {},
 };
 let loadId = 0;
@@ -48,7 +48,7 @@ function errorBox() {
   return `<div class="message error" role="alert">${icon('alert')}<div><strong>${e(state.error.message)}</strong>${Object.keys(state.error.fields).length ? `<ul>${Object.entries(state.error.fields).map(([key, value]) => `<li>${e(key)}: ${e(value)}</li>`).join('')}</ul>` : ''}${state.error.status === 409 && state.quote ? '<p>Your edits are still here. Someone may have updated the quote. Refresh it to review the latest saved version.</p>' : ''}</div></div>`;
 }
 function connection() { return `<span class="connection ${state.connected === false ? 'offline' : ''}"><i></i>${state.connected === null ? 'Connectingâ€¦' : state.connected ? 'Connected' : 'Connection lost'}</span>`; }
-function hasEdits() { return state.dirty || state.settingsDirty || state.clientDirty; }
+function hasEdits() { return state.dirty || state.settingsDirty || state.clientDirty || !!state.composer; }
 function revokePDF() { if (state.pdfURL) URL.revokeObjectURL(state.pdfURL); state.pdfURL = null; state.previewVersion = null; state.pdfReady = false; state.pdfPage = 1; state.pdfPages = 0; state.focusPreview = false; releasePDF().catch(() => {}); }
 
 function render() {
@@ -129,11 +129,22 @@ function reviewPage() {
       <details class="panel customer-request" ${disclosure('message', true)}><summary><span>${icon('telegram')} Customer message</span><small>${e(dateTime(d.created_at))}</small></summary><div class="request-content">${d.messages.map(message => `<blockquote>${e(message.text)}</blockquote>`).join('')}
         ${q ? `<div class="draft-caption">${icon(q.draftMode === 'ai' ? 'spark' : 'file')}<span>${q.draftMode === 'ai' ? 'AI prepared this draft. Check it against the message.' : 'Manual draft. Add the details from this message.'}</span></div><details class="quiet-details" ${disclosure('draft')}><summary>Draft summary${q.draftError ? ' and fallback information' : ''}</summary><p class="summary">${e(q.summary || 'Use the original message to complete the quote.')}</p>${q.draftError ? `<p class="fallback-note">${e(q.draftError)}</p>` : ''}</details>` : `<div class="draft-start"><p>Weâ€™ll prepare a draft from this message. Youâ€™ll add prices and check it before sending.</p>${button('Prepare draft', 'draft-ai', { symbol: 'spark', kind: 'primary', disabled: state.busy })}${button('Write it myself', 'draft-manual', { disabled: state.busy })}</div>`}
       </div></details>
+${conversationPanel()}
       <section class="panel editor-panel"><div class="panel-heading"><div><h2>Quote details</h2><p>Check the customer and add your prices.</p></div><span id="save-state" class="save-state"></span></div>${q ? editor() : '<div class="empty-state"><span class="empty-icon">' + icon('file') + '</span><h3>Start with a draft</h3><p>Choose Prepare draft or Write it myself above.</p></div>'}</section>
       <details class="quiet-details references" ${disclosure('references')}><summary>More details</summary><dl><dt>Enquiry reference</dt><dd><code>${e(d.id)}</code></dd>${q ? `<dt>Client reference</dt><dd><code>${e(q.client.id)}</code></dd><dt>Saved version</dt><dd>${q.version}</dd>` : ''}<dt>Original Telegram chat</dt><dd><code>${e(d.telegram_chat_id)}</code></dd></dl><p>Delivery always goes to this original conversation.</p></details>
     </div><aside class="preview-column">
         <section class="panel preview-panel" id="preview-panel"><div class="panel-heading"><div><h2>Quote preview</h2><p id="preview-status">The document your customer will receive.</p></div>${icon('file')}</div>${pdfContent()}<div class="preview-actions">${button(state.pdfURL ? 'Refresh preview' : 'Preview quote', 'preview', { symbol: 'file', disabled: !q || state.dirty || state.busy })}${state.pdfURL ? `<a class="text-link" href="${e(state.pdfURL)}" target="_blank" rel="noopener">Open full PDF â†—</a>` : ''}</div></section>
     </aside></div>${deliveryHistory()}${activityHistory()}`;
+}
+function conversationPanel() {
+  const a = state.analysis;
+  const current = analysisCurrent(a, state.quote, state.detail, state.conversation, state.assignments);
+  return `<section class="panel settings-panel"><div class="panel-heading"><div><h2>Conversation Room</h2><p>Enquiry ${e(state.detail.id)} · ${e(state.detail.business_profile_id)} · original Telegram chat</p></div></div><ol class="conversation-list">${state.conversation.map(m => `<li><strong>${e(m.direction === 'incoming' ? 'Customer' : m.actor === 'pm' ? 'Manager' : 'Staff')} · ${e(m.kind || 'message')}</strong><time>${e(dateTime(m.created_at))}</time><blockquote>${e(m.text)}</blockquote><span>${e(m.status)}</span></li>`).join('') || '<li>No conversation messages yet.</li>'}</ol><h3>AI clarification suggestions</h3><p class="field-note">${!a ? 'No analysis yet. You can write a message manually.' : !current ? 'Analysis is stale or unavailable. Review current messages and request fresh analysis.' : 'Suggestions are advisory. Edit the message and explicitly send it.'}</p>${current ? (a.extraction?.clarificationSuggestions || []).map((text, i) => `<p>${e(text)} ${button('Use suggestion', 'use-question', {disabled: state.busy}) .replace('data-action="use-question"', `data-action="use-question" data-index="${i}"`)}</p>`).join('') : ''}${button('Analyze current messages', 'analyze', {disabled: state.busy || state.dirty})}<form id="message-form" novalidate><label class="field"><span>Message to customer</span><textarea name="message" style="resize: none" rows="3" maxlength="4000" ${state.busy || state.messageHold ? 'disabled' : ''}>${e(state.composer)}</textarea></label><p class="field-note">${state.messageHold ? 'Delivery unconfirmed. Refresh and check the original chat. This message will not be sent again automatically.' : 'Only your explicit Send delivers this text to the original chat.'}</p><button class="btn primary" ${state.busy || state.messageHold ? 'disabled' : ''}>Send message</button></form></section>`;
+}
+async function loadConversation(id) {
+  const [conversation, analysis, assignments] = await Promise.all([api.conversation(id), api.analysis(id), api.assignments()]);
+  state.conversation = conversation.items; state.analysis = analysis; state.assignments = assignments.items;
+  state.messageHold = state.conversation.some(m => m.direction === 'outgoing' && !m.kind && ['unknown', 'pending'].includes(m.status));
 }
 function input(label, name, value, { type = 'text', max = 500, placeholder = '', extra = '' } = {}) { return `<label class="field"><span>${label}</span><input name="${name}" type="${type}" value="${e(value)}" maxlength="${max}" placeholder="${e(placeholder)}" ${extra} /></label>`; }
 function validitySelect(value, name = 'validity') { return `<label class="field"><span>Valid for</span><select name="${name}">${Object.entries(VALIDITIES).map(([code, label]) => `<option value="${code}" ${code === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>`; }
@@ -221,7 +232,7 @@ async function loadRoute(route) {
   const token = ++loadId;
     state.route = route; state.loading = true; state.error = null; state.notice = ''; state.noticeKind = 'info'; state.dirty = false;
   state.settingsDirty = false; state.clientDirty = false; revokePDF();
-  state.profiles = []; state.detail = null; state.quote = null; state.form = null; state.client = null; state.settings = null; state.hold = false; state.holdBaseline = []; state.expanded = {};
+  state.conversation = []; state.analysis = null; state.composer = ''; state.messageRequest = null; state.messageHold = false; state.profiles = []; state.detail = null; state.quote = null; state.form = null; state.client = null; state.settings = null; state.hold = false; state.holdBaseline = []; state.expanded = {};
   render(); health();
   try {
     if (route === '/settings') {
@@ -240,6 +251,7 @@ async function loadRoute(route) {
       state.detail = d.value;
       if (q.status === 'fulfilled') setQuote(q.value);
       else if (q.reason.status !== 404) throw q.reason;
+      await loadConversation(id); if (token !== loadId) return;
       syncHold();
     } else {
       if (route !== '/') { state.route = '/'; history.replaceState(null, '', '#/'); }
@@ -335,6 +347,8 @@ function focusField(field) {
   target.focus({ preventScroll: true }); target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 const actions = {
+  analyze: () => task(async () => { state.analysis = await api.analysis(state.detail.id, state.role); state.notice = 'Analysis updated. Review suggestions before use.'; }),
+  'use-question': async el => { if (state.composer && !(await ask({title: 'Replace your message?', content: '<p>Replace the current unsent message with this suggestion?</p>', confirm: 'Replace message'}))) return; state.composer = state.analysis.extraction.clarificationSuggestions[Number(el.dataset.index)]; state.messageRequest = null; render(); document.querySelector('[name="message"]').focus(); },
   inbox: () => navigate('/'),
   refresh: async () => { if (state.busy || !(await discardEdits())) return; await loadRoute(state.route); },
   previous: async () => { state.offset = Math.max(0, state.offset - state.limit); await loadRoute('/'); },
@@ -388,6 +402,7 @@ root.addEventListener('click', async event => {
 });
 root.addEventListener('input', event => {
   if (event.target.tagName === 'TEXTAREA') growTextarea(event.target);
+  if (event.target.closest('#message-form')) { state.composer = event.target.value; state.messageRequest = null; }
   if (event.target.closest('#quote-form') && !state.busy) { captureQuote(event.target.form); state.dirty = true; state.notice = ''; root.querySelector('[data-page-notice]')?.remove(); updateEditorIndicators(); }
   if (event.target.id === 'search') { state.search = event.target.value; document.querySelector('#enquiry-results').innerHTML = inboxResults(); }
   if (event.target.closest('#settings-form')) { state.settingsDirty = true; state.settings[event.target.name] = event.target.value; }
@@ -403,7 +418,20 @@ root.addEventListener('change', event => {
 });
 root.addEventListener('submit', async event => {
   event.preventDefault(); if (state.busy) return; const form = event.target;
-  if (form.matches('.assignment-form')) {
+  if (form.id === 'message-form') {
+    if (!state.composer.trim() || state.messageHold) return;
+    const body = { text: state.composer.trim(), request_id: state.messageRequest || crypto.randomUUID() };
+    state.messageRequest = body.request_id;
+    await task(async () => {
+      state.messageHold = true;
+      const result = await api.message(state.detail.id, body, state.role);
+      if (['sent', 'failed'].includes(result.status)) { state.messageHold = false; state.messageRequest = null; }
+      if (result.status === 'sent') state.composer = '';
+      state.notice = result.status === 'sent' ? 'Telegram accepted your message.' : result.status === 'failed' ? 'Telegram rejected your message. Review the cause before a new send.' : 'Message delivery is unconfirmed. Check the original chat.';
+      state.noticeKind = result.status === 'sent' ? 'info' : 'warning';
+      await loadConversation(state.detail.id);
+    });
+  } else if (form.matches('.assignment-form')) {
     const body = { action: event.submitter?.value };
     if (body.action === 'assign') body.enquiry_id = new FormData(form).get('enquiry_id').trim();
     await task(async () => { await api.assign(form.dataset.update, body, state.role); await loadRoute('/'); state.notice = 'Assignment saved. Original message and decision history retained.'; });

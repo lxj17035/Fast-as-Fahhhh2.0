@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { quotePatch, editorForm, sendBlockers, escapeHTML, businessDate, deliveryHoldResolved } from '../src/model.js';
+import { quotePatch, editorForm, sendBlockers, escapeHTML, businessDate, deliveryHoldResolved, analysisCurrent } from '../src/model.js';
 
 const quote = { id: 'abcd', status: 'draft', version: 2, client: { name: 'Example', address: '' }, issueDate: '2026-10-23', expiryDate: '2026-11-23', validity: '1m', notes: '', missingInformation: [], items: [{ description: 'Shirts', quantity: '20', unitPrice: '25.00', lineTotal: '500.00' }], total: '500.00' };
 const ready = { quote, detail: { source: 'telegram', telegram_chat_id: '-100123', delivery_attempts: [] }, role: 'pm', previewVersion: 2, today: '2026-10-23' };
@@ -39,4 +39,14 @@ test('an old failed attempt cannot clear a newer ambiguous retry hold', () => {
   assert.equal(deliveryHoldResolved(['old'], [old]), false);
   assert.equal(deliveryHoldResolved(['old'], [old, { attempt_id: 'new', status: 'unknown' }]), false);
   assert.equal(deliveryHoldResolved(['old'], [old, { attempt_id: 'new', status: 'failed' }]), true);
+});
+
+test('old AI evidence is stale after a message, edit, assignment or sent staff message', () => {
+  const detail = {business_profile_id: 'printing', telegram_chat_id: '1', messages: [{update_id: '1'}]};
+  const analysis = {status: 'completed', business_profile_id: 'printing', signature: {quotationId: quote.id, baseVersion: quote.version, sourceMessageIds: ['1'], unassignedMessageIds: []}};
+  assert.equal(analysisCurrent(analysis, quote, detail), true);
+  assert.equal(analysisCurrent(analysis, {...quote, version: 3}, detail), false);
+  assert.equal(analysisCurrent(analysis, quote, {...detail, messages: [{update_id: '1'}, {update_id: '2'}]}), false);
+  assert.equal(analysisCurrent(analysis, quote, detail, [], [{chat_id:'1',update_id:'3'}]), false);
+  assert.equal(analysisCurrent(analysis, quote, detail, [{direction:'outgoing',status:'sent',text:'new',provider_message_id:'5'}]), false);
 });

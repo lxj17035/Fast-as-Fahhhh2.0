@@ -72,3 +72,13 @@ test('assignment actions use explicit human role and no chat override', async ()
   assert.equal(calls[0].url, '/api/assignments'); assert.equal(calls[1].headers['X-Demo-Actor'], 'sales');
   assert.deepEqual(JSON.parse(calls[1].body), {action: 'assign', enquiry_id: 'same-chat'});
 });
+
+test('conversation deliveries retain explicit failures and do not grant AI authority', async () => {
+  let call; const api = new Api('', async (url, options) => { call = {url, ...options}; return Response.json({id: 'message-id', status: 'failed'}, {status: 502}); });
+  assert.equal((await api.message('enquiry', {text: 'Human reviewed', request_id: 'stable-id'}, 'sales')).status, 'failed');
+  assert.equal(call.headers['X-Demo-Actor'], 'sales'); assert.deepEqual(JSON.parse(call.body), {text: 'Human reviewed', request_id: 'stable-id'});
+});
+test('analysis absence is allowed only on the nullable analysis contract', async () => {
+  const api = new Api('', async () => Response.json(null));
+  assert.equal(await api.analysis('enquiry'), null); await assert.rejects(api.settings());
+});

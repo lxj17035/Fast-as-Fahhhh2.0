@@ -26,7 +26,7 @@ export class Api {
     this.fetcher = fetcher;
   }
 
-  async request(path, { method = 'GET', body, role, pdf = false, delivery = false } = {}) {
+  async request(path, { method = 'GET', body, role, pdf = false, delivery = false, messageDelivery = false, nullable = false } = {}) {
     const headers = {};
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (role) headers['X-Demo-Actor'] = role;
@@ -35,10 +35,10 @@ export class Api {
       response = await this.fetcher(this.base + path, {
         method, headers, cache: 'no-store',
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-        signal: AbortSignal.timeout(delivery ? 120_000 : 90_000),
+        signal: AbortSignal.timeout((delivery || messageDelivery) ? 120_000 : 90_000),
       });
     } catch {
-      throw new ApiError(delivery
+      throw new ApiError((delivery || messageDelivery)
         ? 'Delivery could not be confirmed. Check the original Telegram chat and refresh the delivery history. Do not send again.'
       : 'Cannot reach the API. Check the server connection and try again.');
     }
@@ -53,9 +53,12 @@ export class Api {
     let data;
     try { data = await response.json(); }
     catch { throw new ApiError('The API returned an unreadable response. Refresh before continuing.', response.status); }
+    if (nullable && data === null && response.ok) return null;
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
       throw new ApiError('The API returned an invalid response. Refresh before continuing.', response.status);
     }
+    if (messageDelivery && data.status && ['sent', 'failed', 'unknown', 'pending'].includes(data.status) && data.id) return data;
+    if (messageDelivery && response.ok) throw new ApiError('Message delivery is unconfirmed. Refresh history before sending anything else.', response.status);
     // An explicit rejection is an HTTP 502 but still a persisted delivery outcome.
     if (delivery && data.attempt_id && ['sent', 'failed', 'unknown'].includes(data.status)) return data;
     if (delivery && response.ok) {
@@ -80,6 +83,9 @@ export class Api {
     if (retryId) body.retry_of_attempt_id = retryId;
     return this.request(`/api/quotations/${encodeURIComponent(id)}/send`, { method: 'POST', body, role: 'pm', delivery: true });
   }
+  conversation(id) { return this.request(`/api/enquiries/${encodeURIComponent(id)}/conversation`); }
+  analysis(id, role) { return this.request(`/api/enquiries/${encodeURIComponent(id)}/analysis`, role ? { method: 'POST', body: {}, role, nullable: true } : { nullable: true }); }
+  message(id, body, role) { return this.request(`/api/enquiries/${encodeURIComponent(id)}/messages`, { method: 'POST', body, role, messageDelivery: true }); }
   assignments() { return this.request('/api/assignments'); }
   assign(id, body, role) { return this.request(`/api/assignments/${encodeURIComponent(id)}`, { method: 'POST', body, role }); }
   settings() { return this.request('/api/settings'); }

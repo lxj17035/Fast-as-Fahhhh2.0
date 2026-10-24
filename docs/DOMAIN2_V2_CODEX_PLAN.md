@@ -19,9 +19,9 @@ After each section, update this checklist before handing work back.
 - [x] A3 - Clarification suggestions and follow-up analysis - `3ca6165`; 96 passed; [report](V2_AI_PROGRESS.md).
 - [x] A4 - Quotation change suggestions - `c3702bd`; 106 passed; [report](V2_AI_PROGRESS.md).
 - [x] A5 - Telegram outbound orchestration - `7f28fe7`; full 640 passed; final focused 67 passed; [report](V2_AI_PROGRESS.md).
-- [ ] F1 — Business Profile Settings.
-- [ ] F2 — Enquiry list & Needs Assignment.
-- [ ] F3 — Conversation Room.
+- [x] F1 — Business Profile Settings.
+- [x] F2 — Enquiry list & Needs Assignment.
+- [x] F3 — Conversation Room.
 - [ ] F4 — Generic Quotation Editor.
 - [ ] F5 — Manager Review & Send.
 - [ ] T1 — Printing end to end.
