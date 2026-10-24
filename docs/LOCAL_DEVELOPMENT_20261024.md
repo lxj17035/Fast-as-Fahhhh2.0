@@ -84,3 +84,11 @@ PostgreSQL database, with mocked external providers. The dedicated Docker test
 container was stopped/removed after verification; the pre-existing container was
 untouched. No real Telegram/Runpod checks, pushes or Replit publication. RP2 still
 requires matched Runpod request/usage evidence and remains incomplete.
+
+## README refresh (24 October 2026)
+
+- [x] Reviewed `origin/main` at `90a8491`, README, workflow, startup/configuration and latest verification records.
+- [x] Confirmed QuoteFlow as the project name; consolidated current features, Staff/Manager handoff, setup, hosting and release limits.
+- [x] Verified all 15 README local links resolve, Markdown fences are balanced, and `git diff --check` passes.
+
+Documentation-only change. Application tests and live provider/hosted checks were not rerun; README test counts are explicitly attributed to historical source verification. The existing checkout remains on `codex/feat-domain2-v2`, matching the reviewed remote-tracking main before this edit.
