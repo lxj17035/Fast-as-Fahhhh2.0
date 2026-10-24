@@ -43,3 +43,38 @@ def test_ai_cannot_return_authority_fields(field):
     from backend.drafting import ProviderError
     with pytest.raises(ProviderError):
         OpenAIExtractor('synthetic', 'test', Mock(return_value=response(value))).extract('Fictional', {})
+
+
+@pytest.mark.parametrize('identity,name,unit,notes', [
+    ('printing', 'Flyers', 'pcs', 'A5, full colour'),
+    ('cleaning', 'Office cleaning', 'visit', '120 square metres, windows excluded'),
+    ('repair', 'Laptop repair', 'job', 'Fictional device X; replace stated keyboard')])
+def test_generic_requirements_and_sufficiency(engine, identity, name, unit, notes):
+    from backend.drafting import validate_extraction
+    from backend.errors import AppError
+    store = Store(engine=engine)
+    settings = SettingsService(store)
+    settings.select_profile({'business_profile_id': identity})
+    value = valid_output()
+    value['items'] = [{'description': name, 'quantity': 2, 'unit': unit, 'notes': notes}]
+    extracted = validate_extraction(value)
+    assert extracted['missingInformation'] == []
+    quotes = QuotationService(store, settings)
+    quote = quotes.create('synthetic', settings.demo_client_id(identity), extracted=extracted)
+    assert quote['items'][0]['notes'] == notes and quote['items'][0]['unit'] == unit
+    assert quote['total'] is None
+    value['items'][0].update(quantity=None, unit=None)
+    value['missingInformation'] = ['Confirm ambiguous service specification']
+    incomplete = validate_extraction(value)
+    assert incomplete['items'][0]['quantity'] is None
+    assert len(incomplete['missingInformation']) == 3
+    other = quotes.create('incomplete', settings.demo_client_id(identity), extracted=incomplete)
+    with pytest.raises(AppError):
+        quotes.validate_for_send(other['id'], 1, 'pm')
+
+
+def test_no_items_cannot_be_declared_sufficient():
+    from backend.drafting import validate_extraction
+    value = valid_output()
+    value['items'] = []
+    assert validate_extraction(value)['missingInformation']

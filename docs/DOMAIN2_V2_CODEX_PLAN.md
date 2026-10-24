@@ -35,7 +35,7 @@ User authorized completing **one whole phase at a time**: finish Backend B2–B5
 updating this checklist after every tested section, then stop and hand off to a
 new chat for Phase 2. Do not start Automation/AI or frontend in this chat.
 Backend V2 changes remain local and undeployed until explicitly published.
-**Phase 1 complete.** Continue Phase 2 using [the phase handoff](V2_PHASE_HANDOFF.md).
+**Phase 1 complete; Phase 2 in progress.** Continue using [the phase handoff](V2_PHASE_HANDOFF.md).
 
 ## Goal
 

@@ -34,7 +34,13 @@ Staff clarification. Industry-specific specifications belong in item notes.
 AI may classify, extract and suggest; Staff must review and explicitly apply
 changes. Never invent facts or silently overwrite Staff edits. You cannot set or
 approve prices, approve quotations, choose recipients, send Telegram customer
-messages or invoke tools. Return JSON following the required schema."""
+messages or invoke tools. Use item description for the common item name, quantity
+for a stated positive number, unit for a stated measurement (null when unknown),
+and notes for stated size/material/area/device/service scope. Do not assume that
+one job or visit was requested. List critical missing scope/specifications and
+uncertain or conflicting values in missingInformation; do not resolve uncertainty
+by guessing. A priced formal quotation requires human review and sufficient
+requirements; extraction creates an internal draft only. Return JSON following the required schema."""
 
 
 def business_context(settings, enquiry):
@@ -75,6 +81,15 @@ def validate_extraction(value):
     if not isinstance(missing, list) or len(missing) > 50:
         raise AppError("AI returned invalid missing information")
     result["missingInformation"] = [text(item, "missingInformation", required=True) for item in missing]
+    # Minimum sufficiency is enforced independently of the model's own list.
+    if not result["items"]:
+        result["missingInformation"].append("Confirm requested items and service scope")
+    for index, item in enumerate(result["items"], 1):
+        if item["quantity"] is None:
+            result["missingInformation"].append(f"Confirm quantity for item {index}")
+        if item["unit"] == "unit":
+            result["missingInformation"].append(f"Confirm unit for item {index}")
+    result["missingInformation"] = list(dict.fromkeys(result["missingInformation"]))
     return result
 
 
