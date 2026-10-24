@@ -6,6 +6,12 @@ Malaysian micro and small businesses can miss enquiries or spend time copying me
 
 The first demo uses one fictional printing business and fictional customer enquiries. Keep real customer/company records out of the prototype.
 
+V2 B1 extends the backend to three fictional profiles (Printing, Cleaning,
+Repair) with one manually selected active profile. New enquiries retain their
+profile for life; switching profiles changes the demo workspace scope without
+moving existing records. See [business profile contract](BUSINESS_PROFILES.md).
+Frontend selection and the remaining V2 conversation workflow are separate work.
+
 ## One complete journey
 
 ```mermaid

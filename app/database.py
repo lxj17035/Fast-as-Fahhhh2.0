@@ -46,6 +46,7 @@ enquiries = Table(
         unique=True,
     ),
     Column("source", String(20), nullable=False),
+    Column("business_profile_id", String(40), nullable=False, server_default="printing"),
     Column("status", String(20), nullable=False),
     Column("created_at", DateTime(timezone=True), nullable=False),
     CheckConstraint("source = 'telegram'", name="enquiries_source_check"),
@@ -108,11 +109,12 @@ activities = Table(
 )
 
 
-def enquiry_values(update_id: int, received_at: datetime) -> dict:
+def enquiry_values(update_id: int, received_at: datetime, business_profile_id="printing") -> dict:
     return {
         "id": str(uuid4()),
         "telegram_update_id": update_id,
         "source": "telegram",
+        "business_profile_id": business_profile_id,
         "status": "needs_review",
         "created_at": received_at,
     }
@@ -147,11 +149,15 @@ def save_update(
 ) -> bool:
     """Commit receipt, enquiry and real events; False means an existing receipt."""
     from app.activity import record_activity
+    from app.xinjie_store import Store, integration_transaction
+    from backend.settings import SettingsService
 
     receipt_inserted = False
     received_at = datetime.now(timezone.utc)
     try:
-        with engine.begin() as connection:
+        with integration_transaction(engine) as connection:
+            settings = SettingsService(Store(engine, connection))
+            identity = settings.active_profile_id()
             connection.execute(
                 telegram_updates.insert().values(
                     update_id=update_id,
@@ -162,7 +168,7 @@ def save_update(
                 )
             )
             receipt_inserted = True
-            enquiry = enquiry_values(update_id, received_at)
+            enquiry = enquiry_values(update_id, received_at, identity)
             connection.execute(enquiries.insert().values(**enquiry))
             record_activity(
                 connection,

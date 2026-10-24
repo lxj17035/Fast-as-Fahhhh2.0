@@ -3,6 +3,7 @@ from fastapi import APIRouter, Body, Request
 from fastapi.responses import JSONResponse, Response
 from uuid import UUID
 from app.enquiries import get_enquiry
+from backend.settings import require_profile
 
 router = APIRouter(tags=["quotations"])
 
@@ -33,6 +34,7 @@ def enquiry_activity(enquiry_id: UUID, request: Request):
 @router.get("/api/quotations/{quotation_id}/activity")
 def quotation_activity(quotation_id: UUID, request: Request):
     quote = request.app.state.quotation_app.quotations.get(quotation_id.hex)
+    require_profile(quote, request.app.state.quotation_app.settings.active_profile_id())
     return {"items": get_enquiry(UUID(quote["enquiryId"]), request).activity}
 
 

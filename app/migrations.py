@@ -4,6 +4,17 @@ from app.database import send_attempts
 from app.xinjie_store import integration_transaction
 
 
+def upgrade_business_profile_schema(engine):
+    """Existing data belongs to the original Printing demo, regardless of selection."""
+    if engine.dialect.name != "postgresql":
+        return
+    with integration_transaction(engine) as connection:
+        connection.execute(text(
+            "ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS "
+            "business_profile_id VARCHAR(40) NOT NULL DEFAULT 'printing'"
+        ))
+
+
 def upgrade_delivery_schema(engine):
     # Runtime is PostgreSQL. SQLite is a fresh-schema test adapter only.
     if engine.dialect.name != "postgresql":

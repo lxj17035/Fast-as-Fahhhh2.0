@@ -9,7 +9,7 @@ from .drafting import DraftService
 from .errors import AppError, object_fields, text
 from .pdf import PDFService
 from .quotations import QuotationService
-from .settings import SettingsService
+from .settings import SettingsService, require_profile
 from .store import Store
 from .sending import SendService
 from .telegram_delivery import TelegramDocumentSender
@@ -38,6 +38,15 @@ class Application:
                 return 200, self.settings.get_settings()
             if method == "PATCH":
                 return 200, self.settings.update_settings(body)
+        if path == "/api/business-profiles" and method == "GET":
+            return 200, self.settings.list_profiles()
+        if path == "/api/business-profiles/active" and method == "PATCH":
+            return 200, self.settings.select_profile(body)
+        if len(parts) == 3 and parts[:2] == ["api", "business-profiles"]:
+            if method == "GET":
+                return 200, self.settings.get_profile(parts[2])
+            if method == "PATCH":
+                return 200, self.settings.update_settings(body, parts[2])
         if len(parts) == 3 and parts[:2] == ["api", "clients"]:
             if method == "GET":
                 return 200, self.settings.get_client(parts[2])
@@ -45,21 +54,24 @@ class Application:
                 return 200, self.settings.update_client(parts[2], body)
         if path == "/api/demo/enquiries" and method == "POST":
             object_fields(body, {"text", "clientId"})
-            client_id = body.get("clientId", "demo-client")
-            self.settings.get_client(text(client_id, "clientId", required=True))
-            key = uuid4().hex
-            enquiry = {"id": key, "text": text(body.get("text"), "text", required=True, limit=20000),
-                       "clientId": client_id, "source": "demo", "chatId": "demo-chat", "status": "received"}
             with self.store.transaction():
+                identity = self.settings.active_profile_id()
+                client_id = body.get("clientId", self.settings.demo_client_id(identity))
+                self.settings.get_client(text(client_id, "clientId", required=True), identity)
+                key = uuid4().hex
+                enquiry = {"id": key, "text": text(body.get("text"), "text", required=True, limit=20000),
+                           "business_profile_id": identity, "clientId": client_id,
+                           "source": "demo", "chatId": "demo-chat", "status": "received"}
                 self.store.put("enquiries", key, enquiry)
             return 201, enquiry
         if path == "/api/enquiries" and method == "GET":
-            return 200, self.store.list("enquiries")
+            identity = self.settings.active_profile_id()
+            return 200, [item for item in self.store.list("enquiries") if item["business_profile_id"] == identity]
         if len(parts) >= 3 and parts[:2] == ["api", "enquiries"]:
+            enquiry = require_profile(self.store.get("enquiries", parts[2]), self.settings.active_profile_id())
             if len(parts) == 3 and method == "GET":
-                enquiry = self.store.get("enquiries", parts[2])
                 return 200, {**enquiry, "context": {
-                    "company": self.settings.get_settings(),
+                    "company": self.settings.get_settings(enquiry["business_profile_id"]),
                     "client": self.settings.get_client(enquiry["clientId"]) if enquiry.get("clientId") else None,
                     "source": "stored-business-context" if enquiry["source"] == "telegram" else "synthetic-seed"},
                     "quotations": [q for q in self.store.list("quotations") if q["enquiryId"] == parts[2]],
@@ -78,6 +90,7 @@ class Application:
             if len(parts) == 4 and parts[3] == "activity" and method == "GET":
                 return 200, {"items": enquiry_activity(self.store, parts[2])}
         if len(parts) >= 3 and parts[:2] == ["api", "quotations"]:
+            require_profile(self.quotations.get(parts[2]), self.settings.active_profile_id())
             if len(parts) == 4 and parts[3] == "activity" and method == "GET":
                 quote = self.quotations.get(parts[2])
                 return 200, {"items": enquiry_activity(self.store, quote["enquiryId"])}

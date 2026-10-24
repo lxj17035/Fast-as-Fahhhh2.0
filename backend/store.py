@@ -14,6 +14,7 @@ from sqlalchemy.pool import StaticPool
 from app.db_url import postgres_url
 from app.database import metadata as inbound_metadata, enquiries, telegram_updates
 from .errors import AppError
+from .settings import profile_id, require_profile
 
 metadata = MetaData()
 records = Table(
@@ -100,6 +101,7 @@ class Store:
             context = connection.execute(select(records.c.body).where(
                 records.c.kind == "enquiry_context", records.c.id == row["id"])).scalar_one_or_none() or {}
             result.append({"id": row["id"], "text": row["original_text"], "source": row["source"],
+                           "business_profile_id": row["business_profile_id"],
                            "chatId": str(row["chat_id"]), "clientId": context.get("clientId"),
                            "providerUpdateId": str(row["update_id"]),
                            "providerMessageId": str(row["message_id"]), "status": row["status"]})
@@ -115,12 +117,37 @@ class Store:
                 records.c.kind == kind, records.c.id == key)).scalar_one_or_none()
         if value is None:
             raise AppError(f"{kind} not found", 404)
+        if kind in {"enquiries", "clients", "quotations"}:
+            value.setdefault("business_profile_id", "printing")
         return value
 
     def put(self, kind, key, value):
         if self.connection is None:
             raise RuntimeError("Store mutations require transaction()")
         json.dumps(value, ensure_ascii=False, allow_nan=False)
+        if kind in {"enquiries", "clients", "quotations"}:
+            identity = profile_id(value.get("business_profile_id", "printing"))
+            try:
+                original = self.get(kind, key)
+            except AppError as error:
+                if error.status != 404:
+                    raise
+            else:
+                if original["business_profile_id"] != identity:
+                    raise AppError("Business profile cannot be changed on an existing record", 409)
+            value = {**value, "business_profile_id": identity}
+            client_id = value.get("clientId") if kind == "enquiries" else None
+            if kind == "quotations":
+                client_id = value.get("client", {}).get("id")
+                try:
+                    parent = self.get("enquiries", value["enquiryId"])
+                except AppError as error:
+                    if error.status != 404:
+                        raise
+                else:
+                    require_profile(parent, identity)
+            if client_id:
+                require_profile(self.get("clients", client_id), identity)
         if kind == "enquiries" and self.inbound(self.connection, key):
             # Do not overwrite transport identifiers or the original message.
             if "status" in value:
@@ -136,6 +163,9 @@ class Store:
         with self.reading() as connection:
             values = list(connection.execute(select(records.c.body).where(
                 records.c.kind == kind).order_by(records.c.created_at, records.c.id)).scalars())
+            if kind in {"enquiries", "clients", "quotations"}:
+                for value in values:
+                    value.setdefault("business_profile_id", "printing")
             if kind == "enquiries":
                 inbound = self.inbound(connection)
                 ids = {item["id"] for item in inbound}

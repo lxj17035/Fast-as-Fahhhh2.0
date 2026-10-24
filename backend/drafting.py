@@ -132,6 +132,7 @@ class DraftService:
 
     def create(self, enquiry_id, *, manual=False):
         enquiry = self.store.get("enquiries", enquiry_id)
+        identity = enquiry["business_profile_id"]
         for quotation in self.store.list("quotations"):
             if quotation["enquiryId"] == enquiry_id:
                 return quotation
@@ -141,17 +142,19 @@ class DraftService:
             client_id = "telegram-client-" + enquiry_id
             with self.store.transaction():
                 try:
-                    self.settings.get_client(client_id)
+                    self.settings.get_client(client_id, identity)
                 except AppError as failure:
                     if failure.status != 404:
                         raise
-                    self.store.put("clients", client_id, {"id": client_id, "name": "", "address": ""})
+                    self.store.put("clients", client_id, {
+                        "id": client_id, "name": "", "address": "", "business_profile_id": identity,
+                    })
                 current = self.store.get("enquiries", enquiry_id)
                 current["clientId"] = client_id
                 self.store.put("enquiries", enquiry_id, current)
             enquiry["clientId"] = client_id
-        context = {"company": self.settings.get_settings(),
-                   "client": self.settings.get_client(enquiry["clientId"])}
+        context = {"company": self.settings.get_settings(identity),
+                   "client": self.settings.get_client(enquiry["clientId"], identity)}
         error = None
         extracted = None
         if not manual:

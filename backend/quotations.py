@@ -106,8 +106,17 @@ class QuotationService:
             existing = [q for q in self.store.list("quotations") if q["enquiryId"] == enquiry_id]
             if existing:
                 return existing[0]
-            company = self.settings.get_settings()
-            client = self.settings.get_client(client_id)
+            try:
+                enquiry = self.store.get("enquiries", enquiry_id)
+            except AppError as error:
+                if error.status != 404:
+                    raise
+                # Retain the standalone service/fixture contract with no intake row.
+                identity = self.settings.active_profile_id()
+            else:
+                identity = enquiry["business_profile_id"]
+            company = self.settings.get_settings(identity)
+            client = self.settings.get_client(client_id, identity)
             if extracted.get("clientName"):
                 client["name"] = extracted["clientName"]
             if extracted.get("clientAddress"):
@@ -118,6 +127,7 @@ class QuotationService:
             value = {
                 "id": quote_id, "number": "QUO-" + quote_id[:12].upper(),
                 "enquiryId": enquiry_id, "version": 1, "status": "draft",
+                "business_profile_id": identity,
                 "company": company, "client": client, "currency": company["currency"],
                 "issueDate": issue, "validity": company["defaultValidity"],
                 "expiryDate": expiry_date(issue, company["defaultValidity"]),

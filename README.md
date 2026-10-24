@@ -68,6 +68,7 @@ Telegram is the selected first channel. WhatsApp, Instagram, and Facebook are fu
 | Component | Status |
 | --- | --- |
 | Editable business/client settings and PostgreSQL persistence | Implemented and locally tested |
+| V2 B1: Printing/Cleaning/Repair profile persistence and pinned enquiry scope | Backend implemented; frontend selection remains pending. See [profile contract and checks](docs/BUSINESS_PROFILES.md). |
 | Quotation drafts, exact totals, configurable validity, version checks | Implemented and locally tested |
 | PM-role validation and send-state helpers | Implemented and locally tested; not a production identity system |
 | AI extraction | Runpod GLM-5.3 integrated; one live synthetic extraction passed. OpenAI remains an optional mocked/tested alternative |

@@ -13,7 +13,7 @@ from app.xinjie_store import Store
 from backend.errors import AppError
 from backend.pdf import PDFService
 from backend.quotations import QuotationService
-from backend.settings import SettingsService
+from backend.settings import SettingsService, require_profile
 
 router = APIRouter(prefix="/api", tags=["quotations"])
 
@@ -52,6 +52,30 @@ def patch_settings(request: Request, patch: dict = Body(...)):
         return settings.update_settings(patch)
 
 
+@router.get("/business-profiles")
+def get_business_profiles(request: Request):
+    with services(request) as (_, settings, _):
+        return settings.list_profiles()
+
+
+@router.patch("/business-profiles/active")
+def select_business_profile(request: Request, patch: dict = Body(...)):
+    with services(request) as (_, settings, _):
+        return settings.select_profile(patch)
+
+
+@router.get("/business-profiles/{profile_id}")
+def get_business_profile(profile_id: str, request: Request):
+    with services(request) as (_, settings, _):
+        return settings.get_profile(profile_id)
+
+
+@router.patch("/business-profiles/{profile_id}")
+def patch_business_profile(profile_id: str, request: Request, patch: dict = Body(...)):
+    with services(request) as (_, settings, _):
+        return settings.update_settings(patch, profile_id)
+
+
 @router.get("/clients/{client_id}")
 def get_client(client_id: str, request: Request):
     with services(request) as (_, settings, _):
@@ -74,20 +98,22 @@ def create_draft(enquiry_id: UUID, body: DraftRequest, request: Request):
             if error.status != 404:
                 raise
             key = enquiry_id.hex
+        require_profile(store.get("enquiries", key), settings.active_profile_id())
         return request.app.state.quotation_app.drafts.create(key, manual=body.manual)
 
 
 @router.get("/quotations/{quotation_id}")
 def get_quotation(quotation_id: UUID, request: Request):
-    with services(request) as (_, _, quotations):
-        return quotations.get(quotation_id.hex)
+    with services(request) as (_, settings, quotations):
+        return require_profile(quotations.get(quotation_id.hex), settings.active_profile_id())
 
 
 @router.patch("/quotations/{quotation_id}")
 def patch_quotation(quotation_id: UUID, request: Request, patch: dict = Body(...)):
     actor = optional_demo_actor(request)
-    with services(request) as (store, _, quotations):
+    with services(request) as (store, settings, quotations):
         with store.transaction():
+            require_profile(quotations.get(quotation_id.hex), settings.active_profile_id())
             saved = quotations.update(quotation_id.hex, patch)
             record_activity(
                 store.connection,
@@ -107,7 +133,8 @@ def get_pdf(
     request: Request,
     version: Annotated[int, Query(gt=0, le=2**31 - 1)],
 ):
-    with services(request) as (store, _, quotations):
+    with services(request) as (store, settings, quotations):
+        require_profile(quotations.get(quotation_id.hex), settings.active_profile_id())
         pdf, saved_version = PDFService(store, quotations).get(
             quotation_id.hex, version
         )

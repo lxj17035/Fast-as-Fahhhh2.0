@@ -11,6 +11,7 @@ from sqlalchemy.engine import RowMapping
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.database import activities, enquiries, send_attempts, telegram_updates
+from app.xinjie_store import Store
 
 router = APIRouter(prefix="/api/enquiries", tags=["enquiries"])
 
@@ -22,6 +23,7 @@ class EnquirySummary(BaseModel):
     created_at: datetime
     telegram_chat_id: str
     original_text: str
+    business_profile_id: str
 
 
 class EnquiryPage(BaseModel):
@@ -91,6 +93,7 @@ def summary(row: RowMapping) -> EnquirySummary:
         created_at=utc_timestamp(row["created_at"]),
         telegram_chat_id=str(row["chat_id"]),
         original_text=row["original_text"],
+        business_profile_id=row["business_profile_id"],
     )
 
 
@@ -115,6 +118,8 @@ def list_enquiries(
     )
     try:
         with request.app.state.engine.connect() as connection:
+            identity = Store(connection.engine, connection).get("settings", "active_profile")["business_profile_id"]
+            statement = statement.where(enquiries.c.business_profile_id == identity)
             rows = connection.execute(statement).mappings().all()
     except SQLAlchemyError:
         raise HTTPException(
@@ -128,6 +133,8 @@ def get_enquiry(enquiry_id: UUID, request: Request) -> EnquiryDetail:
     statement = enquiry_query().where(enquiries.c.id == str(enquiry_id))
     try:
         with request.app.state.engine.connect() as connection:
+            identity = Store(connection.engine, connection).get("settings", "active_profile")["business_profile_id"]
+            statement = statement.where(enquiries.c.business_profile_id == identity)
             row = connection.execute(statement).mappings().one_or_none()
             attempts = connection.execute(
                 select(

@@ -23,7 +23,7 @@ from app.quotation_contract import (
     SavedQuotation,
 )
 from app.telegram_client import DeliveryResult
-from app.xinjie_store import integration_transaction
+from app.xinjie_store import Store, integration_transaction
 
 router = APIRouter(prefix="/api/quotations", tags=["delivery"])
 MAX_PDF_BYTES = 10 * 1024 * 1024
@@ -125,11 +125,15 @@ def send_quotation(
     approved_at = datetime.now(timezone.utc)
     try:
         with integration_transaction(engine) as connection:
+            identity = Store(engine, connection).get("settings", "active_profile")["business_profile_id"]
             previous = connection.execute(
                 select(send_attempts.c.id, send_attempts.c.status,
-                       send_attempts.c.retry_of_attempt_id)
+                       send_attempts.c.retry_of_attempt_id, enquiries.c.business_profile_id)
+                .join(enquiries, send_attempts.c.enquiry_id == enquiries.c.id)
                 .where(send_attempts.c.quotation_id == saved_id)
             ).mappings().all()
+            if any(row["business_profile_id"] != identity for row in previous):
+                raise HTTPException(status_code=404, detail="Quotation not found in this business profile")
             retry_of = str(approval.retry_of_attempt_id) if approval.retry_of_attempt_id else None
             if previous:
                 # Never retry a success, an active upload or an ambiguous outcome.
@@ -147,16 +151,19 @@ def send_quotation(
                 connection, saved_id, approval.expected_version
             )
             validate_quotation(quotation, saved_id, approval.expected_version)
-            chat_id = connection.execute(
-                select(telegram_updates.c.chat_id)
+            source = connection.execute(
+                select(telegram_updates.c.chat_id, enquiries.c.business_profile_id)
                 .join(
                     enquiries,
                     enquiries.c.telegram_update_id == telegram_updates.c.update_id,
                 )
                 .where(enquiries.c.id == quotation.enquiry_id)
-            ).scalar_one_or_none()
-            if chat_id is None:
+            ).mappings().one_or_none()
+            if source is None:
                 raise HTTPException(status_code=422, detail="Original chat unavailable")
+            if source["business_profile_id"] != identity:
+                raise HTTPException(status_code=404, detail="Quotation not found in this business profile")
+            chat_id = source["chat_id"]
             connection.execute(
                 send_attempts.insert().values(
                     id=attempt_id,

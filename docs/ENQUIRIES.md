@@ -9,6 +9,9 @@ Each accepted Telegram text message creates one enquiry with a UUID `id`, source
 `telegram`, status `needs_review`, and the original receipt timestamp. A unique
 foreign key `telegram_update_id` links it to the immutable original receipt.
 Original text, chat ID, message ID and update ID remain stored in that receipt.
+V2 B1 pins `business_profile_id` from the manually selected demo profile at
+intake. Existing enquiries never move when selection changes. See
+[business profiles](BUSINESS_PROFILES.md) for migration and scope rules.
 Two distinct messages in the same chat create separate enquiries; no implicit
 conversation grouping or customer matching occurs.
 
@@ -28,6 +31,8 @@ the schema with one application instance before starting additional workers.
 
 `limit` must be 1–100; `offset` must be 0–9223372036854775807. Invalid values return 422.
 Results are ordered by `created_at` descending, then `id` descending to break ties.
+Filtering to the active business profile occurs before pagination. Detail,
+quotation, activity, PDF and mutation endpoints reject foreign-profile IDs.
 An empty page returns `items: []`. Offsets are not snapshots: newly received
 messages may shift page boundaries between requests.
 
@@ -38,6 +43,7 @@ Illustrative response (fictional data):
   "items": [{
     "id": "ea28df69-5682-462c-996e-05012137eace",
     "source": "telegram",
+    "business_profile_id": "printing",
     "status": "needs_review",
     "created_at": "2026-10-23T00:00:00Z",
     "telegram_chat_id": "-1001234567890",
