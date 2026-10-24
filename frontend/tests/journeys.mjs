@@ -148,6 +148,83 @@ try {
     assert.equal(history.at(-1).text, review.telegram_summary);
     assert.equal((await api.enquiry(enquiry.id)).status, 'sent');
     console.log(`PASS ${c.profile}: webhook -> Runpod mocked HTTP -> Staff clarification -> answer -> current-message review -> Manager price -> rendered saved PDF/summary -> approved delivery/history; desktop/mobile`);
+    if (c.profile === 'printing') {
+      const oldPDF = new Uint8Array(await (await api.pdf(quote.id, quote.version)).blob.arrayBuffer());
+      const oldQuote = await api.quotation(enquiry.id);
+      await incoming(2, 'I need 40 shirts; not sure how to group this', history.at(-1).provider_message_id);
+      async function reloadAfterAnalysis(count) {
+        let ready = false;
+        for (let i = 0; i < 100; i++) {
+          const analysis = await api.analysis(enquiry.id);
+          if (analysis?.signature.sourceMessageIds.length === count) { ready = true; break; }
+          await new Promise(r => setTimeout(r, 100));
+        }
+        assert.ok(ready, 'Follow-up analysis completed');
+        await page.reload();
+        await page.getByRole('heading', { name: 'Post-send request', exact: true }).waitFor();
+      }
+      await reloadAfterAnalysis(3);
+      assert.equal((await api.analysis(enquiry.id)).relationshipIntent, 'unclear');
+      assert.equal((await api.request(`/api/enquiries/${enquiry.id}/quotations`)).items.length, 1);
+      await page.getByRole('button', { name: 'Use suggestion', exact: true }).click();
+      await page.getByRole('button', { name: 'Send message', exact: true }).click();
+      await notice('Telegram accepted your message');
+      const clarification = (await api.conversation(enquiry.id)).items.at(-1);
+      await incoming(3, 'Amend the original quotation to 40 shirts', clarification.provider_message_id);
+      await reloadAfterAnalysis(4);
+      assert.equal((await api.analysis(enquiry.id)).relationshipIntent, 'revision');
+      await page.locator('#fork-form select[name="relationship"]').selectOption('revision');
+      await page.getByRole('button', { name: 'Create quotation from confirmed request', exact: true }).click();
+      await notice('Created a draft');
+
+      async function prepareAndSendChild(targetId) {
+        await page.getByLabel('Simulated role').selectOption('sales');
+        await page.getByLabel('Item 1 quantity', { exact: true }).fill('40');
+        await page.getByLabel('Item 1 unit', { exact: true }).fill('pcs');
+        await page.getByLabel('Item 1 notes', { exact: true }).fill('Confirmed blue cotton');
+        while (await page.getByRole('button', { name: 'Mark checked', exact: true }).count()) {
+          await page.getByRole('button', { name: 'Mark checked', exact: true }).first().click();
+          await page.getByRole('dialog').getByRole('button', { name: 'Mark checked', exact: true }).click();
+        }
+        await page.locator('#review-messages').check();
+        await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+        await notice('Your draft is saved');
+        assert.equal((await api.quotation(targetId)).total, null);
+        await page.getByLabel('Simulated role').selectOption('pm');
+        await page.getByLabel('Item 1 unit price', { exact: true }).fill('25.00');
+        await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+        await notice('Your draft is saved');
+        await page.getByRole('button', { name: 'Manager Review & Send', exact: true }).click();
+        await page.waitForFunction(() => document.querySelector('[data-action="final-send"]') && !document.querySelector('[data-action="final-send"]').disabled);
+        await page.getByRole('button', { name: 'Approve & Send', exact: true }).click();
+        await notice('accepted by Telegram');
+        const saved = await api.quotation(targetId);
+        assert.equal(saved.total, '1000.00'); assert.equal(saved.status, 'sent');
+        assert.deepEqual(new Uint8Array(await (await api.pdf(quote.id, quote.version)).blob.arrayBuffer()), oldPDF);
+        return saved;
+      }
+      const revision = await prepareAndSendChild(enquiry.id);
+      assert.equal(revision.parentQuotationId, quote.id); assert.equal(revision.relationship, 'revision');
+      await incoming(4, 'New quotation for a separate independent order of 40 shirts');
+      let additional;
+      for (let i = 0; i < 100; i++) {
+        additional = (await api.enquiries()).items.find(e => e.id !== enquiry.id);
+        if (additional) { try { await api.quotation(additional.id); break; } catch {} }
+        await new Promise(r => setTimeout(r, 100));
+      }
+      assert.ok(additional);
+      await page.reload();
+      await page.getByRole('heading', { name: 'Post-send request', exact: true }).waitFor();
+      await page.locator('#fork-form select[name="relationship"]').selectOption('additional');
+      await page.getByLabel('Additional enquiry reference', { exact: true }).fill(additional.id);
+      await page.getByRole('button', { name: 'Create quotation from confirmed request', exact: true }).click();
+      await page.waitForURL(`**/#/enquiries/${additional.id}`);
+      await page.getByRole('heading', { name: 'Quote details', exact: true }).waitFor();
+      const extra = await prepareAndSendChild(additional.id);
+      assert.equal(extra.parentQuotationId, revision.id); assert.equal(extra.relationship, 'additional');
+      assert.deepEqual(await api.request(`/api/quotations/${quote.id}`), oldQuote);
+      console.log('PASS post-send UI: unclear -> explicit clarification/answer -> Revision -> new Manager price/approval -> independent Additional -> approved delivery; original PDF/metadata unchanged');
+    }
   }
   assert.deepEqual(errors, []);
   console.log(`PASS browser identity/content/no overlay/console/interaction/screenshots; ${cases.length} journey(s)`);

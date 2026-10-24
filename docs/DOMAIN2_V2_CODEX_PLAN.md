@@ -26,7 +26,7 @@ After each section, update this checklist before handing work back.
 - [x] F5 — Manager Review & Send - `9fef80d`; [verification](V2_FRONTEND_PROGRESS.md).
 - [x] T1 — Printing end to end; SQLite/PostgreSQL + actual desktop/mobile UI, [evidence](V2_INTEGRATION_PROGRESS.md).
 - [x] T2 — Cleaning and Repair compatibility; complete API/UI journeys, [evidence](V2_INTEGRATION_PROGRESS.md).
-- [ ] T3 — Post-send changes.
+- [x] T3 — Post-send changes and negative integration; 14 database cases + browser forks, [evidence](V2_INTEGRATION_PROGRESS.md).
 - [x] RP1 - One bounded live V2 Runpod check: HTTP 200; 1,362 tokens; [sanitized evidence](V2_RUNPOD_RP1.md).
 - [ ] RP2 — Release/T1: verify the published Replit app actually calls Runpod and capture submission proof.
 
@@ -288,6 +288,11 @@ mocked providers. [Files/commands/limits](V2_INTEGRATION_PROGRESS.md).
 
 ### T3 — Post-send changes
 Clear Revision; explicit Additional; ambiguous grouping asks Staff; historical PDFs untouched. Include negative tests for unauthorized AI send/pricing, wrong business profile, duplicate sends and unknown delivery result. Commit tests in the relevant section or one final tests commit only after passing.
+
+**Completed locally — 24 October 2026.** Fourteen T1-T3 SQLite/PostgreSQL
+cases passed; browser repeated all profiles and unclear -> clarification ->
+Revision -> independent Additional with fresh Manager approval and immutable old
+PDF/metadata. Exact [commands/files/limits](V2_INTEGRATION_PROGRESS.md).
 
 ## Explicitly deferred / not to invent
 - Customer acceptance and binding confirmed-order processing, quotation expiry/re-quotation workflows beyond display, closed enquiry reopening rules, future production dedicated Telegram bots, advanced per-SME validation rule engines.

@@ -150,3 +150,119 @@ def test_t2_services_complete_journey_and_pinned_scope(journey, headers, update,
     client.patch('/api/business-profiles/active', json={'business_profile_id': identity})
     assert client.get(review['pdf']['url']).content == pdf
     assert current_quote(client, enquiry['id'])['business_profile_id'] == identity
+
+
+def fork(client, original, relationship='revision', target=None):
+    response = client.post(f"/api/quotations/{original['id']}/fork", headers=STAFF,
+        json={'version': original['version'], 'relationship': relationship,
+              **({'enquiry_id': target} if target else {})})
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def prepare_fork(client, quote):
+    ids = [m['update_id'] for m in client.get(f"/api/enquiries/{quote['enquiryId']}").json()['messages']]
+    quote = save(client, quote, {'reviewedMessageIds': ids, 'missingInformation': [],
+        'client': {'name': 'Fictional Customer'}, 'items': [dict(item_name='Revised event shirts',
+        quantity=40, unit='pcs', notes='Confirmed amendment; blue cotton')]})
+    assert quote['total'] is None
+    return save(client, quote, {'items': [dict(item_name='Revised event shirts', quantity=40,
+        unit='pcs', notes='Confirmed amendment; blue cotton', unit_price='25.00')]}, MANAGER)
+
+
+@pytest.mark.parametrize('intent', ['revision', 'additional', 'unclear'])
+def test_t3_post_send_relationships_keep_original_history(journey, headers, update, intent):
+    client, sender, _ = journey
+    enquiry, original, review, pdf, _ = complete_journey(journey, headers, update)
+    saved_original = client.get(f"/api/quotations/{original['id']}").json()
+    original_calls = list(sender.calls)
+    if intent == 'additional':
+        receive(client, headers, update, 2, 'New quotation for a separate independent order of 40 shirts')
+        target = next(e['id'] for e in client.get('/api/enquiries').json()['items'] if e['id'] != enquiry['id'])
+        wrong = client.post(f"/api/quotations/{original['id']}/fork", headers=STAFF,
+            json={'version': original['version'], 'relationship': intent, 'enquiry_id': enquiry['id']})
+        assert wrong.status_code == 422
+        child = fork(client, original, intent, target)
+        assert child['enquiryId'] == target
+    else:
+        receive(client, headers, update, 2, 'Amend the original to 40 shirts' if intent == 'revision'
+                else 'I need 40 shirts; not sure how to group this', reply=700003)
+        analysis = client.get(f"/api/enquiries/{enquiry['id']}/analysis").json()
+        assert analysis['relationshipIntent'] == intent and analysis['suggestionSetId'] is None
+        assert client.get(f"/api/quotations/{original['id']}").json() == saved_original
+        if intent == 'unclear':
+            assert analysis['changeWarnings'] and analysis['extraction']['clarificationSuggestions']
+            assert len(client.get(f"/api/enquiries/{enquiry['id']}/quotations").json()['items']) == 1
+            assert sender.calls == original_calls  # Advisory AI does not send or fork.
+            question = analysis['extraction']['clarificationSuggestions'][0]
+            result = client.post(f"/api/enquiries/{enquiry['id']}/messages", headers=STAFF,
+                json={'text': question, 'request_id': str(uuid4())})
+            assert result.status_code == 200
+            receive(client, headers, update, 3, 'Amend the original quotation to 40 shirts',
+                    reply=int(result.json()['provider_message_id']))
+            assert client.get(f"/api/enquiries/{enquiry['id']}/analysis").json()['relationshipIntent'] == 'revision'
+        child = fork(client, original)
+        assert child['enquiryId'] == enquiry['id']
+    assert child['id'] != original['id'] and child['parentQuotationId'] == original['id']
+    assert child['relationship'] == ('revision' if intent == 'unclear' else intent)
+    assert child['total'] is None and all(i['unitPrice'] is None for i in child['items'])
+    child = prepare_fork(client, child)
+    result, child_review, child_pdf, _ = final_send(client, child)
+    assert result.status_code == 200, result.text
+    assert child['total'] == '1000.00' and child_pdf != pdf
+    assert child_review['source_message_ids'] == child['reviewedMessageIds']
+    assert client.get(review['pdf']['url']).content == pdf
+    assert client.get(f"/api/quotations/{original['id']}").json() == saved_original
+    # Original and child delivery histories retain their own immutable snapshots.
+    history = client.get(f"/api/enquiries/{enquiry['id']}/conversation").json()['items']
+    original_summary = [m for m in history if m.get('kind') == 'quotation_summary'
+                        and m.get('quotation_id', '').replace('-', '') == original['id']]
+    assert len(original_summary) == 1 and original_summary[0]['text'] == review['telegram_summary']
+
+
+def test_t3_authority_scope_stale_duplicates_and_unknown_hold(journey, headers, update):
+    client, sender, _ = journey
+    enquiry, original, review, pdf, _ = complete_journey(journey, headers, update)
+    receive(client, headers, update, 2, 'Amend the original to 40 shirts', reply=700003)
+    child = prepare_fork(client, fork(client, original))
+    path = f"/api/quotations/{child['id']}"
+    approval = {'expected_version': child['version'], 'approved': True}
+    before = len(sender.calls)
+    for actor, status in [('sales', 403), ('ai', 401)]:
+        role = {'X-Demo-Actor': actor}
+        assert client.post(path + '/send', headers=role, json=approval).status_code == status
+        assert client.patch(path, headers=role, json={'version': child['version'], 'items': [
+            dict(item_name='Forbidden price', quantity=1, unit_price=1)]}).status_code == status
+    assert client.post(path + '/send', headers=MANAGER, json={**approval, 'chat_id': -999}).status_code == 422
+    assert client.post(f"/api/quotations/{original['id']}/send", headers=MANAGER,
+        json={'expected_version': original['version'], 'approved': True}).status_code == 409
+    assert len(sender.calls) == before
+    assert client.get(path + f"/review?version={child['version']}", headers=MANAGER).status_code == 200
+    stale_version = child['version']
+    child = save(client, child, {'notes': 'Manager reviewed amendment'}, MANAGER)
+    assert client.post(path + '/send', headers=MANAGER, json=approval).status_code == 409
+    assert client.get(path + f'/pdf?version={stale_version}').status_code == 409
+    assert client.get(path + f"/review?version={child['version']}", headers=MANAGER).status_code == 200
+    client.patch('/api/business-profiles/active', json={'business_profile_id': 'repair'})
+    assert client.get(path + f"/review?version={child['version']}", headers=MANAGER).status_code == 404
+    assert client.patch(path, headers=MANAGER, json={'version': child['version'], 'notes': 'Wrong profile'}).status_code == 404
+    assert client.post(path + '/send', headers=MANAGER, json={**approval, 'expected_version': child['version']}).status_code == 404
+    assert client.post(f"/api/enquiries/{enquiry['id']}/messages", headers=STAFF,
+        json={'text': 'Wrong scope', 'request_id': str(uuid4())}).status_code == 404
+    client.patch('/api/business-profiles/active', json={'business_profile_id': 'printing'})
+    assert current_quote(client, enquiry['id']) == child  # Wrong-scope reservation rolls back.
+    assert len(sender.calls) == before
+    sender.outcome = 'unknown'
+    result, _, _, _ = final_send(client, child)
+    assert result.status_code == 202
+    assert len(sender.calls) == before + 1 and sender.calls[-1][0] == 'pdf'
+    attempt_id = result.json()['attempt_id']
+    for extra in ({}, {'retry_of_attempt_id': attempt_id}):
+        response = client.post(path + '/send', headers=MANAGER,
+            json={'expected_version': child['version'], 'approved': True, **extra})
+        assert response.status_code == 409
+    detail = client.get(f"/api/enquiries/{enquiry['id']}").json()
+    attempt = next(a for a in detail['delivery_attempts'] if a['attempt_id'] == attempt_id)
+    assert attempt['requires_verification'] and not attempt['can_retry']
+    assert detail['status'] != 'sent' and current_quote(client, enquiry['id'])['status'] == 'send_uncertain'
+    assert client.get(review['pdf']['url']).content == pdf and len(sender.calls) == before + 1

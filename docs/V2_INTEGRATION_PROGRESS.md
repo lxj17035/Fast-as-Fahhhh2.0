@@ -79,3 +79,39 @@ quotation/PDF and switching back preserves its exact sent PDF bytes.
   No page/console errors or page overflow. Cleaning desktop and Repair mobile
   screenshots visually reviewed; artifacts remain ignored `.input/phase4/`.
 - `git diff --check`: passed. Live/hosted checks remain separate.
+
+## T3 — post-send and negative integration (passed)
+
+T2 commit: `7adf602`. Changed `tests/test_phase4_journeys.py`,
+`frontend/tests/journeys.mjs`, this report and the plan. Existing safeguards
+required no business logic/UI changes.
+
+Three complete post-send scenarios retain exact original quote metadata/PDF and
+summary history while delivering new Manager-priced/approved content: explicit
+Revision; explicit independent Additional in a distinct same-chat enquiry; unclear
+grouping -> editable Staff question -> explicit send -> customer confirmation ->
+Revision. AI advice never forks/sends/applies to a sent quote. New revision prices
+are blank. Additional rejects the same original enquiry as its target.
+
+Negative integration combines AI/Staff send/pricing denial, recipient override,
+duplicate original approval, stale version/PDF, wrong-profile read/edit/send/text
+actions, transactional rollback after rejected scope, and unknown PDF delivery.
+Unknown delivery records a verification hold, skips summary, blocks normal/retry
+approval and preserves the original accepted PDF.
+
+- `TEST_DATABASE_URL=<disposable-local-db> .venv/Scripts/python.exe -m pytest -q tests/test_phase4_journeys.py --basetemp=.input/v2-t3-api-final -p no:cacheprovider`:
+  **14 passed**, SQLite + PostgreSQL, one existing Starlette warning.
+- `QF_PLAYWRIGHT_MODULE=<installed-module> node frontend/tests/journeys.mjs`:
+  all **3 industry journeys plus post-send unclear/Revision/Additional browser
+  flows passed**. New forks were priced, reviewed and approved through actual UI,
+  with immutable original PDF bytes/metadata checked. Desktop/mobile screenshots
+  and no console/page errors/overflow retained. Fork selects are scoped to their
+  form in the test to avoid an exact-label lookup ambiguity.
+- `git diff --check`: passed. Earlier test-fixture completion metadata and selector
+  mistakes were corrected before these passing runs; no application fix needed.
+
+Run browser acceptance with existing Playwright installed/resolvable, or set
+`QF_PLAYWRIGHT_MODULE` to its module URL. `QF_BROWSER_CHANNEL` defaults to `msedge`;
+`QF_TEST_PYTHON` can override the repository virtualenv. Both local servers use
+reserved ephemeral localhost ports, mock external transports and clean up temporary
+SQLite on exit. These are test adapters, never runtime storage.
