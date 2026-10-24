@@ -32,3 +32,22 @@ With disposable `TEST_DATABASE_URL`:
 **88 passed**, existing warning. Three profiles tested with notes and unknowns.
 Industry scope sufficiency still depends on model flags plus explicit Staff review;
 no new per-industry rules engine. No live provider check in this section.
+
+## A3 — Clarification and renewed analysis
+
+Changed `backend/drafting.py`, new `backend/analysis.py`, `app/routing.py`,
+`app/automatic_drafting.py`, `app/telegram.py`, `app/quotation_routes.py`,
+`tests/test_ai_v2.py`. Contract: `docs/AI_ANALYSIS.md`.
+Initial and renewed snapshots retain source evidence and editable questions.
+Customer follow-ups trigger analysis; existing Staff edits remain untouched.
+Unchanged completed analysis is reused; duplicates do not consume another call.
+Provider-time races are stale and never acknowledge new messages. AI association
+requires an actual later customer reply, exact unresolved-message reference and
+explicit enquiry/quote reference; arbitrary claims and confirmed decisions block.
+
+With disposable `TEST_DATABASE_URL`:
+`.\.venv\Scripts\python.exe -m pytest -q tests/test_ai_v2.py tests/test_drafting.py tests/test_runpod.py tests/test_routing_v2.py tests/test_automatic_drafting.py --basetemp=.input/v2-a3-verified -p no:cacheprovider`:
+**96 passed**, existing warning; diff checks passed. Earlier runs exposed duplicate
+analysis and synthetic fixture/manual-cache issues; corrected before this rerun.
+No customer send or quotation overwrite. Conservative assignment needs Staff to
+associate a confirmation first; vague evidence stays Needs Assignment. UI is F3.

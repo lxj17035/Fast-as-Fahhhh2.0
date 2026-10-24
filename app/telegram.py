@@ -101,5 +101,5 @@ async def receive_update(request: Request, background_tasks: BackgroundTasks) ->
         ) from None
     # Run only after receipt/enquiry commit and response creation. Duplicates may
     # retry an interrupted draft; DraftService returns existing PM-edited drafts.
-    background_tasks.add_task(request.app.state.automatic_drafting.run, update.update_id)
+    background_tasks.add_task(request.app.state.automatic_drafting.run, update.update_id, stored)
     return {"status": "received" if stored else "duplicate"}

@@ -195,3 +195,34 @@ def get_pdf(
                 "Cache-Control": "no-store",
             },
         )
+
+
+@router.get("/enquiries/{enquiry_id}/analysis")
+def get_analysis(enquiry_id: UUID, request: Request):
+    from backend.analysis import AnalysisService
+    with services(request) as (store, settings, _):
+        key = str(enquiry_id)
+        try:
+            store.get('enquiries', key)
+        except AppError as error:
+            if error.status != 404:
+                raise
+            key = enquiry_id.hex
+        require_profile(store.get('enquiries', key), settings.active_profile_id())
+        return AnalysisService(request.app.state.quotation_app.drafts).latest(key)
+
+
+@router.post("/enquiries/{enquiry_id}/analysis")
+def analyze_enquiry(enquiry_id: UUID, request: Request):
+    from backend.analysis import AnalysisService
+    require_demo_staff(request)
+    with services(request) as (store, settings, _):
+        key = str(enquiry_id)
+        try:
+            store.get('enquiries', key)
+        except AppError as error:
+            if error.status != 404:
+                raise
+            key = enquiry_id.hex
+        require_profile(store.get('enquiries', key), settings.active_profile_id())
+        return AnalysisService(request.app.state.quotation_app.drafts).run(key)

@@ -21,8 +21,14 @@ EXTRACTION_SCHEMA = {
             "required": ["description", "quantity", "unit", "notes"],
         }},
         "missingInformation": {"type": "array", "items": {"type": "string"}},
+        "clarificationSuggestions": {"type": "array", "items": {"type": "string"}},
+        "assignmentSuggestions": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"update_id": {"type": "string"}, "confirmation_update_id": {"type": "string"}},
+            "required": ["update_id", "confirmation_update_id"]}},
     },
-    "required": ["summary", "clientName", "clientAddress", "items", "missingInformation"],
+    "required": ["summary", "clientName", "clientAddress", "items", "missingInformation",
+                 "clarificationSuggestions", "assignmentSuggestions"],
 }
 INSTRUCTIONS = """You assist a fictional SME with enquiry analysis. Use the single
 backend-validated businessProfile and company/client context supplied at runtime;
@@ -40,7 +46,13 @@ and notes for stated size/material/area/device/service scope. Do not assume that
 one job or visit was requested. List critical missing scope/specifications and
 uncertain or conflicting values in missingInformation; do not resolve uncertainty
 by guessing. A priced formal quotation requires human review and sufficient
-requirements; extraction creates an internal draft only. Return JSON following the required schema."""
+requirements; extraction creates an internal draft only. Produce editable
+clarificationSuggestions for Staff, never send them. On follow-up, use attributed
+chronological conversation evidence; later explicit corrections supersede earlier
+values, while uncertain corrections require clarification. Do not mix separate
+enquiries. assignmentSuggestions may only cite unresolved update_id and a later
+confirmation_update_id that replies to that exact message and explicitly names
+the enquiry ID or quotation number. Backend validates these claims independently. Return JSON following the required schema."""
 
 
 def business_context(settings, enquiry):
@@ -58,8 +70,8 @@ class ProviderError(Exception):
 
 
 def validate_extraction(value):
-    object_fields(value, EXTRACTION_SCHEMA["required"])
-    if set(value) != set(EXTRACTION_SCHEMA["required"]):
+    object_fields(value, EXTRACTION_SCHEMA["properties"])
+    if not {"summary", "clientName", "clientAddress", "items", "missingInformation"} <= set(value):
         raise AppError("AI response is missing required fields")
     result = {"summary": text(value["summary"], "summary", required=True, limit=2000)}
     for key in ("clientName", "clientAddress"):
@@ -90,6 +102,19 @@ def validate_extraction(value):
         if item["unit"] == "unit":
             result["missingInformation"].append(f"Confirm unit for item {index}")
     result["missingInformation"] = list(dict.fromkeys(result["missingInformation"]))
+    questions = value.get("clarificationSuggestions", [])
+    if not isinstance(questions, list) or len(questions) > 20:
+        raise AppError("Invalid clarification suggestions")
+    result["clarificationSuggestions"] = [text(q, "question", required=True, limit=1000) for q in questions]
+    assignments = value.get("assignmentSuggestions", [])
+    if not isinstance(assignments, list) or len(assignments) > 20:
+        raise AppError("Invalid assignment suggestions")
+    for assignment in assignments:
+        object_fields(assignment, {"update_id", "confirmation_update_id"})
+        if set(assignment) != {"update_id", "confirmation_update_id"} or any(
+                not isinstance(v, str) or not v.isdecimal() for v in assignment.values()):
+            raise AppError("Invalid assignment evidence")
+    result["assignmentSuggestions"] = assignments
     return result
 
 
@@ -185,7 +210,10 @@ class DraftService:
                 current["clientId"] = client_id
                 self.store.put("enquiries", enquiry_id, current)
             enquiry["clientId"] = client_id
-        context = business_context(self.settings, enquiry)
+        from .analysis import evidence
+        conversation = evidence(self.store, enquiry)
+        context = {**business_context(self.settings, enquiry), 'enquiryId': enquiry_id,
+                   'conversation': conversation}
         error = None
         extracted = None
         if not manual:
@@ -205,6 +233,8 @@ class DraftService:
                                           draft_mode="ai" if error is None and not manual else "manual",
                                           draft_error=error,
                                           source_message_ids=enquiry.get("messageUpdateIds", []))
+            from .analysis import AnalysisService
+            AnalysisService(self).record_initial(enquiry, conversation, quote, extracted, error)
             # Preserve messages that may have arrived while the provider ran.
             current_enquiry = self.store.get("enquiries", enquiry_id)
             current_enquiry["status"] = "needs_review"

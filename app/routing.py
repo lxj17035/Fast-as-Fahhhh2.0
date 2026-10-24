@@ -74,7 +74,7 @@ def route_receipt(connection, update_id, message_id, chat_id, text, at, identity
                         provider_reference=str(update_id), timestamp=at)
 
 
-def assign_message(store, update_id, patch, actor, *, origin="staff"):
+def assign_message(store, update_id, patch, actor, *, origin="staff", confirmation_update_id=None):
     object_fields(patch, {"action", "enquiry_id"})
     action = patch.get("action")
     if action not in {"assign", "new", "unrelated"} or (origin == "ai" and action != "assign"):
@@ -86,7 +86,8 @@ def assign_message(store, update_id, patch, actor, *, origin="staff"):
         ).where(message_links.c.update_id == update_id)).mappings().one_or_none()
         if row is None:
             raise AppError("Message not found", 404)
-        identity = store.get("settings", "active_profile")["business_profile_id"]
+        identity = (store.get("enquiries", patch.get("enquiry_id", ""))["business_profile_id"]
+                    if origin == "ai" else store.get("settings", "active_profile")["business_profile_id"])
         require_profile(row, identity)
         if row["status"] != "needs_assignment":
             raise AppError("Assignment is already resolved; confirmed history is retained", 409)
@@ -101,8 +102,13 @@ def assign_message(store, update_id, patch, actor, *, origin="staff"):
                 raise AppError("Message and enquiry must have the same original chat", 422)
         elif action == "new":
             target = new_enquiry(connection, row, identity)
+        if origin == "ai":
+            validate_confirmation(store, row, target, confirmation_update_id)
         status = "assigned" if target else "unrelated"
-        history = [*row["history"], link_event(target, actor, action)]
+        entry = link_event(target, actor, action)
+        if origin == "ai":
+            entry["confirmation_update_id"] = str(confirmation_update_id)
+        history = [*row["history"], entry]
         connection.execute(message_links.update().where(message_links.c.update_id == update_id).values(
             enquiry_id=target, status=status, assigned_by=origin, history=history))
         if target:
@@ -135,3 +141,32 @@ def resolve_assignment(update_id: int, request: Request, patch: dict = Body(...)
     if result["enquiry_id"]:
         request.app.state.automatic_drafting.run(update_id)
     return result
+
+
+def validate_confirmation(store, unresolved, target, confirmation_update_id):
+    """A model-selected target is never evidence. Require a real customer reply."""
+    if not isinstance(confirmation_update_id, str) or not confirmation_update_id.isdecimal():
+        raise AppError("Customer confirmation evidence is required")
+    row = store.connection.execute(select(message_links, telegram_updates).join(
+        telegram_updates, message_links.c.update_id == telegram_updates.c.update_id
+    ).where(message_links.c.update_id == int(confirmation_update_id))).mappings().one_or_none()
+    if (row is None or row['status'] != 'assigned' or row['enquiry_id'] != target or
+            row['business_profile_id'] != unresolved['business_profile_id'] or
+            row['chat_id'] != unresolved['chat_id'] or
+            (row['received_at'], row['update_id']) <= (unresolved['received_at'], unresolved['update_id']) or
+            not any(h.get('reply_to_message_id') == str(unresolved['message_id']) for h in row['history'])):
+        raise AppError("Customer confirmation does not identify this unresolved message")
+    # Exact stable reference and explicit association phrasing, not an AI interpretation.
+    references = [target] + [q['number'] for q in store.list('quotations') if q['enquiryId'] == target]
+    normalized = row['original_text'].strip().casefold().rstrip('.')
+    if not any(normalized == 'this message is for ' + ref.casefold() for ref in references):
+        raise AppError("Customer must explicitly confirm the enquiry reference")
+
+
+def resolve_ai_assignment(store, enquiry_id, proposal):
+    object_fields(proposal, {"update_id", "confirmation_update_id"})
+    identity = proposal.get('update_id')
+    if not isinstance(identity, str) or not identity.isdecimal():
+        raise AppError("Invalid unresolved message reference")
+    return assign_message(store, int(identity), {'action': 'assign', 'enquiry_id': enquiry_id},
+                          'system', origin='ai', confirmation_update_id=proposal.get('confirmation_update_id'))

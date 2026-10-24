@@ -16,7 +16,7 @@ class AutomaticDrafting:
         self.lock = Lock()
         self.active = set()
 
-    def run(self, update_id):
+    def run(self, update_id, analyze=True):
         with self.lock:
             if update_id in self.active:
                 return
@@ -28,7 +28,11 @@ class AutomaticDrafting:
                     message_links.c.status == "assigned")).scalar_one_or_none()
             if enquiry_id is None:
                 return
+            existing = any(q['enquiryId'] == enquiry_id for q in self.app.store.list('quotations'))
             self.app.drafts.create(enquiry_id)
+            if existing and analyze:
+                from backend.analysis import AnalysisService
+                AnalysisService(self.app.drafts).run(enquiry_id)
         except Exception:
             # No raw exception/provider text: it may contain connection secrets.
             # Receipt is already committed, so staff can retry the draft endpoint.
