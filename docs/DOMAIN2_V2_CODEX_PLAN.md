@@ -12,8 +12,8 @@ After each section, update this checklist before handing work back.
 - [x] B1 — Business Profiles & shared data scope — `6b77031`; verification below.
 - [x] B2 — Telegram enquiry routing & assignment — `ce5daac`; verification below.
 - [x] B3 — Conversation Room APIs — `f5e2f7f`; verification below.
-- [ ] B4 — Shared quotation items and versions — **next section**.
-- [ ] B5 — Manager review, approval & delivery contracts.
+- [x] B4 — Shared quotation items and versions — `5dbac4b`; verification below.
+- [ ] B5 — Manager review, approval & delivery contracts — **next section**.
 - [ ] A1 — Core AI System Prompt and dynamic context.
 - [ ] A2 — Requirement extraction & sufficiency.
 - [ ] A3 — Clarification suggestions and follow-up analysis.
@@ -136,6 +136,18 @@ Live providers not called; AI suggestion generation and frontend remain A3/F3.
 
 ### B4 — Shared quotation items and versions
 Reuse existing Quotation models where possible. Implement generic item fields and notes, draft workflow, selected change application, basic stale-data/atomicity protection, revision vs additional relationship and immutable sent version. Tests: printing/cleaning/repair items, amount totals, incomplete input blocking formal quotation, revision preserves prior PDF, additional independent quotation. Commit: `feat(backend): support generic quotation drafts and revisions`.
+
+**Completed — 24 October 2026.** Implementation commit `5dbac4b`. Generic
+items/notes/units, version-bound human-selected changes and audit, explicit
+revision/additional relationships, preserved historical PDFs, and stale/unassigned
+customer-message guards implemented. Incomplete previews are clearly labelled
+drafts. SQLite regression: **62 passed, 1 skipped**; final B4 SQLite **15 passed**.
+Quotation/activity SQLite + PostgreSQL rerun: **52 passed**; final malformed-input
+subset **10 passed, 20 deselected**. Existing mocked real-API integration:
+**7 passed**. Five saved-version PDF samples rendered and visually reviewed,
+including all nine multipage pages. A PostgreSQL synthetic-activity FK issue
+found during verification was fixed. Exact files/commands and limitations:
+[backend phase report](V2_BACKEND_PROGRESS.md). AI generation/UI remain A4/F4.
 
 ### B5 — Manager review, approval & delivery contracts
 Enforce Staff/Manager permissions, manager pricing and send authority, reuse current issue date/valid-for calculation and implement preview/send-ready data contracts and PDF snapshot logic. Tests: Staff cannot approve/send, Manager can, expiry consistent, PDF unchanged after send, failures not falsely marked Sent. Commit: `feat(backend): enforce manager quotation approval`.
