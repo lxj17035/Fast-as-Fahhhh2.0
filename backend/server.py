@@ -42,6 +42,8 @@ class Application:
         parts = [part for part in path.split("/") if part]
         if path == "/api/health" and method == "GET":
             return 200, {"status": "ok", "mode": "local-synthetic-demo"}
+        if path == "/api/demo/capabilities" and method == "GET":
+            return 200, {"demoApprovalEnabled": self.enable_demo_approval}
         if path == "/api/settings":
             if method == "GET":
                 return 200, self.settings.get_settings()

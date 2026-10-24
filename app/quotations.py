@@ -16,6 +16,11 @@ def dispatch(request, method, body=None, query=None):
     return JSONResponse(payload, status_code=status)
 
 
+@router.get("/api/demo/capabilities")
+def demo_capabilities(request: Request):
+    return dispatch(request, "GET")
+
+
 @router.get("/api/health")
 def health(request: Request):
     return dispatch(request, "GET")

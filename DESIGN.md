@@ -126,3 +126,11 @@ explicitly submit complete saved requirements without prices/PDF preview.
 The durable handoff owns Manager To do. Staff edits/new sources require another
 submission. Manager edits retain their pricing task but invalidate old review.
 Existing colors, shared form controls, PDF rendering and send confirmation remain.
+
+## Business settings (24 October 2026)
+
+Settings content uses one Business details card and Manager-only collapsed Demo
+tools; shared sidebar/top bar are preserved. Staff sees disabled values and the
+view-only explanation. Profile switching offers cancel, discard, or save first.
+Currency stays the existing three-letter uppercase input and all supported validity
+values are retained. Existing profile data supplies all values; no prototype seeds.

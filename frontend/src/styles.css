@@ -2569,3 +2569,17 @@ input[readonly] { background: #f6f8f7; }
 
 .preview-actions { flex-wrap: wrap; }
 .preview-actions > * { max-width: 100%; }
+
+/* Settings content only; shared shell remains unchanged. */
+.business-settings { max-width: 900px; margin: 0 auto; }
+.business-settings .settings-panel { margin-bottom: 20px; }
+.business-settings .field-note, .business-settings .form-bottom p { font-size: 14px; color: #52665d; line-height: 1.6; }
+.business-settings .form-bottom { flex-wrap: wrap; gap: 16px; }
+.business-settings textarea { resize: none; }
+.settings-view-note { padding: 14px 18px; background: #fdf1d6; border: 1px solid #f0d69b; border-radius: 10px; }
+.settings-demo { border-style: dashed; }
+.settings-demo > summary { padding: 18px 24px; cursor: pointer; font-weight: 600; }
+.settings-demo-section { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border, #e5eae7); }
+#settings-dirty { display: inline-block; color: #805208; }
+#settings-dirty[hidden] { display: none; }
+@media(max-width:560px) { .business-settings .form-bottom .btn { width: 100%; } }

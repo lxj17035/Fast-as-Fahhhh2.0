@@ -47,6 +47,11 @@ class APITests(unittest.TestCase):
         self.assertEqual(status, 200)
         return enquiry, quote
 
+    def test_demo_capabilities_only_reports_boolean(self):
+        self.assertEqual(self.request("GET", "/api/demo/capabilities")[1], {"demoApprovalEnabled": True})
+        self.app.enable_demo_approval = False
+        self.assertEqual(self.request("GET", "/api/demo/capabilities")[1], {"demoApprovalEnabled": False})
+
     def test_settings_and_client_edit_routes(self):
         self.assertEqual(self.request("GET", "/api/health")[0], 200)
         self.assertEqual(self.request("GET", "/api/settings")[1]["defaultValidity"], "1m")

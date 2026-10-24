@@ -13,7 +13,7 @@ const readSession = (key, fallback = '') => { try { return sessionStorage.getIte
 const writeSession = (key, value) => { try { sessionStorage.setItem(key, value); } catch { /* Browser storage may be disabled. */ } };
 const state = {
   route: '', role: readSession('qf-role', 'sales') === 'pm' ? 'pm' : 'sales',
-  recordActor: readSession('qf-actor') === 'true', connected: null, busy: false, loading: false,
+  recordActor: readSession('qf-actor', 'true') === 'true', demoApproval: null, savedSettings: null, connected: null, busy: false, loading: false,
   error: null, notice: '', noticeKind: 'info', offset: 0, limit: 25, items: [], filter: 'all', search: '',
   detail: null, quote: null, form: null, dirty: false, previewVersion: null, pdfURL: null,
   settings: null, client: null, settingsDirty: false, clientDirty: false, hold: false, holdBaseline: [],
@@ -229,27 +229,31 @@ const actionLabels = { telegram_received: 'Telegram enquiry received', enquiry_c
 function activityHistory() {
   return `<details class="panel history-panel simple-history" ${disclosure('activity', true)}><summary>Activity <span>${state.detail.activity.length} updates</span></summary><ol class="timeline">${[...state.detail.activity].reverse().map(a => `<li><span class="timeline-dot ${a.result === 'failed' ? 'failed' : ''}">${icon(a.action.includes('send') ? 'send' : 'check')}</span><div><strong>${e(eventLabel(a.action))}</strong><p>${e(a.actor_origin === 'simulated' ? `${a.role === 'pm' ? 'Manager' : a.role === 'sales' ? 'Staff' : 'Team member'} (demo role)` : a.actor_origin === 'system' ? 'System' : 'Actor not recorded')}</p></div><time datetime="${e(a.timestamp)}">${e(dateTime(a.timestamp))}</time></li>`).join('') || '<li class="muted">No updates recorded yet.</li>'}</ol></details>`;
 }
+function settingsPatch() { return Object.fromEntries(['companyName','companyAddress','currency','defaultValidity'].map(key => [key, state.settings[key]])); }
+function settingsChanged() { return JSON.stringify(settingsPatch()) !== JSON.stringify(state.savedSettings); }
+async function saveBusinessSettings() {
+  state.settings = await api.saveProfile(state.settings.business_profile_id, settingsPatch());
+  state.savedSettings = settingsPatch(); state.settingsDirty = false;
+  state.companyName = state.settings.companyName;
+  state.profiles = state.profiles.map(profile => profile.id === state.settings.business_profile_id ? {...profile,...state.settings} : profile);
+  state.notice = 'Business details saved.';
+}
 function settingsPage() {
-    return `<section class="page-heading"><div><h1>Business settings<span class="heading-dot">.</span></h1><p>Your company details and defaults for new quotes.</p></div>${button('Refresh', 'refresh', { symbol: 'refresh', disabled: state.busy })}</section>${errorBox()}${noticeBox()}
-    <div class="settings-grid">
-      <section class="panel settings-panel profile-panel"><div class="panel-heading"><div><h2>Demo business profile</h2><p>Choose the business for this workspace and new enquiries.</p></div>${icon('settings')}</div>
-        <form id="profile-form" novalidate><fieldset ${state.busy || !state.profiles.length ? 'disabled' : ''}><label class="field"><span>Business profile</span><select name="business_profile_id" id="business-profile" aria-label="Business profile" aria-describedby="profile-help">${state.profiles.map(profile => `<option value="${e(profile.id)}" ${profile.id === state.selectedProfile ? 'selected' : ''}>${e(profile.industry)} — ${e(profile.companyName)}</option>`).join('')}</select></label><p id="profile-help" class="field-note">Active: <strong>${e(state.profileLabel || 'Unavailable')}</strong>. Switching changes the workspace for everyone using this demo. Existing enquiries stay with their original business. AI cannot choose this profile.</p></fieldset><div class="form-bottom"><p>Save your edits before switching, or discard them when asked.</p><button class="btn primary" ${state.busy || !state.profiles.length || state.selectedProfile === state.activeProfile ? 'disabled' : ''}>Switch business profile</button></div></form>
-      </section>
-      <section class="panel settings-panel v2-panel"><div class="panel-heading"><div><h2>Your business</h2><p>These details appear on new quotations.</p></div>${icon('settings')}</div>
-        ${state.settings ? `<form id="settings-form" novalidate><fieldset ${state.busy ? 'disabled' : ''}>
-          ${input('Company name', 'companyName', state.settings.companyName, { extra: 'required' })}
-          <label class="field"><span>Company address</span><textarea style="resize: none" name="companyAddress" rows="3" maxlength="500">${e(state.settings.companyAddress)}</textarea></label>
-          <div class="field-grid">${input('Currency', 'currency', state.settings.currency, { max: 3, extra: 'required pattern="[A-Z]{3}" title="Three uppercase letters, e.g. MYR"' })}${validitySelect(state.settings.defaultValidity, 'defaultValidity')}</div>
-          <p class="field-note">Dates use Kuala Lumpur time. You can change the validity on each quote.</p>
-        </fieldset><div class="form-bottom"><p>Quotes you already saved keep their original details.</p><button type="submit" class="btn primary" ${state.busy ? 'disabled' : ''}>Save business details</button></div></form>` : `<div class="empty-state"><p>We couldn’t load your business details.</p>${button('Try again', 'refresh')}</div>`}
-      </section>
-      <div class="settings-aside"><section class="panel settings-explainer"><span class="note-icon">${icon('file')}</span><h2>Set up once. Review each quote.</h2><p>Your company details and usual validity are added to new drafts.</p><p>Check the customer’s name and address directly in their quotation. You can leave an unknown address blank.</p><div class="review-clear">${icon('shield')} Updating settings won’t change a sent quote.</div></section>
-      <details class="panel settings-panel client-drawer" ${state.client ? 'open' : ''}><summary>Manage a saved client</summary><div class="drawer-content"><p class="field-note">For an existing client record. You can find its reference under More details in their quotation.</p>
-        <form novalidate id="load-client" class="client-lookup">${input('Client reference', 'clientId', state.client?.id || (state.activeProfile === 'printing' ? 'demo-client' : 'demo-client-' + state.activeProfile), { extra: 'required' })}<button class="btn secondary" ${state.busy ? 'disabled' : ''}>Find client</button></form>
-        <div id="client-editor">${state.client ? `<form id="client-form" novalidate><fieldset ${state.busy ? 'disabled' : ''}>${input('Client name', 'name', state.client.name, { extra: 'required' })}<label class="field"><span>Client address <small>Optional</small></span><textarea style="resize: none" name="address" rows="3" maxlength="500">${e(state.client.address)}</textarea></label></fieldset><div class="form-bottom"><p>Previously saved quotes keep their original client details.</p><button class="btn primary" ${state.busy ? 'disabled' : ''}>Save client</button></div></form>` : ''}</div>
-      </div></details></div>
-      <details class="panel demo-options"><summary>Demo and connection options</summary><div class="drawer-content"><p>Roles are simulated for this supervised demo. A project manager must approve each send.</p><label class="checkbox-label"><input type="checkbox" id="record-actor" ${state.recordActor ? 'checked' : ''} /> Record the selected demo role on quotation edits</label><p class="field-note">Use this only when your backend has <code>ENABLE_DEMO_APPROVAL=true</code>. Otherwise, edits are recorded without a named actor.</p><p class="field-note">Server: <code>${e(API_BASE_URL || 'same origin')}</code>. Private keys stay on the server.</p></div></details>
-    </div>`;
+  const manager = state.role === 'pm';
+  return `<div class="business-settings"><section class="page-heading"><div><h1>Business settings<span class="heading-dot">.</span></h1><p>Used on every new quotation. Active business: <strong>${e(state.profileLabel)}</strong>.</p></div>${button('Refresh','refresh',{symbol:'refresh',disabled:state.busy})}</section>${errorBox()}${noticeBox()}
+  ${!manager ? '<p class="settings-view-note">You can view these settings. Only a Manager can change them.</p>' : ''}
+  <section class="panel settings-panel v2-panel"><div class="panel-heading"><h2>Business details</h2></div>
+  ${state.settings ? `<form id="settings-form" novalidate><fieldset ${state.busy || !manager ? 'disabled' : ''}>
+  ${input('Company name','companyName',state.settings.companyName,{extra:'required'})}
+  <label class="field"><span>Company address</span><textarea style="resize: none" name="companyAddress" rows="3" maxlength="500">${e(state.settings.companyAddress)}</textarea></label>
+  <div class="field-grid">${input('Currency','currency',state.settings.currency,{max:3,extra:'required pattern="[A-Z]{3}" title="Three uppercase letters, e.g. MYR"'})}${validitySelect(state.settings.defaultValidity,'defaultValidity').replace('Valid for','Quotes are valid for')}</div>
+  <p class="field-note">Dates use Kuala Lumpur time. You can change the validity on each quote.</p></fieldset>
+  <div class="form-bottom"><p>Changes apply to new quotes only. Sent quotes are not changed. <strong id="settings-dirty" ${state.settingsDirty ? '' : 'hidden'}>Unsaved changes</strong></p>${manager ? `<button type="submit" class="btn primary" ${state.busy || !state.settingsDirty ? 'disabled' : ''}>Save business details</button>` : ''}</div></form>` : '<p>Business details unavailable. Use Refresh to try again.</p>'}</section>
+  ${manager ? `<details class="panel settings-demo" ${disclosure('settings-demo',false)}><summary>Demo tools</summary><div class="drawer-content">
+  <form id="profile-form" novalidate><fieldset ${state.busy || !state.profiles.length ? 'disabled' : ''}><label class="field"><span>Demo business profile</span><select name="business_profile_id" id="business-profile">${state.profiles.map(profile=>`<option value="${e(profile.id)}" ${profile.id===state.selectedProfile?'selected':''}>${e(profile.industry)} — ${e(profile.companyName)}</option>`).join('')}</select></label>
+  <p class="field-note">Switching changes the workspace for everyone using this demo. Existing enquiries keep their original business. AI cannot choose this profile.</p></fieldset><button class="btn secondary" ${state.busy || state.selectedProfile===state.activeProfile ? 'disabled' : ''}>Switch business profile</button></form>
+  <div class="settings-demo-section"><label class="checkbox-label"><input type="checkbox" id="record-actor" ${state.recordActor?'checked':''} ${state.demoApproval !== true || state.busy?'disabled':''}> Record the selected demo role on quotation edits</label><p class="field-note">${state.demoApproval === true ? 'Server status: demo approval is on.' : 'Not available on this server.'}</p></div>
+  <p class="field-note settings-demo-section">Roles are simulated for this supervised demo. A project manager must approve each send.<br>Server: ${e(API_BASE_URL || 'same origin')}. Private keys stay on the server.</p></div></details>` : ''}</div>`;
 }
 async function health() {
   const token = loadId;
@@ -277,6 +281,9 @@ async function loadRoute(route) {
       const profile = state.profiles.find(item => item.id === state.activeProfile);
       if (!profile) throw Error('The active business profile could not be loaded. Refresh to try again.');
       state.settings = { ...profile, business_profile_id: profile.id };
+      state.savedSettings = settingsPatch();
+      try { state.demoApproval = (await api.demoCapabilities()).demoApprovalEnabled === true; } catch { state.demoApproval = null; }
+      if (token !== loadId) return;
       state.companyName = profile.companyName; state.profileLabel = profile.industry;
     } else if (/^\/enquiries\/[a-fA-F0-9-]{32,36}$/.test(route)) {
       const id = route.split('/')[2];
@@ -329,14 +336,16 @@ function setHold(value) {
   if (value) state.holdBaseline = (state.detail?.delivery_attempts || []).map(a => a.attempt_id);
   writeSession(holdKey(), value ? JSON.stringify({ baseline: state.holdBaseline }) : '');
 }
-function ask({ title, content, confirm = 'Continue', danger = false, approval = false }) {
+function ask({ title, content, confirm = 'Continue', danger = false, approval = false, alternate = '' }) {
   return new Promise(resolve => {
     const previousFocus = document.activeElement;
     const dialog = document.createElement('dialog'); dialog.className = 'confirm-dialog'; dialog.setAttribute('aria-labelledby', 'dialog-title');
-    dialog.innerHTML = `<form method="dialog" novalidate><div class="dialog-icon">${icon(approval ? 'send' : 'alert')}</div><h2 id="dialog-title">${e(title)}</h2>${content}${approval ? '<label class="checkbox-label approval-check"><input type="checkbox" id="confirm-approval" required /> I checked this PDF and approve sending it to this Telegram chat.</label>' : ''}<div class="dialog-actions"><button type="button" class="btn secondary" data-cancel>Cancel</button><button type="submit" class="btn ${danger ? 'danger' : 'primary'}" ${approval ? 'disabled' : ''}>${e(confirm)}</button></div></form>`;
+    const alternateButton = alternate ? `<button type="button" class="btn secondary" data-action="dialog-alternate" data-alternate>${e(alternate)}</button>` : '';
+    dialog.innerHTML = `<form method="dialog" novalidate><div class="dialog-icon">${icon(approval ? 'send' : 'alert')}</div><h2 id="dialog-title">${e(title)}</h2>${content}${approval ? '<label class="checkbox-label approval-check"><input type="checkbox" id="confirm-approval" required /> I checked this PDF and approve sending it to this Telegram chat.</label>' : ''}<div class="dialog-actions"><button type="button" class="btn secondary" data-cancel>Cancel</button>${alternateButton}<button type="submit" class="btn ${danger ? 'danger' : 'primary'}" ${approval ? 'disabled' : ''}>${e(confirm)}</button></div></form>`;
     document.body.append(dialog);
     const finish = value => { dialog.close(); dialog.remove(); if (previousFocus?.isConnected) previousFocus.focus(); resolve(value); };
     dialog.querySelector('[data-cancel]').onclick = () => finish(false);
+    if (alternate) dialog.querySelector('[data-alternate]').onclick = () => finish('alternate');
     dialog.addEventListener('cancel', event => { event.preventDefault(); finish(false); });
     dialog.querySelector('form').onsubmit = event => { event.preventDefault(); finish(true); };
     if (approval) dialog.querySelector('#confirm-approval').onchange = event => { dialog.querySelector('[type="submit"]').disabled = !event.target.checked; };
@@ -377,7 +386,7 @@ function saveQuoteAndPreview(preview) {
   if (!patch && !preview) return;
   return task(async () => {
     if (patch) {
-      setQuote(await api.saveQuote(state.quote.id, patch, state.role));
+      setQuote(await api.saveQuote(state.quote.id, patch, state.role, state.recordActor));
       revokePDF();
       state.notice = 'Your draft is saved.';
     }
@@ -525,7 +534,7 @@ root.addEventListener('input', event => {
   if (event.target.closest('#message-form')) { state.composer = event.target.value; state.messageRequest = null; }
   if (event.target.closest('#quote-form') && !state.busy) { captureQuote(event.target.form); state.dirty = true; state.notice = ''; root.querySelector('[data-page-notice]')?.remove(); updateEditorIndicators(); }
   if (event.target.id === 'search') { state.search = event.target.value; document.querySelector('#enquiry-results').innerHTML = inboxResults(); }
-  if (event.target.closest('#settings-form')) { state.settingsDirty = true; state.settings[event.target.name] = event.target.value; }
+  if (event.target.closest('#settings-form') && state.role === 'pm' && !state.busy) { state.settings[event.target.name] = event.target.value; state.settingsDirty = settingsChanged(); document.querySelector('#settings-dirty').hidden = !state.settingsDirty; document.querySelector('#settings-form [type=submit]').disabled = !state.settingsDirty; }
   if (event.target.closest('#client-form')) { state.clientDirty = true; state.client[event.target.name] = event.target.value; }
 });
 root.addEventListener('toggle', event => {
@@ -577,8 +586,12 @@ root.addEventListener('submit', async event => {
     await saveQuoteAndPreview(false);
   } else if (form.id === 'profile-form') {
     const identity = state.selectedProfile;
-    if (!identity || identity === state.activeProfile || !(await discardEdits())) return;
+    if (state.role !== 'pm' || !identity || identity === state.activeProfile) return;
+    let choice = true;
+    if (state.settingsDirty) choice = await ask({title:'You have unsaved changes',content:'<p>Switching the business profile replaces the values on this page.</p>',confirm:'Save and switch',alternate:'Discard and switch'});
+    if (!choice) {state.selectedProfile = state.activeProfile; render(); return;}
     await task(async () => {
+      if (state.settingsDirty && choice === true) await saveBusinessSettings();
       await api.selectProfile(identity);
       state.items = []; state.offset = 0; state.filter = 'all'; state.search = '';
       state.client = null; state.detail = null; state.quote = null; state.form = null; revokePDF();
@@ -588,8 +601,8 @@ root.addEventListener('submit', async event => {
       state.notice = 'Business profile switched. New enquiries use this business; existing enquiries keep their original profile.';
     });
   } else if (form.id === 'settings-form') {
-    const data = new FormData(form); const patch = Object.fromEntries(['companyName', 'companyAddress', 'currency', 'defaultValidity'].map(key => [key, data.get(key)]));
-    await task(async () => { state.settings = await api.saveProfile(state.settings.business_profile_id, patch); state.companyName = state.settings.companyName; state.profiles = state.profiles.map(profile => profile.id === state.settings.business_profile_id ? { ...profile, ...state.settings } : profile); state.settingsDirty = false; state.notice = 'Business settings saved. Existing quotation snapshots are unchanged.'; });
+    if (state.role !== 'pm' || !state.settingsDirty) return;
+    await task(saveBusinessSettings);
   } else if (form.id === 'load-client') {
     const id = new FormData(form).get('clientId').trim();
     if (state.clientDirty && !(await ask({ title: 'Discard client edits?', content: '<p>Loading another client will discard the current unsaved client changes.</p>', confirm: 'Discard and load', danger: true }))) return;

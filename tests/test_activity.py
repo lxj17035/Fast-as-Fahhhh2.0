@@ -259,3 +259,25 @@ def test_legacy_receipt_backfill_does_not_invent_history(engine, settings):
     with TestClient(create_app(settings, engine)) as client:
         [enquiry] = client.get("/api/enquiries").json()["items"]
         assert history(client, enquiry) == []
+
+
+def test_recording_preference_does_not_change_price_permission(integrated):
+    client, _, enquiry = integrated
+    quote = draft(client, enquiry)
+    assert client.get('/api/demo/capabilities').json() == {'demoApprovalEnabled': True}
+    patch = {'version': quote['version'], 'items': [{'description': 'Fictional shirts', 'quantity': '2', 'unitPrice': '12.00'}]}
+    response = client.patch(f"/api/quotations/{quote['id']}", json=patch,
+                            headers={'X-Demo-Actor': 'sales', 'X-Record-Demo-Actor': 'false'})
+    assert response.status_code == 403
+    response = client.patch(f"/api/quotations/{quote['id']}", json=patch,
+                            headers={'X-Demo-Actor': 'pm', 'X-Record-Demo-Actor': 'false'})
+    assert response.status_code == 200
+    entry = [a for a in history(client, enquiry) if a['action'] == 'quotation_updated'][-1]
+    assert entry['actor_origin'] == 'unknown'
+    assert entry['role'] is None
+    quote = response.json()
+    assert client.patch(f"/api/quotations/{quote['id']}", json={'version': quote['version'], 'notes': 'Checked'},
+                        headers={'X-Demo-Actor': 'pm'}).status_code == 200
+    entry = [a for a in history(client, enquiry) if a['action'] == 'quotation_updated'][-1]
+    assert entry['role'] == 'pm'
+    assert entry['actor_origin'] == 'simulated'

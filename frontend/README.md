@@ -90,3 +90,8 @@ bot, AI key, or PostgreSQL. Real PostgreSQL and live-provider checks are separat
 
 See [the frontend handoff](../docs/FRONTEND.md) and
 [section-by-section evidence](../docs/FRONTEND_CHECKLIST.md).
+
+Settings browser automation: `node frontend/tests/settings-browser.mjs` from the
+repository root, with an installed Playwright module (optional
+`QF_PLAYWRIGHT_MODULE` module URL) and Edge. Uses temporary storage and mocked
+providers on localhost ports 8195/8196; no live messages or runtime records.

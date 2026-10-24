@@ -123,7 +123,7 @@ def patch_quotation(quotation_id: UUID, request: Request, patch: dict = Body(...
                 store, saved,
                 action="quotation_updated",
                 result="saved",
-                **actor,
+                **(actor if request.headers.get("X-Record-Demo-Actor") != "false" else {"actor_id": None, "role": None, "actor_origin": "unknown"}),
             )
             return saved
 

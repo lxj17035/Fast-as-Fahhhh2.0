@@ -26,10 +26,11 @@ export class Api {
     this.fetcher = fetcher;
   }
 
-  async request(path, { method = 'GET', body, role, pdf = false, delivery = false, messageDelivery = false, nullable = false } = {}) {
+  async request(path, { method = 'GET', body, role, pdf = false, delivery = false, messageDelivery = false, nullable = false, recordActor = true } = {}) {
     const headers = {};
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (role) headers['X-Demo-Actor'] = role;
+    if (!recordActor) headers['X-Record-Demo-Actor'] = 'false';
     let response;
     try {
       response = await this.fetcher(this.base + path, {
@@ -76,7 +77,7 @@ export class Api {
   enquiry(id) { return this.request(`/api/enquiries/${encodeURIComponent(id)}`); }
   quotation(id) { return this.request(`/api/enquiries/${encodeURIComponent(id)}/quotation`); }
   draft(id, manual) { return this.request(`/api/enquiries/${encodeURIComponent(id)}/draft`, { method: 'POST', body: { manual } }); }
-  saveQuote(id, body, role) { return this.request(`/api/quotations/${encodeURIComponent(id)}`, { method: 'PATCH', body, role }); }
+  saveQuote(id, body, role, recordActor = true) { return this.request(`/api/quotations/${encodeURIComponent(id)}`, { method: 'PATCH', body, role, recordActor }); }
   submitReview(id, version, sourceMessageIds, role) { return this.request(`/api/quotations/${encodeURIComponent(id)}/submit-review`, { method: 'POST', body: {version, sourceMessageIds}, role }); }
   pdf(id, version) { return this.request(`/api/quotations/${encodeURIComponent(id)}/pdf?version=${version}`, { pdf: true }); }
   send(id, version, retryId) {
@@ -93,6 +94,7 @@ export class Api {
   message(id, body, role) { return this.request(`/api/enquiries/${encodeURIComponent(id)}/messages`, { method: 'POST', body, role, messageDelivery: true }); }
   assignments() { return this.request('/api/assignments'); }
   assign(id, body, role) { return this.request(`/api/assignments/${encodeURIComponent(id)}`, { method: 'POST', body, role }); }
+  demoCapabilities() { return this.request('/api/demo/capabilities'); }
   settings() { return this.request('/api/settings'); }
   profiles() { return this.request('/api/business-profiles'); }
   selectProfile(id) { return this.request('/api/business-profiles/active', { method: 'PATCH', body: { business_profile_id: id } }); }

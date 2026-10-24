@@ -354,3 +354,17 @@ saved quote version is unchanged. A previously closed Staff row therefore reopen
 for Manager after inbox refresh. Verification: 46 frontend checks passed; actual
 API/browser check passed Close -> same-version submit -> Refresh -> Manager To do
 on a temporary database with mocked providers. No backend Close state is implied.
+
+## Business settings contract (24 October 2026)
+
+Settings now presents Business details plus Manager-only collapsed Demo tools.
+Staff views disabled fields; settings API authorization remains the existing
+supervised demo model. Save is enabled only when values differ from the loaded
+snapshot. Profile selection shares the existing dialog, with Cancel, Discard and
+switch, and Save and switch; failed saves retain edits and do not switch profiles.
+GET /api/demo/capabilities returns demoApprovalEnabled (boolean) only.
+The record-role checkbox defaults on and persists its preference in session storage.
+Quotation PATCH accepts optional X-Record-Demo-Actor: false to omit edit attribution;
+X-Demo-Actor still validates pricing and source-review authority. Approval/send
+records remain attributable regardless of this edit-only preference.
+Client APIs remain available; manual client lookup is removed from Settings.

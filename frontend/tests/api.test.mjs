@@ -95,3 +95,13 @@ test('review submission sends saved version, source IDs and explicit human role 
  assert.equal(call.headers['X-Demo-Actor'],'sales');
  assert.deepEqual(JSON.parse(call.body),{version:7,sourceMessageIds:['123']});
 });
+
+
+test('recording preference retains the role used for price authorization', async () => {
+  const calls = [];
+  const api = new Api('http://api', async (url, options) => { calls.push(options); return Response.json({}); });
+  await api.saveQuote('quote', {version: 1}, 'pm', false);
+  assert.equal(calls[0].headers['X-Demo-Actor'], 'pm');
+  assert.equal(calls[0].headers['X-Record-Demo-Actor'], 'false');
+  await api.demoCapabilities();
+});

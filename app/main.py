@@ -74,7 +74,7 @@ def create_app(
     application = FastAPI(title="QuoteFlow (working title)", lifespan=lifespan)
     application.add_middleware(CORSMiddleware, allow_origins=sorted(ALLOWED_ORIGINS),
                                allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
-                               allow_headers=["Content-Type", "X-Demo-Actor"], expose_headers=["X-Quotation-Version"])
+                               allow_headers=["Content-Type", "X-Demo-Actor", "X-Record-Demo-Actor"], expose_headers=["X-Quotation-Version"])
 
     @application.exception_handler(AppError)
     async def quotation_error(request, error):
