@@ -25,6 +25,20 @@ omitted:
 
 # QuoteFlow design context
 
+## Inbox reference preview (24 October 2026)
+
+The owner supplied quoteflow-inbox.html and quoteflow-inbox-spec.md and approved
+a local-only inbox redesign. Route #/ uses a dark #142c28 header, #1f6b55 actions,
+760px centered column, task rows, role-owned To do, All/Closed and native source/
+stage filters. Settings remains in the header; assisted/synthetic notices remain
+in the footer. Scope all overrides under .inbox-shell in frontend/src/inbox.css;
+the detail editor, Settings and PDF surfaces retain their existing design.
+Do not show internal enquiry Copy ID buttons; assignment uses the dropdown.
+Assignment stays an inline explicit action with history.
+Close/Restore is browser-session-only, approved for preview; it does not alter
+backend routing, send guards or records. Non-Telegram examples require an explicit
+localhost-only switch and cannot send. No extra live AI calls for short titles.
+
 ## Overview
 
 Product register: a sales desk reviewing an actual document beside a customer
@@ -87,3 +101,20 @@ adapter. Staff/Manager labels map to existing simulated sales/pm roles. Prices
 are readonly for Staff. A final review uses the saved version, actual PDF and
 server summary together. Frozen partial delivery explains the protected edit
 state. Horizontal scrolling belongs to the item table; the page scrolls naturally.
+
+Owner refinement: Inbox restores the existing left sidebar and Settings navigation,
+matching the Settings page. Keep the compact task list in the remaining content
+column. Use saved shortTitle first, compact saved item/quantity for legacy rows.
+
+## Detail review reference (24 October 2026, local preview)
+
+Use the supplied quoteflow-detail.html/spec as the layout reference: centered
+820px content, one next-step panel, Quote/Preview/Messages/Activity tabs, and
+an amber new-customer-message notice containing the actual text. Keep the shared
+sidebar. Staff remains able to edit unsent details; Manager owns pricing and
+approval. No new handover state or duplicate Save-for-Manager button.
+Use explicit Confirm handled & save quote only for unreviewed incoming source
+IDs; no permanent review checkbox. Preserve the current saved PDF renderer and
+Manager's saved PDF/summary verification before a final send dialog. Changes
+retain existing prices and require saving/previewing again. Technical history
+stays collapsed in Activity; old quotation browsing remains future work.

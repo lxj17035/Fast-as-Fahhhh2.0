@@ -1,7 +1,7 @@
 import { businessDate, decimalValid, editable, editorForm, sameId, sendBlockers } from './model.js';
 
 // Explain what to do next. The existing send guards and API remain authoritative.
-export function preparationIssues(form, today = businessDate()) {
+export function preparationIssues(form, today = businessDate(), role = 'pm') {
   if (!form) return [];
   const issues = [];
   if (!form.client.name.trim()) issues.push({ field: 'clientName', message: 'Add the customer’s name.' });
@@ -11,7 +11,7 @@ export function preparationIssues(form, today = businessDate()) {
   form.items.forEach((item, i) => {
     if (!item.description.trim()) issues.push({ field: `item-description-${i}`, message: `Describe item ${i + 1}.` });
     if (!decimalValid(item.quantity)) issues.push({ field: `item-quantity-${i}`, message: `Check the quantity for item ${i + 1}.` });
-    if (!decimalValid(item.unitPrice, true)) issues.push({ field: `item-price-${i}`, message: `Enter a price for item ${i + 1}. Zero is allowed.` });
+    if (role === 'pm' && !decimalValid(item.unitPrice, true)) issues.push({ field: `item-price-${i}`, message: `Enter a price for item ${i + 1}. Zero is allowed.` });
   });
   if (form.missingInformation.length) issues.push({ field: 'missing-review', message: `Review ${form.missingInformation.length === 1 ? 'the flagged detail' : 'the flagged details'} below.` });
   return issues;
@@ -30,12 +30,13 @@ export function reviewGuidance(context) {
   if (busy) return { stage: 1, kind: 'working', title: 'Working on your quote…', body: 'Please wait before taking the next step.', action: null, issues: [] };
   if (!quote) return { stage: 1, kind: 'review', title: 'Start with a draft', body: 'Use the customer’s message to prepare a quote. You’ll review every detail before sending.', action: 'draft-ai', label: 'Prepare draft', issues: [] };
   const form = context.form || editorForm(quote);
-  const issues = preparationIssues(form, today);
+  const issues = preparationIssues(form, today, role);
   if (!dirty && quote.expiryDate < today) issues.push({ field: 'issueDate', message: 'This quote has expired. Update the date and save it again.' });
   if (issues.length) return { stage: 1, kind: 'review', title: 'Check the quote details', body: 'Complete these details before sending. You can save an unfinished draft at any time.', action: 'fix-details', label: 'Review details', issues };
   if (dirty) return { stage: 1, kind: 'review', title: 'Save and check the document', body: 'Your changes are ready to save. Open the updated PDF to check how the quote will look.', action: 'save-preview', label: 'Save & preview', issues: [] };
   if (!editable(quote)) return { stage: 3, kind: 'warning', title: 'This quote is protected', body: 'Refresh the record to check its latest delivery status.', action: 'refresh', label: 'Refresh status', issues: [] };
-  if (!pdfReady || previewVersion !== quote.version) return { stage: 2, kind: 'preview', title: 'Preview your quote', body: 'Check the saved PDF your customer will receive, including the items, prices and dates.', action: 'preview', label: 'Preview quote', issues: [] };
+  if (!pdfReady || previewVersion !== quote.version) return { stage: 2, kind: 'preview', title: 'Preview your quote', body: 'Check the saved PDF your customer will receive, including the items, prices and dates.', action: 'preview', label: role === 'pm' ? 'Preview quote' : 'Preview draft', issues: [] };
+  if (role !== 'pm' && form.items.some(item => !decimalValid(item.unitPrice, true))) return { stage: 3, kind: 'review', title: 'Waiting for Manager pricing', body: 'Your details are saved and the draft is previewed. A Manager needs to enter prices and approve sending.', action: null, issues: [] };
   if (role !== 'pm') return { stage: 3, kind: 'review', title: 'Ready for a project manager', body: 'The quote is saved and previewed. A PM needs to review it and approve sending. The role selector is for this supervised demo.', action: null, label: 'PM approval needed', issues: [] };
   const blockers = sendBlockers({ ...context, today });
   if (blockers.length) return { stage: 3, kind: 'warning', title: 'Check before sending', body: 'Refresh the record to check the original conversation and delivery status.', action: 'refresh', label: 'Refresh status', issues: [] };

@@ -37,6 +37,19 @@ test('Sales cannot reach the approval action and stale previews require refresh'
   assert.equal(reviewGuidance({ ...ready, role: 'sales' }).action, null);
   assert.equal(reviewGuidance({ ...ready, previewVersion: 1 }).action, 'preview');
 });
+
+test('Staff can preview unpriced drafts while Manager still owns price validation', () => {
+  const form = editorForm(quote); form.items[0].unitPrice = '';
+  const staff = { ...ready, form, role: 'sales' };
+  assert.deepEqual(preparationIssues(form, ready.today, 'sales'), []);
+  assert.equal(preparationIssues(form, ready.today, 'pm')[0].field, 'item-price-0');
+  assert.equal(reviewGuidance({ ...staff, dirty: true }).action, 'save-preview');
+  assert.equal(reviewGuidance({ ...staff, pdfReady: false }).label, 'Preview draft');
+  assert.equal(reviewGuidance(staff).title, 'Waiting for Manager pricing');
+  assert.equal(reviewGuidance(staff).action, null);
+  form.client.name = '';
+  assert.equal(reviewGuidance(staff).action, 'fix-details');
+});
 test('sent and unknown states do not invite another send', () => {
   assert.equal(reviewGuidance({ ...ready, quote: { ...quote, status: 'sent' } }).kind, 'complete');
   for (const status of ['pending', 'unknown']) {

@@ -78,14 +78,18 @@ try {
     assert.equal(quote.items[0].description, c.name);
     await page.goto(url);
     assert.equal(new URL(page.url()).origin, url);
-    await page.getByRole('heading', { name: 'Enquiries.', exact: true }).waitFor();
-    await page.locator('.enquiry-link').first().click();
-    await page.getByRole('heading', { name: 'Conversation Room', exact: true }).waitFor();
+    await page.getByRole('heading', { name: 'What needs you', exact: true }).waitFor();
+    await page.getByLabel('Simulated role').selectOption('sales');
+    await page.locator('.inbox-row [data-action="inbox-open"]').first().click();
+    await page.getByRole('tab', {name:/^Messages/}).click();
+    await page.getByRole('heading', { name: 'Messages', exact: true }).waitFor();
     assert.match(await page.title(), /Quotation review/);
     await page.getByLabel('Simulated role').selectOption('sales');
     assert.ok(await page.getByLabel('Item 1 unit price', { exact: true }).getAttribute('readonly') !== null);
     assert.equal((await api.conversation(enquiry.id)).items.length, 1);
-    await page.getByRole('button', { name: 'Use suggestion', exact: true }).click();
+    await page.getByRole('tab', {name:/^Messages/}).click();
+    await page.locator('.detail-questions input[type=checkbox]').first().check();
+    await page.getByRole('button', {name:'Add selected questions to message',exact:true}).click();
     const question = (await page.getByLabel('Message to customer').inputValue()) + ' Thank you.';
     await page.getByLabel('Message to customer').fill(question);
     assert.equal((await api.conversation(enquiry.id)).items.length, 1);
@@ -93,15 +97,20 @@ try {
     await notice('Telegram accepted your message');
     const outgoing = (await api.conversation(enquiry.id)).items.at(-1);
     assert.equal(outgoing.actor, 'sales'); assert.equal(outgoing.text, question);
+    await page.getByRole('tab',{name:'Quote',exact:true}).click();
+    await page.getByLabel('Item 1 notes',{exact:true}).fill('Unsaved edit retained during new-message refresh');
     await incoming(1, c.answer, outgoing.provider_message_id);
     for (let i = 0; i < 100; i++) {
       const analysis = await api.analysis(enquiry.id);
       if (analysis?.signature.sourceMessageIds.length === 2) break;
       await new Promise(r => setTimeout(r, 100));
     }
-    await page.reload();
-    await page.getByRole('heading', { name: 'Conversation Room', exact: true }).waitFor();
+    await page.locator('.detail-message-alert').waitFor({timeout:25000});
+    assert.equal(await page.getByLabel('Item 1 notes',{exact:true}).inputValue(),'Unsaved edit retained during new-message refresh');
+    await page.getByRole('tab', {name:/^Messages/}).click();
+    await page.getByRole('heading', { name: 'Messages', exact: true }).waitFor();
     assert.ok((await page.locator('.conversation-list').innerText()).includes(c.answer));
+    await page.getByRole('tab', {name:'Quote',exact:true}).click();
     await page.getByLabel('Item 1 quantity', { exact: true }).fill(c.quantity);
     await page.getByLabel('Item 1 unit', { exact: true }).fill(c.unit);
     await page.getByLabel('Item 1 notes', { exact: true }).fill(c.notes);
@@ -109,21 +118,21 @@ try {
       await page.getByRole('button', { name: 'Mark checked', exact: true }).first().click();
       await page.getByRole('dialog').getByRole('button', { name: 'Mark checked', exact: true }).click();
     }
-    await page.locator('#review-messages').check();
-    await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+    if (await page.getByRole('button',{name:'Confirm handled & save quote',exact:true}).count()) await page.getByRole('button',{name:'Confirm handled & save quote',exact:true}).click();
+    else await page.locator('#save-quote').click();
     await notice('Your draft is saved');
     quote = await api.quotation(enquiry.id);
     assert.deepEqual(quote.reviewedMessageIds, [String(updateId), String(updateId + 1)]);
     assert.equal(quote.items[0].unitPrice, null);
     await page.getByLabel('Simulated role').selectOption('pm');
     await page.getByLabel('Item 1 unit price', { exact: true }).fill(c.price);
-    await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+    await page.locator('#save-quote').click();
     await notice('Your draft is saved');
     quote = await api.quotation(enquiry.id);
     assert.equal(quote.total, c.total);
     assert.equal(quote.items[0].unit, c.unit); assert.equal(quote.items[0].notes, c.notes);
     assert.equal(quote.business_profile_id, c.profile);
-    await page.getByRole('button', { name: 'Manager Review & Send', exact: true }).click();
+    await page.getByRole('button', { name: 'Review & send', exact: true }).click();
     const approve = page.getByRole('button', { name: 'Approve & Send', exact: true });
     await approve.waitFor();
     await page.waitForFunction(() => !document.querySelector('[data-action="final-send"]')?.disabled);
@@ -140,7 +149,12 @@ try {
       await page.screenshot({ path: resolve(root, `.input/phase4/${c.profile}-${label}.png`), fullPage: true });
     }
     await page.setViewportSize({ width: 1365, height: 900 });
+    const beforeApproval=(await api.conversation(enquiry.id)).items.length;
     await approve.click();
+    await page.getByRole('dialog').getByRole('button',{name:'Cancel',exact:true}).click();
+    assert.equal((await api.conversation(enquiry.id)).items.length,beforeApproval);
+    await approve.click();
+    await page.getByRole('dialog').getByRole('button',{name:'Send to Telegram',exact:true}).click();
     await notice('accepted by Telegram');
     const history = (await api.conversation(enquiry.id)).items;
     assert.deepEqual(history.map(m => m.actor), ['customer', 'sales', 'customer', 'pm', 'pm']);
@@ -166,7 +180,9 @@ try {
       await reloadAfterAnalysis(3);
       assert.equal((await api.analysis(enquiry.id)).relationshipIntent, 'unclear');
       assert.equal((await api.request(`/api/enquiries/${enquiry.id}/quotations`)).items.length, 1);
-      await page.getByRole('button', { name: 'Use suggestion', exact: true }).click();
+      await page.getByRole('tab', {name:/^Messages/}).click();
+    await page.locator('.detail-questions input[type=checkbox]').first().check();
+    await page.getByRole('button', {name:'Add selected questions to message',exact:true}).click();
       await page.getByRole('button', { name: 'Send message', exact: true }).click();
       await notice('Telegram accepted your message');
       const clarification = (await api.conversation(enquiry.id)).items.at(-1);
@@ -186,17 +202,18 @@ try {
           await page.getByRole('button', { name: 'Mark checked', exact: true }).first().click();
           await page.getByRole('dialog').getByRole('button', { name: 'Mark checked', exact: true }).click();
         }
-        await page.locator('#review-messages').check();
-        await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+        if (await page.getByRole('button',{name:'Confirm handled & save quote',exact:true}).count()) await page.getByRole('button',{name:'Confirm handled & save quote',exact:true}).click();
+    else await page.locator('#save-quote').click();
         await notice('Your draft is saved');
         assert.equal((await api.quotation(targetId)).total, null);
         await page.getByLabel('Simulated role').selectOption('pm');
         await page.getByLabel('Item 1 unit price', { exact: true }).fill('25.00');
-        await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+        await page.locator('#save-quote').click();
         await notice('Your draft is saved');
-        await page.getByRole('button', { name: 'Manager Review & Send', exact: true }).click();
+        await page.getByRole('button', { name: 'Review & send', exact: true }).click();
         await page.waitForFunction(() => document.querySelector('[data-action="final-send"]') && !document.querySelector('[data-action="final-send"]').disabled);
         await page.getByRole('button', { name: 'Approve & Send', exact: true }).click();
+        await page.getByRole('dialog').getByRole('button',{name:'Send to Telegram',exact:true}).click();
         await notice('accepted by Telegram');
         const saved = await api.quotation(targetId);
         assert.equal(saved.total, '1000.00'); assert.equal(saved.status, 'sent');
